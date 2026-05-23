@@ -8,7 +8,7 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
     private let modalButton = UIButton(type: .system)
     private let pushButton = UIButton(type: .system)
     private let collectionView: UICollectionView
-    private let cellReuseIdentifier = "LanguageDemoCell"
+    private let cellReuseIdentifier = String(describing: LanguageDemoCollectionViewCell.self)
     private let onPushRequested: () -> Void
 
     init(
@@ -52,7 +52,7 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
         collectionView.backgroundColor = .clear
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.dataSource = self
-        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: cellReuseIdentifier)
+        collectionView.register(LanguageDemoCollectionViewCell.self, forCellWithReuseIdentifier: cellReuseIdentifier)
 
         let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel, modalButton, pushButton, collectionView])
         stack.axis = .vertical
@@ -112,29 +112,63 @@ extension UIKitLocalizationDemoViewController: UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellReuseIdentifier, for: indexPath)
-        cell.contentView.subviews.forEach { $0.removeFromSuperview() }
-        cell.contentView.backgroundColor = .systemBackground
-        cell.contentView.layer.cornerRadius = 8
-        cell.contentView.layer.borderColor = UIColor.separator.cgColor
-        cell.contentView.layer.borderWidth = 1
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: cellReuseIdentifier,
+            for: indexPath
+        ) as? LanguageDemoCollectionViewCell else {
+            return UICollectionViewCell()
+        }
 
-        let label = UILabel()
-        label.font = .preferredFont(forTextStyle: .callout)
-        label.textAlignment = .center
-        label.numberOfLines = 2
-        label.text = resolver.string("collection.item.\(indexPath.item + 1)", bundle: .main)
-        label.translatesAutoresizingMaskIntoConstraints = false
-        cell.contentView.addSubview(label)
+        cell.configure(text: resolver.string("collection.item.\(indexPath.item + 1)", bundle: .main))
+        return cell
+    }
+}
+
+private final class LanguageDemoCollectionViewCell: UICollectionViewCell {
+    private let titleLabel = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        configureView()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        contentView.layer.borderColor = UIColor.separator.cgColor
+    }
+
+    func configure(text: String) {
+        titleLabel.text = text
+    }
+
+    private func configureView() {
+        contentView.backgroundColor = .systemBackground
+        contentView.layer.cornerRadius = 8
+        contentView.layer.borderColor = UIColor.separator.cgColor
+        contentView.layer.borderWidth = 1
+
+        titleLabel.font = .preferredFont(forTextStyle: .callout)
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 2
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(titleLabel)
 
         NSLayoutConstraint.activate([
-            label.topAnchor.constraint(equalTo: cell.contentView.topAnchor, constant: 8),
-            label.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 8),
-            label.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -8),
-            label.bottomAnchor.constraint(equalTo: cell.contentView.bottomAnchor, constant: -8)
+            titleLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
+            titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
+            titleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8)
         ])
-
-        return cell
     }
 }
 
