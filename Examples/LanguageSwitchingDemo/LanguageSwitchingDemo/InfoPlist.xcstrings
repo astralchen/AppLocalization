@@ -1,29 +1,41 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "CFBundleDisplayName": {
-      "extractionState": "manual",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عرض اللغة"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "عرض اللغة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Language Demo"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Language Demo"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "语言演示"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语言演示"
           }
         }
       }
+    },
+    "CFBundleName" : {
+      "comment" : "内部 bundle 名称，不向用户展示。",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LanguageSwitchingDemo"
+          }
+        }
+      },
+      "shouldTranslate" : false
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

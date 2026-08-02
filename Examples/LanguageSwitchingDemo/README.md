@@ -13,4 +13,4 @@ This sample app demonstrates:
 - App display name localization through `InfoPlist.xcstrings`; this is system-owned metadata and is not refreshed by in-app language switching.
 - Light, dark, and tinted app icon variants through `Assets.xcassets/AppIcon.appiconset`.
 
-The sample compiles the library sources from `../../Sources/AppLocalization` directly into the app target so it can be opened without extra package setup.
+The Xcode project links the repository root as a local Swift Package and imports the `AppLocalization` library product. The package reference is already configured, so no additional dependency setup is required.

@@ -1,4 +1,5 @@
 import SwiftUI
+import AppLocalization
 
 @main
 struct LanguageSwitchingDemoApp: App {
@@ -10,7 +11,12 @@ struct LanguageSwitchingDemoApp: App {
                 localizationController: services.localizationController,
                 resolver: services.resolver
             )
-            .appLocalizationEnvironment(services.localizationController)
+            // `NavigationView` 和 `List` 原地切换布局方向后可能保留 UIKit 镜像变换。
+            // 仅在布局方向变化时重建内容；同方向的语言切换保留现有视图状态。
+            .appLocalizationEnvironment(
+                services.localizationController,
+                resetContentOnLayoutDirectionChange: true
+            )
             .onReceive(
                 NotificationCenter.default.publisher(
                     for: LocalizationController.localizationDidChangeNotification,
@@ -22,10 +28,7 @@ struct LanguageSwitchingDemoApp: App {
                 }
                 UIWindowSceneLocalizationCoordinator().reloadAllScenes(
                     for: change,
-                    // 修复点：SwiftUI root 已由 appLocalizationEnvironment 在方向变化时换 identity。
-                    // 如果这里再执行 UIKit rootViewController 重挂，SwiftUI List/NavigationView
-                    // 的内部复用状态可能和新环境交错，随机多次切换后会出现整体镜像或反排。
-                    // UIKit-root App 可继续对方向变化传 true；SwiftUI-root App 保持 false。
+                    // SwiftUI 环境会按需重建内容，无需同时重设窗口的根视图控制器。
                     rebuildRootWindows: false,
                     animateRootRebuild: true,
                     updateAppearanceProxies: false

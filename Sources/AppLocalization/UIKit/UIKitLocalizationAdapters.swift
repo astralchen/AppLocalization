@@ -1,46 +1,48 @@
 #if canImport(UIKit)
 import UIKit
 
-/// UIKit 页面实现此协议后，可以在 locale 变化时重设所有可见文案。
+/// 为需要在区域设置变化时刷新可见文本的 UIKit 视图控制器提供接口。
 ///
-/// UIKit 的 `UILabel.text`、`UIButton` title、`navigationItem.title` 等都是
-/// 命令式赋值，不会像 SwiftUI 一样自动跟随环境重算，因此需要显式 reload。
+/// UIKit 的 `UILabel.text`、按钮标题和导航标题等值不会像 SwiftUI 一样自动根据
+/// 环境重新计算，因此实现者必须显式更新这些值。
 @MainActor
 public protocol LocalizedContentUpdating: AnyObject {
-    /// 重设页面内所有本地化文案。
+    /// 重新加载接收者显示的所有本地化文本。
     func reloadLocalizedContent()
 }
 
-/// 方向敏感的 UIKit 页面实现此协议。
+/// 为需要响应布局方向变化的 UIKit 视图控制器提供接口。
 ///
-/// 只有 LTR/RTL 发生变化时才会调用，用于更新 `semanticContentAttribute`、
-/// collection layout、手势边缘、自定义动画方向等。
+/// 实现者可更新 `semanticContentAttribute`、集合视图布局、手势边缘和自定义动画方向。
 @MainActor
 public protocol UserInterfaceLayoutDirectionUpdating: AnyObject {
-    /// 按新的 UIKit layout direction 刷新方向相关 UI。
+    /// 使用指定的 UIKit 布局方向刷新接收者。
+    ///
+    /// - Parameter direction: 要应用的界面布局方向。
     func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection)
 }
 
-/// 对无法原地刷新的 presented 内容提供重建钩子。
+/// 为无法原地刷新的已呈现内容提供重建接口。
 ///
-/// `UIAlertController`、菜单、context menu、第三方 SDK 弹窗等通常不能可靠地
-/// 原地替换文案，可以实现该协议或通过 coordinator 的 handler 选择 dismiss
-/// 后重建，或约定下次展示时生效。
+/// `UIAlertController`、菜单、上下文菜单和第三方 SDK 弹窗等内容通常无法可靠地
+/// 原地替换文本。此类视图控制器可实现该协议以提供重建或降级策略。
 @MainActor
 public protocol PresentedLocalizationBoundaryRebuilding: AnyObject {
-    /// 处理 presented 边界的重建或降级策略。
+    /// 根据本地化变更重建已呈现内容，或应用降级策略。
+    ///
+    /// - Parameter change: 触发重建的本地化变更。
     func rebuildPresentedBoundary(for change: LocalizationChange)
 }
 
 public extension AppUserInterfaceLayoutDirection {
-    /// 转成 UIKit 的 `UIUserInterfaceLayoutDirection`。
+    /// 对应的 UIKit `UIUserInterfaceLayoutDirection`。
     var uiLayoutDirection: UIUserInterfaceLayoutDirection {
         self == .rightToLeft ? .rightToLeft : .leftToRight
     }
 
-    /// 转成 UIKit 的强制 semantic content attribute。
+    /// 对应的 UIKit 强制语义内容属性。
     ///
-    /// 使用 `.forceLeftToRight` / `.forceRightToLeft` 是为了让 App 内选择的方向
+    /// 使用 `.forceLeftToRight` 或 `.forceRightToLeft` 可使应用内选择的方向
     /// 明确覆盖系统语言方向。
     var semanticContentAttribute: UISemanticContentAttribute {
         self == .rightToLeft ? .forceRightToLeft : .forceLeftToRight
@@ -48,28 +50,28 @@ public extension AppUserInterfaceLayoutDirection {
 }
 
 public extension UIUserInterfaceLayoutDirection {
-    /// 从 UIKit layout direction 转回框架内部方向类型。
+    /// 对应的应用布局方向。
     var appLayoutDirection: AppUserInterfaceLayoutDirection {
         self == .rightToLeft ? .rightToLeft : .leftToRight
     }
 }
 
-/// 负责把一次本地化变化分发到所有 `UIWindowScene`。
+/// 将本地化变更分发到所有已连接窗口场景的协调器。
 ///
-/// 不使用 `keyWindow`，因为 iPad 多窗口、外接显示器、Stage Manager 等场景
-/// 可能同时存在多个 scene/window。coordinator 会遍历 root、children、
-/// navigation stack、tab stack 和 presented chain。
+/// 协调器会遍历每个窗口的根视图控制器、子视图控制器、导航栈、标签页和
+/// 已呈现层级。
+/// 此类型不依赖单一关键窗口，因此支持 iPad 多窗口、外接显示器和台前调度。
 @MainActor
 public final class UIWindowSceneLocalizationCoordinator {
     private let application: UIApplication
     private let presentedBoundaryHandler: ((UIViewController, LocalizationChange) -> Bool)?
 
-    /// 创建 coordinator。
+    /// 使用指定应用实例创建协调器。
     ///
     /// - Parameters:
     ///   - application: 默认使用 `.shared`，测试或特殊宿主可注入。
-    ///   - presentedBoundaryHandler: 返回 `true` 时表示该 presented VC 已由
-    ///     handler 处理，coordinator 会 dismiss 它并停止递归。
+    ///   - presentedBoundaryHandler: 处理已呈现视图控制器的可选闭包。返回 `true` 时，
+    ///     协调器会关闭该视图控制器并停止遍历其层级。
     public init(
         application: UIApplication,
         presentedBoundaryHandler: ((UIViewController, LocalizationChange) -> Bool)? = nil
@@ -78,7 +80,9 @@ public final class UIWindowSceneLocalizationCoordinator {
         self.presentedBoundaryHandler = presentedBoundaryHandler
     }
 
-    /// 使用 `UIApplication.shared` 创建 coordinator。
+    /// 使用 `UIApplication.shared` 创建协调器。
+    ///
+    /// - Parameter presentedBoundaryHandler: 处理已呈现视图控制器的可选闭包。
     public convenience init(
         presentedBoundaryHandler: ((UIViewController, LocalizationChange) -> Bool)? = nil
     ) {
@@ -88,15 +92,14 @@ public final class UIWindowSceneLocalizationCoordinator {
         )
     }
 
-    /// 刷新所有 connected `UIWindowScene` 中的可见 window。
-    ///
-    /// 通常在 `LocalizationController.localizationDidChangeNotification` 的监听中调用。
-    /// 默认路径是原地 reload；当系统 UI 或 RTL/LTR 切换需要更强刷新时，可以打开
-    /// root-window rebuild。rebuild 会用快照淡出减少闪烁。
-    ///
-    /// `updateAppearanceProxies` 默认为 `false`：运行时切语言优先更新 window/root/页面，
-    /// 不默认改 `UIView.appearance()` 这个全局默认值，避免 SwiftUI-root App 的懒创建
-    /// UIKit 宿主 view 混入旧方向。UIKit-only App 确认需要时可显式打开。
+    /// 刷新所有已连接窗口场景中的可见窗口。
+///
+    /// 通常在监听 `LocalizationController.localizationDidChangeNotification` 时调用此方法。
+    /// 默认行为是原地刷新。当系统界面或布局方向变化需要完整刷新时，可选择重建
+    /// 根视图控制器。重建过程使用淡出快照减少闪烁。
+///
+    /// `updateAppearanceProxies` 默认为 `false`。运行时切换语言时，协调器优先更新窗口、
+    /// 根视图控制器和已加载界面，不修改 `UIView.appearance()` 的全局默认值。
     ///
     /// ```swift
     /// UIWindowSceneLocalizationCoordinator().reloadAllScenes(
@@ -106,6 +109,12 @@ public final class UIWindowSceneLocalizationCoordinator {
     ///     updateAppearanceProxies: false
     /// )
     /// ```
+    ///
+    /// - Parameters:
+    ///   - change: 要分发的本地化变更。
+    ///   - rebuildRootWindows: 是否重建每个窗口的根视图控制器。
+    ///   - animateRootRebuild: 是否使用淡出快照过渡根视图控制器重建。
+    ///   - updateAppearanceProxies: 是否更新 UIKit 外观代理的全局布局方向。
     public func reloadAllScenes(
         for change: LocalizationChange,
         rebuildRootWindows: Bool = false,
@@ -115,11 +124,9 @@ public final class UIWindowSceneLocalizationCoordinator {
         let direction = change.currentLocale.layoutDirection.uiLayoutDirection
         let scenes = application.connectedScenes.compactMap { $0 as? UIWindowScene }
 
-        // appearance proxy 是全局“默认值”，只影响之后创建的 UIKit view。
-        // SwiftUI-root App 在运行时切语言时不建议默认更新它：List/NavigationView
-        // 会懒创建 UIKit 宿主 view，多次随机切换可能把旧 proxy、SwiftUI environment
-        // 和 window semantic 混进同一棵树。UIKit-only App 如需让后续新建 view
-        // 继承方向，可以显式传 updateAppearanceProxies: true。
+        // 外观代理是全局默认值，只影响之后创建的 UIKit 视图。SwiftUI 根视图可能延迟
+        // 创建 UIKit 宿主视图；运行时更新代理会使不同批次的方向状态混入同一视图树。
+        // 纯 UIKit 应用如需让后续视图继承方向，可显式启用 `updateAppearanceProxies`。
         if change.layoutDirectionChanged && updateAppearanceProxies {
             applyGlobalLayoutDirection(change.currentLocale)
         }
@@ -127,11 +134,12 @@ public final class UIWindowSceneLocalizationCoordinator {
         for scene in scenes {
             for window in scene.windows where !window.isHidden {
                 window.semanticContentAttribute = change.currentLocale.layoutDirection.semanticContentAttribute
+                var visited = Set<ObjectIdentifier>()
                 reloadTree(
                     from: window.rootViewController,
                     change: change,
                     direction: direction,
-                    visited: []
+                    visited: &visited
                 )
 
                 if rebuildRootWindows {
@@ -144,29 +152,30 @@ public final class UIWindowSceneLocalizationCoordinator {
         }
     }
 
-    /// 更新 UIKit 全局 appearance 的 semantic 方向。
-    ///
-    /// 这只影响之后创建的 view。已经存在的页面仍需要实现
-    /// `UserInterfaceLayoutDirectionUpdating`，或在必要时执行 root-window rebuild。
-    ///
-    /// 注意：它是全局默认值，不是一次局部刷新动作。SwiftUI 混合栈在运行时切换
-    /// LTR/RTL 时，如果同时更新 appearance、window semantic 和 SwiftUI environment，
-    /// SwiftUI 内部懒创建的 UIKit 宿主 view 可能拿到不同批次的方向状态。
-    /// 因此示例 App 默认不在运行时调用它，只在 UIKit-only 或启动阶段需要统一默认值时使用。
+    /// 更新 UIKit 外观代理的全局语义方向。
+///
+    /// 此方法只影响之后创建的视图。已存在的界面仍需实现
+    /// `UserInterfaceLayoutDirectionUpdating`，或在必要时重建根视图控制器。
+///
+    /// - Important: 此方法修改全局默认值，而非执行局部刷新。在 SwiftUI 混合层级中，
+    ///   同时更新外观代理、窗口语义方向和 SwiftUI 环境，可能使延迟创建的 UIKit 宿主视图
+    ///   获得不同批次的方向状态。建议仅在纯 UIKit 应用或启动阶段使用。
     ///
     /// ```swift
     /// UIWindowSceneLocalizationCoordinator().applyGlobalLayoutDirection(
     ///     localizationController.currentLocale
     /// )
     /// ```
+    ///
+    /// - Parameter locale: 用于确定全局布局方向的区域设置。
     public func applyGlobalLayoutDirection(_ locale: AppLocale) {
         UIView.appearance().semanticContentAttribute = locale.layoutDirection.semanticContentAttribute
     }
 
-    /// 通过重设 rootViewController 触发系统容器 UI 重新读取方向和 appearance。
+    /// 通过重设根视图控制器，使系统容器重新读取布局方向和外观。
     ///
-    /// 这是 fallback 手段，适合 NavigationBar、TabBar 或复杂 UIKit 容器无法原地
-    /// 刷新的场景。快照淡出用于减少 root 置空再恢复时的闪烁。
+    /// 此回退方案适用于导航栏、标签栏或复杂 UIKit 容器无法原地刷新的场景。
+    /// 快照淡出用于减少重设根视图控制器时的闪烁。
     private func rebuildRootWindow(_ window: UIWindow, animated: Bool) {
         let snapshot = animated ? window.snapshotView(afterScreenUpdates: false) : nil
         let currentRootViewController = window.rootViewController
@@ -190,43 +199,48 @@ public final class UIWindowSceneLocalizationCoordinator {
         )
     }
 
-    /// 递归刷新 view controller 树。
+    /// 递归刷新视图控制器树。
     ///
-    /// `visited` 防止自定义容器或异常层级形成循环。递归顺序覆盖普通 children、
-    /// `UINavigationController` 栈、`UITabBarController` 子控制器以及 presented 链。
+    /// `visited` 防止自定义容器或异常层级形成循环。遍历范围包括普通子视图控制器、
+    /// `UINavigationController` 栈、`UITabBarController` 子控制器和已呈现层级。
     private func reloadTree(
         from viewController: UIViewController?,
         change: LocalizationChange,
         direction: UIUserInterfaceLayoutDirection,
-        visited: Set<ObjectIdentifier>
+        visited: inout Set<ObjectIdentifier>
     ) {
         guard let viewController else { return }
 
         let identifier = ObjectIdentifier(viewController)
-        guard !visited.contains(identifier) else { return }
-        var visited = visited
-        visited.insert(identifier)
+        guard visited.insert(identifier).inserted else { return }
 
-        (viewController as? LocalizedContentUpdating)?.reloadLocalizedContent()
-        if change.layoutDirectionChanged {
-            viewController.view.semanticContentAttribute = change.currentLocale.layoutDirection.semanticContentAttribute
-            (viewController as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(direction)
+        // 导航栈可能包含尚未加载视图的离屏界面。不要为了语言刷新主动加载它们：
+        // 它们应在自己的 `viewDidLoad` 中读取当前区域设置，而已经加载的离屏界面
+        // 仍需要在返回前刷新。
+        if viewController.isViewLoaded {
+            (viewController as? LocalizedContentUpdating)?.reloadLocalizedContent()
+            if change.layoutDirectionChanged {
+                viewController.viewIfLoaded?.semanticContentAttribute = change.currentLocale
+                    .layoutDirection
+                    .semanticContentAttribute
+                (viewController as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(direction)
+            }
         }
 
         if let navigationController = viewController as? UINavigationController {
-            navigationController.viewControllers.forEach {
-                reloadTree(from: $0, change: change, direction: direction, visited: visited)
+            for child in navigationController.viewControllers {
+                reloadTree(from: child, change: change, direction: direction, visited: &visited)
             }
         }
 
         if let tabBarController = viewController as? UITabBarController {
-            tabBarController.viewControllers?.forEach {
-                reloadTree(from: $0, change: change, direction: direction, visited: visited)
+            for child in tabBarController.viewControllers ?? [] {
+                reloadTree(from: child, change: change, direction: direction, visited: &visited)
             }
         }
 
-        viewController.children.forEach {
-            reloadTree(from: $0, change: change, direction: direction, visited: visited)
+        for child in viewController.children {
+            reloadTree(from: child, change: change, direction: direction, visited: &visited)
         }
 
         if let presented = viewController.presentedViewController {
@@ -235,7 +249,7 @@ public final class UIWindowSceneLocalizationCoordinator {
             } else if let rebuildable = presented as? PresentedLocalizationBoundaryRebuilding {
                 rebuildable.rebuildPresentedBoundary(for: change)
             } else {
-                reloadTree(from: presented, change: change, direction: direction, visited: visited)
+                reloadTree(from: presented, change: change, direction: direction, visited: &visited)
             }
         }
     }
@@ -243,16 +257,19 @@ public final class UIWindowSceneLocalizationCoordinator {
 
 /// 导航按钮的语义位置。
 ///
-/// 使用 leading/trailing 表达意图，再根据 LTR/RTL 映射到 UIKit 的 left/right。
+/// 使用前缘和后缘表达意图，再根据布局方向映射到 UIKit 的物理左侧或右侧。
 public enum NavigationItemPlacement: Equatable, Sendable {
+    /// 导航栏的语义前缘。
     case leading
+
+    /// 导航栏的语义后缘。
     case trailing
 }
 
 public extension UINavigationItem {
-    /// 按语义位置设置导航按钮，而不是直接写 left/right。
+    /// 在指定的语义位置设置导航栏按钮。
     ///
-    /// 自定义导航栏按钮如果需要 RTL 镜像，建议统一使用这个方法。
+    /// 自定义导航栏按钮需要随布局方向镜像时，建议统一使用此方法。
     ///
     /// ```swift
     /// navigationItem.setBarButtonItem(
@@ -261,32 +278,65 @@ public extension UINavigationItem {
     ///     layoutDirection: view.effectiveUserInterfaceLayoutDirection
     /// )
     /// ```
+    ///
+    /// - Parameters:
+    ///   - item: 要设置的导航栏按钮。传入 `nil` 可清除对应位置的按钮。
+    ///   - side: 按钮的语义位置。
+    ///   - layoutDirection: 当前 UIKit 布局方向。
     func setBarButtonItem(
         _ item: UIBarButtonItem?,
         side: NavigationItemPlacement,
         layoutDirection: UIUserInterfaceLayoutDirection
     ) {
-        switch (side, layoutDirection) {
-        case (.leading, .leftToRight), (.trailing, .rightToLeft):
+        let physicalEdge = DirectionalLayout.physicalEdge(
+            for: side.semanticDirection,
+            layoutDirection: layoutDirection.appLayoutDirection
+        )
+
+        switch physicalEdge {
+        case .left:
+            if let item, rightBarButtonItem === item {
+                rightBarButtonItem = nil
+            }
             leftBarButtonItem = item
-        case (.trailing, .leftToRight), (.leading, .rightToLeft):
+        case .right:
+            if let item, leftBarButtonItem === item {
+                leftBarButtonItem = nil
+            }
             rightBarButtonItem = item
-        @unknown default:
-            leftBarButtonItem = item
+        }
+    }
+}
+
+private extension NavigationItemPlacement {
+    var semanticDirection: SemanticHorizontalDirection {
+        switch self {
+        case .leading:
+            return .leading
+        case .trailing:
+            return .trailing
         }
     }
 }
 
 public extension DirectionalLayout {
-    /// 返回自定义 interactive pop 手势应该监听的 `UIRectEdge`。
+    /// 返回自定义交互式出栈手势应监听的 `UIRectEdge`。
     ///
     /// ```swift
     /// edgePan.edges = DirectionalLayout.backSwipeRectEdge(
     ///     layoutDirection: localizationController.layoutDirection
     /// )
     /// ```
+    ///
+    /// - Parameter layoutDirection: 当前应用布局方向。
+    /// - Returns: 返回手势应监听的物理矩形边缘。
     static func backSwipeRectEdge(layoutDirection: AppUserInterfaceLayoutDirection) -> UIRectEdge {
-        layoutDirection == .rightToLeft ? .right : .left
+        switch backSwipeEdge(layoutDirection: layoutDirection) {
+        case .left:
+            return .left
+        case .right:
+            return .right
+        }
     }
 
     /// 返回自定义返回按钮应该使用的 SF Symbol 名称。
@@ -298,17 +348,25 @@ public extension DirectionalLayout {
     ///     )
     /// )
     /// ```
+    ///
+    /// - Parameter layoutDirection: 当前应用布局方向。
+    /// - Returns: 与返回方向匹配的 SF Symbol 名称。
     static func backChevronSystemName(layoutDirection: AppUserInterfaceLayoutDirection) -> String {
-        layoutDirection == .rightToLeft ? "chevron.right" : "chevron.left"
+        switch backSwipeEdge(layoutDirection: layoutDirection) {
+        case .left:
+            return "chevron.left"
+        case .right:
+            return "chevron.right"
+        }
     }
 }
 
 public extension UICollectionView {
-    /// 应用 LTR/RTL 方向并 invalidate layout，同时尽量保留当前逻辑 item。
-    ///
-    /// 横向列表、分页 carousel、依赖 leading/trailing 几何的布局，都应在
-    /// `reloadLayoutDirection(_:)` 中调用。切方向时不要直接复用旧 `contentOffset`，
-    /// 因为物理偏移在 RTL/LTR 下含义不同；保留 indexPath 更接近用户意图。
+    /// 应用布局方向、使集合视图布局失效，并按需保留当前逻辑项目。
+///
+    /// 横向列表、分页轮播和依赖语义边缘的布局，均可在 `reloadLayoutDirection(_:)`
+    /// 中调用此方法。切换方向时不应直接复用旧 `contentOffset`，因为物理偏移在不同
+    /// 布局方向下含义不同；保留 `IndexPath` 更符合用户意图。
     ///
     /// ```swift
     /// func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
@@ -318,6 +376,10 @@ public extension UICollectionView {
     ///     )
     /// }
     /// ```
+    ///
+    /// - Parameters:
+    ///   - layoutDirection: 要应用的布局方向。
+    ///   - shouldPreserveVisibleItem: 是否在布局失效后保持当前可见的逻辑项目。
     func applyUserInterfaceLayoutDirection(
         _ layoutDirection: AppUserInterfaceLayoutDirection,
         preservingVisibleItem shouldPreserveVisibleItem: Bool = true
@@ -325,20 +387,20 @@ public extension UICollectionView {
         let visibleIndexPath = shouldPreserveVisibleItem
             ? indexPathsForVisibleItems.sorted().first
             : nil
-        // 修复点：切换 RTL/LTR 时不能复用旧 contentOffset。
-        // 旧偏移是物理坐标，方向切换后含义会反转；这里保留逻辑 indexPath。
-        // 如果首次布局还没有 visible item，就定位到第一个逻辑 item，避免 RTL 下停在物理左端。
+        // 旧偏移使用物理坐标，切换方向后含义会反转，因此这里保留逻辑 `IndexPath`。
+        // 首次布局没有可见项目时，定位到第一个逻辑项目，避免从右向左布局
+        // 停在物理左端。
         let targetIndexPath = visibleIndexPath ?? (shouldPreserveVisibleItem ? firstItemIndexPathForDirectionReset() : nil)
 
         semanticContentAttribute = layoutDirection.semanticContentAttribute
         collectionViewLayout.invalidateLayout()
-        // invalidate 后先强制 layout，确保 scrollToItem 使用的是新方向下的布局属性。
+        // 布局失效后立即执行布局，确保滚动操作使用新方向下的布局属性。
         layoutIfNeeded()
 
         if let targetIndexPath {
             scrollToItem(
                 at: targetIndexPath,
-                // RTL 的逻辑起点在右侧，LTR 的逻辑起点在左侧。
+                // 从右向左布局的逻辑起点在右侧，从左向右布局的逻辑起点在左侧。
                 at: layoutDirection == .rightToLeft ? .right : .left,
                 animated: false
             )

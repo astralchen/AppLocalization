@@ -1,4 +1,5 @@
 import SwiftUI
+import AppLocalization
 
 struct PushPopGestureDemoView: View {
     @ObservedObject var localizationController: LocalizationController
@@ -42,9 +43,9 @@ struct PushPopGestureDemoView: View {
                         .multilineTextAlignment(.center)
                         .padding()
                     }
-                    // 这个拖拽区不负责真正 pop，只验证“物理滑动 -> 语义返回”的判断。
-                    // LTR 下向右滑是返回；RTL 下向左滑是返回。生产里的自定义
-                    // edge-pan、push/pop 动画也应使用同一套 DirectionalLayout 逻辑。
+                    // 此拖拽区不执行真正的出栈操作，仅验证物理滑动到语义返回的映射。
+                    // 从左向右布局时向右滑动表示返回；从右向左布局时则向左滑动。
+                    // 生产环境中的边缘手势和入栈、出栈动画也应使用 `DirectionalLayout`。
                     .gesture(
                         DragGesture(minimumDistance: 12)
                             .onChanged { value in
@@ -65,7 +66,7 @@ struct PushPopGestureDemoView: View {
             }
         }
         .navigationTitle(resolver.string("pop.page.title", bundle: .main))
-        // 兜底配置：根页面已经在 push 发生前同步 UINavigationController 方向；
+        // 根页面已在入栈前同步 `UINavigationController` 方向；
         // 目标页继续挂一次，覆盖语言切换后仍停留在栈内页面的场景。
         .background(
             NavigationPopGestureConfigurator(layoutDirection: localizationController.layoutDirection)

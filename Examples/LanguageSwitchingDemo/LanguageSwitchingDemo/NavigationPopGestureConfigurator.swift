@@ -1,12 +1,13 @@
 import SwiftUI
 import UIKit
+import AppLocalization
 
-/// 把 SwiftUI NavigationView 背后的 `UINavigationController` 同步到 App 当前方向。
+/// 将 SwiftUI `NavigationView` 的 `UINavigationController` 同步到应用布局方向。
 ///
 /// SwiftUI 的 `.environment(\.layoutDirection, ...)` 会影响文本和很多布局，
 /// 但不保证同步修改底层 `UINavigationController` 的转场语义，也不保证修改
-/// `interactivePopGestureRecognizer` 的物理边缘。阿语 RTL 下如果只改 SwiftUI
-/// 环境，页面可能显示右侧返回按钮，但 push/pop 动画仍按 LTR，从左向右返回。
+/// `interactivePopGestureRecognizer` 的物理边缘。在阿拉伯文布局中，如果只修改
+/// SwiftUI 环境，页面可能显示右侧返回按钮，但出栈动画仍可能从左向右移动。
 struct NavigationPopGestureConfigurator: UIViewControllerRepresentable {
     let layoutDirection: AppUserInterfaceLayoutDirection
 
@@ -38,8 +39,8 @@ struct NavigationPopGestureConfigurator: UIViewControllerRepresentable {
         }
 
         func configureNavigationControllerWhenAvailable() {
-            // SwiftUI 会先创建 representable，再把宿主控制器放进导航栈；
-            // 因此这里延后一轮到主队列，等 navigationController 可用后再配置。
+            // SwiftUI 先创建桥接对象，再将宿主控制器放入导航栈，因此延迟到下一次
+            // 主队列调度，等待 `navigationController` 可用后再配置。
             DispatchQueue.main.async { [weak self] in
                 guard let self,
                       let navigationController = self.navigationController
@@ -52,20 +53,18 @@ struct NavigationPopGestureConfigurator: UIViewControllerRepresentable {
         private func configure(_ navigationController: UINavigationController) {
             let semanticAttribute = layoutDirection.semanticContentAttribute
 
-            // 关键修复：系统 push/pop 转场读取的是 UIKit 导航容器的语义方向，
-            // 不是 SwiftUI view 的 layoutDirection。RTL 下必须在 push 发生前把
-            // UINavigationController.view 设为 forceRightToLeft，否则返回动画仍会
-            // 按 LTR 从左向右移动。
+            // 系统入栈和出栈转场读取 UIKit 导航容器的语义方向，而不是 SwiftUI 视图的
+            // `layoutDirection`。从右向左布局必须在入栈前设置导航控制器视图的语义属性。
             navigationController.view.semanticContentAttribute = semanticAttribute
             navigationController.navigationBar.semanticContentAttribute = semanticAttribute
             navigationController.toolbar.semanticContentAttribute = semanticAttribute
             navigationController.viewControllers.forEach {
-                $0.view.semanticContentAttribute = semanticAttribute
+                $0.viewIfLoaded?.semanticContentAttribute = semanticAttribute
             }
 
             if let edgePan = navigationController.interactivePopGestureRecognizer as? UIScreenEdgePanGestureRecognizer {
-                // 系统 interactive pop 是物理边缘手势，不会自动理解 App 内语言状态。
-                // LTR 使用左边缘；RTL 使用右边缘，和返回按钮所在的 semantic leading 对齐。
+                // 系统交互式出栈操作使用物理边缘手势，不会自动读取应用内语言状态。
+                // 手势边缘应与返回按钮所在的语义前缘保持一致。
                 edgePan.edges = DirectionalLayout.backSwipeRectEdge(layoutDirection: layoutDirection)
                 edgePan.isEnabled = navigationController.viewControllers.count > 1
             }

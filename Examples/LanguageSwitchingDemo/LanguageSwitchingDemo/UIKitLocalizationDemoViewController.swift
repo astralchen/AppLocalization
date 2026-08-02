@@ -1,4 +1,5 @@
 import UIKit
+import AppLocalization
 
 final class UIKitLocalizationDemoViewController: UIViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
     private let localizationController: LocalizationController
@@ -22,8 +23,11 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
 
         let layout = UICollectionViewFlowLayout()
         layout.scrollDirection = .horizontal
-        layout.minimumLineSpacing = 12
-        layout.itemSize = CGSize(width: 132, height: 64)
+        layout.minimumLineSpacing = DemoSurfaceLayout.spacing
+        layout.itemSize = CGSize(
+            width: DemoSurfaceLayout.itemWidth,
+            height: DemoSurfaceLayout.itemHeight
+        )
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
 
         super.init(nibName: nil, bundle: nil)
@@ -38,7 +42,7 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
         super.viewDidLoad()
 
         view.backgroundColor = .secondarySystemGroupedBackground
-        view.layer.cornerRadius = 8
+        view.layer.cornerRadius = DemoSurfaceLayout.cornerRadius
         view.clipsToBounds = true
 
         titleLabel.font = .preferredFont(forTextStyle: .headline)
@@ -57,16 +61,18 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
         let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel, modalButton, pushButton, collectionView])
         stack.axis = .vertical
         stack.alignment = .fill
-        stack.spacing = 12
+        stack.spacing = DemoSurfaceLayout.spacing
         stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)
 
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: view.topAnchor, constant: 16),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -16),
-            collectionView.heightAnchor.constraint(equalToConstant: 76)
+            stack.topAnchor.constraint(equalTo: view.topAnchor, constant: DemoSurfaceLayout.contentInset),
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: DemoSurfaceLayout.contentInset),
+            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -DemoSurfaceLayout.contentInset),
+            stack.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -DemoSurfaceLayout.contentInset),
+            modalButton.heightAnchor.constraint(greaterThanOrEqualToConstant: DemoSurfaceLayout.buttonHeight),
+            pushButton.heightAnchor.constraint(greaterThanOrEqualToConstant: DemoSurfaceLayout.buttonHeight),
+            collectionView.heightAnchor.constraint(equalToConstant: DemoSurfaceLayout.collectionHeight)
         ])
 
         reloadLocalizedContent()
@@ -90,9 +96,8 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
     }
 
     @objc private func openPushPage() {
-        // UIKit representable 不直接依赖 navigationController。
-        // 它可能被 SwiftUI HostingController 包住，直接 push 容易拿不到正确导航栈；
-        // 所以通过 closure 把事件交回 SwiftUI root，由外层 NavigationLink 统一执行 push。
+        // UIKit 桥接视图不直接依赖导航控制器。该视图可能由 SwiftUI 宿主控制器包装，
+        // 因此通过闭包将事件交回 SwiftUI 根视图，由外层 `NavigationLink` 执行入栈。
         onPushRequested()
     }
 
@@ -108,7 +113,7 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
 
 extension UIKitLocalizationDemoViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        3
+        DemoSurfaceLayout.itemCount
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -153,7 +158,7 @@ private final class LanguageDemoCollectionViewCell: UICollectionViewCell {
 
     private func configureView() {
         contentView.backgroundColor = .systemBackground
-        contentView.layer.cornerRadius = 8
+        contentView.layer.cornerRadius = DemoSurfaceLayout.cornerRadius
         contentView.layer.borderColor = UIColor.separator.cgColor
         contentView.layer.borderWidth = 1
 
@@ -176,6 +181,12 @@ final class DemoModalViewController: UIViewController, LocalizedContentUpdating,
     private let localizationController: LocalizationController
     private let resolver: LocalizedStringResolver
     private let messageLabel = UILabel()
+    private lazy var closeButton = UIBarButtonItem(
+        title: nil,
+        style: .plain,
+        target: self,
+        action: #selector(close)
+    )
 
     init(localizationController: LocalizationController, resolver: LocalizedStringResolver) {
         self.localizationController = localizationController
@@ -203,12 +214,6 @@ final class DemoModalViewController: UIViewController, LocalizedContentUpdating,
             messageLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
         ])
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .done,
-            target: self,
-            action: #selector(close)
-        )
-
         reloadLocalizedContent()
         reloadLayoutDirection(localizationController.layoutDirection.uiLayoutDirection)
     }
@@ -216,12 +221,17 @@ final class DemoModalViewController: UIViewController, LocalizedContentUpdating,
     func reloadLocalizedContent() {
         title = resolver.string("modal.title", bundle: .main)
         navigationItem.title = title
-        navigationItem.rightBarButtonItem?.title = resolver.string("close", bundle: .main)
+        closeButton.title = resolver.string("close", bundle: .main)
         messageLabel.text = resolver.string("modal.message", bundle: .main)
     }
 
     func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
         view.semanticContentAttribute = direction.appLayoutDirection.semanticContentAttribute
+        navigationItem.setBarButtonItem(
+            closeButton,
+            side: .leading,
+            layoutDirection: direction
+        )
     }
 
     @objc private func close() {

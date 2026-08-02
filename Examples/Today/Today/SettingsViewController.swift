@@ -1,8 +1,9 @@
 /*
- See LICENSE folder for this sample's licensing information.
+ 有关此示例的许可信息，请参阅 LICENSE 文件夹。
  */
 
 import UIKit
+import AppLocalization
 
 final class SettingsViewController: UITableViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
     private enum Row: Hashable {
@@ -149,7 +150,7 @@ private final class LanguageOptionCell: UITableViewCell {
 
         titleLabel.text = title
         titleLabel.semanticContentAttribute = titleLayoutDirection.semanticContentAttribute
-        titleLabel.textAlignment = textAlignment
+        titleLabel.textAlignment = titleLayoutDirection.textAlignment
 
         subtitleLabel.text = subtitle
         subtitleLabel.semanticContentAttribute = appLayoutDirection.semanticContentAttribute

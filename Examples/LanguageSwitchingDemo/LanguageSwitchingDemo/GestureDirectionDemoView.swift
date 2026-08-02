@@ -1,4 +1,5 @@
 import SwiftUI
+import AppLocalization
 
 struct GestureDirectionDemoView: View {
     @ObservedObject var localizationController: LocalizationController

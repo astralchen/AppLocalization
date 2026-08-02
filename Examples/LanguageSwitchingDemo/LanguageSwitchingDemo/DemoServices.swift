@@ -1,4 +1,5 @@
 import Foundation
+import AppLocalization
 
 @MainActor
 final class DemoServices: ObservableObject {

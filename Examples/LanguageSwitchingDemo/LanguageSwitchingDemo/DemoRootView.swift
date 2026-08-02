@@ -1,4 +1,5 @@
 import SwiftUI
+import AppLocalization
 
 struct DemoRootView: View {
     @ObservedObject var localizationController: LocalizationController
@@ -7,38 +8,72 @@ struct DemoRootView: View {
     @State private var isSheetPresented = false
     @State private var isPushPresented = false
 
+    private var demoItemTitles: [String] {
+        (1...DemoSurfaceLayout.itemCount).map {
+            resolver.string("collection.item.\($0)", bundle: .main)
+        }
+    }
+
     var body: some View {
         NavigationView {
             List {
-                languageSection
-                swiftUISection
-                UIKitDemoRepresentable(
+                LanguageSelectionSection(
                     localizationController: localizationController,
-                    resolver: resolver,
-                    onPushRequested: {
-                        isPushPresented = true
-                    }
+                    resolver: resolver
                 )
-                .frame(minHeight: 310)
-                .listRowInsets(EdgeInsets())
+                Section("SwiftUI") {
+                    SwiftUIDemoCard(
+                        title: resolver.string("swiftui.instant", bundle: .main),
+                        message: resolver.string("swiftui.body", bundle: .main),
+                        sheetButtonTitle: resolver.string("show.sheet", bundle: .main),
+                        pushButtonTitle: resolver.string("pop.open", bundle: .main),
+                        itemTitles: demoItemTitles,
+                        showSheet: showSheet,
+                        showPushPage: showPushPage
+                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
 
-                GestureDirectionDemoView(localizationController: localizationController, resolver: resolver)
+                Section("UIKit") {
+                    UIKitDemoRepresentable(
+                        localizationController: localizationController,
+                        resolver: resolver,
+                        onPushRequested: showPushPage
+                    )
+                    .frame(minHeight: DemoSurfaceLayout.minimumCardHeight)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+
+                GestureDirectionDemoView(
+                    localizationController: localizationController,
+                    resolver: resolver
+                )
             }
             .navigationTitle(resolver.string("demo.title", bundle: .main))
-            // 修复点：NavigationView 背后的 UINavigationController 必须在 push 发生前
-            // 同步 semantic 方向。只在目标 push 页配置会太晚，阿语 RTL 下 pop 动画
-            // 仍可能按 LTR 从左向右返回。
+            // `NavigationView` 背后的 `UINavigationController` 必须在入栈前同步语义方向。
+            // 仅在目标页面配置会太晚，阿拉伯文布局的出栈动画仍可能从左向右移动。
             .background(
-                NavigationPopGestureConfigurator(layoutDirection: localizationController.layoutDirection)
-                    .frame(width: 0, height: 0)
+                NavigationPopGestureConfigurator(
+                    layoutDirection: localizationController.layoutDirection
+                )
+                .frame(width: 0, height: 0)
             )
             .toolbar {
-                // 修复点：返回语义属于 leading，而不是固定放在右侧。
-                // LTR 下 leading 映射到左侧，RTL 下 leading 映射到右侧；
-                // 图标方向再由 DirectionalLayout 根据当前布局方向切换。
+                // 返回操作位于语义前缘，而不是固定物理右侧；图标方向由
+                // `DirectionalLayout` 根据当前布局方向确定。
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Image(systemName: DirectionalLayout.backChevronSystemName(layoutDirection: localizationController.layoutDirection))
-                        .accessibilityLabel(resolver.string("nav.direction.icon", bundle: .main))
+                    Image(
+                        systemName: DirectionalLayout.backChevronSystemName(
+                            layoutDirection: localizationController.layoutDirection
+                        )
+                    )
+                    .accessibilityLabel(
+                        resolver.string("nav.direction.icon", bundle: .main)
+                    )
                 }
             }
             .background(
@@ -53,39 +88,49 @@ struct DemoRootView: View {
                 .hidden()
             )
             .sheet(isPresented: $isSheetPresented) {
-                NavigationView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text(resolver.string("sheet.message", bundle: .main))
-                            .font(.body)
-                        Spacer()
-                    }
-                    .padding()
-                    .navigationTitle(resolver.string("sheet.title", bundle: .main))
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button(resolver.string("close", bundle: .main)) {
-                                isSheetPresented = false
-                            }
-                        }
-                    }
-                }
-                .appLocalizationEnvironment(localizationController)
+                DemoSheetView(
+                    localizationController: localizationController,
+                    resolver: resolver
+                )
             }
         }
     }
 
-    private var languageSection: some View {
+    private func showSheet() {
+        isSheetPresented = true
+    }
+
+    private func showPushPage() {
+        isPushPresented = true
+    }
+}
+
+private struct LanguageSelectionSection: View {
+    @ObservedObject var localizationController: LocalizationController
+    let resolver: LocalizedStringResolver
+
+    private var currentLanguageValue: String {
+        guard localizationController.followsSystemLocale else {
+            return localizationController.currentLocale.identifier
+        }
+
+        let followSystem = resolver.string("language.follow.system", bundle: .main)
+        return "\(followSystem) (\(localizationController.currentLocale.identifier))"
+    }
+
+    private var systemResolvedLocaleSubtitle: String {
+        localizationController.currentLocale.localizedDisplayName(
+            preferredBy: localizationController.currentLocale
+        )
+    }
+
+    var body: some View {
         Section(resolver.string("language.section", bundle: .main)) {
-            Button {
-                localizationController.setFollowsSystemLocale()
-            } label: {
+            Button(action: followSystemLocale) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        // “跟随系统”是一个选择状态，所以主标题继续跟随当前 App 语言刷新；
-                        // 它不像普通语言项那样有固定的 native 名称。
+                        // “跟随系统”是设置状态，因此主标题跟随当前应用语言刷新。
                         Text(resolver.string("language.follow.system", bundle: .main))
-
-                        // 副标题展示系统偏好解析后的真实 App 语言，帮助用户知道当前实际生效的是哪种语言。
                         Text(systemResolvedLocaleSubtitle)
                             .font(.footnote)
                             .foregroundColor(.secondary)
@@ -98,65 +143,162 @@ struct DemoRootView: View {
             }
 
             ForEach(localizationController.supportedLocales, id: \.identifier) { locale in
-                Button {
-                    localizationController.setLocale(identifier: locale.identifier)
-                } label: {
+                Button(action: { select(locale) }) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            // 主标题使用语言自身名称，保证普通语言项不随当前 App 语言切换而变化。
-                            // 同时按该语言自己的排版方向渲染，避免阿语 RTL 环境下把中文/英文视觉反排。
+                            // 主标题使用候选语言自身方向，避免受当前应用布局方向影响。
                             Text(locale.nativeDisplayName)
-                                .environment(\.layoutDirection, locale.layoutDirection.swiftUILayoutDirection)
-
-                            // 副标题使用当前 App 语言本地化显示，会随语言切换即时刷新；
-                            // 这让用户既能看到稳定自名，也能看到当前界面语言下的解释。
-                            Text(locale.localizedDisplayName(preferredBy: localizationController.currentLocale))
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
+                                .environment(
+                                    \.layoutDirection,
+                                    locale.layoutDirection.swiftUILayoutDirection
+                                )
+                            Text(
+                                locale.localizedDisplayName(
+                                    preferredBy: localizationController.currentLocale
+                                )
+                            )
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
                         }
                         Spacer()
-                        if !localizationController.followsSystemLocale && locale == localizationController.currentLocale {
+                        if !localizationController.followsSystemLocale
+                            && locale == localizationController.currentLocale {
                             Image(systemName: "checkmark")
                         }
                     }
                 }
             }
 
-            keyValueRow(
+            DemoKeyValueRow(
                 title: resolver.string("current.language", bundle: .main),
                 value: currentLanguageValue
             )
-            keyValueRow(
+            DemoKeyValueRow(
                 title: resolver.string("direction", bundle: .main),
                 value: localizationController.layoutDirection == .rightToLeft ? "RTL" : "LTR"
             )
         }
     }
 
-    private var currentLanguageValue: String {
-        guard localizationController.followsSystemLocale else {
-            return localizationController.currentLocale.identifier
-        }
-
-        return "\(resolver.string("language.follow.system", bundle: .main)) (\(localizationController.currentLocale.identifier))"
+    private func followSystemLocale() {
+        localizationController.setFollowsSystemLocale()
     }
 
-    private var systemResolvedLocaleSubtitle: String {
-        localizationController.currentLocale.localizedDisplayName(
-            preferredBy: localizationController.currentLocale
-        )
+    private func select(_ locale: AppLocale) {
+        localizationController.setLocale(identifier: locale.identifier)
     }
+}
 
-    private var swiftUISection: some View {
-        Section(resolver.string("swiftui.instant", bundle: .main)) {
-            Text(resolver.string("swiftui.body", bundle: .main))
-            Button(resolver.string("show.sheet", bundle: .main)) {
-                isSheetPresented = true
+private struct SwiftUIDemoCard: View {
+    let title: String
+    let message: String
+    let sheetButtonTitle: String
+    let pushButtonTitle: String
+    let itemTitles: [String]
+    let showSheet: () -> Void
+    let showPushPage: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DemoSurfaceLayout.spacing) {
+            Text(title)
+                .font(.headline)
+
+            Text(message)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+
+            actionButton(sheetButtonTitle, action: showSheet)
+            actionButton(pushButtonTitle, action: showPushPage)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: DemoSurfaceLayout.spacing) {
+                    ForEach(Array(itemTitles.enumerated()), id: \.offset) { _, title in
+                        Text(title)
+                            .font(.callout)
+                            .multilineTextAlignment(.center)
+                            .frame(
+                                width: DemoSurfaceLayout.itemWidth,
+                                height: DemoSurfaceLayout.itemHeight
+                            )
+                            .background(Color(uiColor: .systemBackground))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: DemoSurfaceLayout.cornerRadius)
+                                    .stroke(Color(uiColor: .separator), lineWidth: 1)
+                            }
+                    }
+                }
             }
+            .frame(height: DemoSurfaceLayout.collectionHeight)
+        }
+        .padding(DemoSurfaceLayout.contentInset)
+        .frame(minHeight: DemoSurfaceLayout.minimumCardHeight)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: DemoSurfaceLayout.cornerRadius))
+    }
+
+    private func actionButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity, minHeight: DemoSurfaceLayout.buttonHeight)
+                .contentShape(Rectangle())
+        }
+        // 同一 `List` 行中的多个自动样式按钮可能共享行点击事件。
+        // 使用无边框样式可使两个呈现操作保持独立。
+        .buttonStyle(.borderless)
+    }
+}
+
+private struct DemoSheetView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var localizationController: LocalizationController
+    let resolver: LocalizedStringResolver
+
+    private var closeButtonPlacement: ToolbarItemPlacement {
+        switch DirectionalLayout.physicalEdge(
+            for: .leading,
+            layoutDirection: localizationController.layoutDirection
+        ) {
+        case .left:
+            return .navigationBarLeading
+        case .right:
+            return .navigationBarTrailing
         }
     }
 
-    private func keyValueRow(title: String, value: String) -> some View {
+    var body: some View {
+        NavigationView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(resolver.string("sheet.message", bundle: .main))
+                    .font(.body)
+                Spacer()
+            }
+            .padding()
+            .navigationTitle(resolver.string("sheet.title", bundle: .main))
+            .toolbar {
+                // SwiftUI 根据系统方向解析工具栏位置，因此需将应用的语义前缘
+                // 映射到物理位置。
+                ToolbarItem(placement: closeButtonPlacement) {
+                    Button(resolver.string("close", bundle: .main)) {
+                        dismiss()
+                    }
+                }
+            }
+            // SwiftUI 环境会更新内容方向，工作表的 UIKit 导航容器也需使用相同语义方向。
+            .background(
+                NavigationPopGestureConfigurator(
+                    layoutDirection: localizationController.layoutDirection
+                )
+                .frame(width: 0, height: 0)
+            )
+        }
+    }
+}
+
+private struct DemoKeyValueRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
         HStack {
             Text(title)
             Spacer()
@@ -164,4 +306,16 @@ struct DemoRootView: View {
                 .foregroundColor(.secondary)
         }
     }
+}
+
+enum DemoSurfaceLayout {
+    static let contentInset: CGFloat = 16
+    static let spacing: CGFloat = 12
+    static let cornerRadius: CGFloat = 8
+    static let buttonHeight: CGFloat = 32
+    static let itemWidth: CGFloat = 132
+    static let itemHeight: CGFloat = 64
+    static let collectionHeight: CGFloat = 76
+    static let minimumCardHeight: CGFloat = 310
+    static let itemCount = 3
 }

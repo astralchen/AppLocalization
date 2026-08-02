@@ -1,90 +1,41 @@
 /*
- See LICENSE folder for this sample’s licensing information.
+ 有关此示例的许可信息，请参阅 LICENSE 文件夹。
  */
 
 import UIKit
+import AppLocalization
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-    private var localizationObserver: NSObjectProtocol?
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
-        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
-        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
+        // 故事板会自动创建窗口并将其关联到传入的窗口场景。
         guard let _ = (scene as? UIWindowScene) else { return }
 
         let services = TodayLocalizationServices.shared
         window?.semanticContentAttribute = services.localizationController.layoutDirection.semanticContentAttribute
-        reloadAllScenes(forCurrentLocalization: services)
-
-        localizationObserver = NotificationCenter.default.addObserver(
-            forName: LocalizationController.localizationDidChangeNotification,
-            object: services.localizationController,
-            queue: .main
-        ) { [weak self] notification in
-            let change = notification.userInfo?[LocalizationController.localizationChangeUserInfoKey] as? LocalizationChange
-            Task { @MainActor in
-                if let change {
-                    self?.reloadAllScenes(for: change)
-                } else {
-                    self?.reloadAllScenes(forCurrentLocalization: services)
-                }
-            }
-        }
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
-        // Called as the scene is being released by the system.
-        // This occurs shortly after the scene enters the background, or when its session is discarded.
-        // Release any resources associated with this scene that can be re-created the next time the scene connects.
-        // The scene may re-connect later, as its session was not necessarily discarded (see `application:didDiscardSceneSessions` instead).
-        if let localizationObserver {
-            NotificationCenter.default.removeObserver(localizationObserver)
-        }
-        localizationObserver = nil
+        // 在此释放场景下次连接时可以重新创建的资源。
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        // Called when the scene has moved from an inactive state to an active state.
-        // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+        // 在此恢复场景处于非活跃状态时暂停的任务。
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        // Called when the scene will move from an active state to an inactive state.
-        // This may occur due to temporary interruptions (ex. an incoming phone call).
+        // 在此暂停需要随场景进入非活跃状态而停止的任务。
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        // Called as the scene transitions from the background to the foreground.
-        // Use this method to undo the changes made on entering the background.
+        // 返回前台时，重新解析“跟随系统”的区域设置。
         TodayLocalizationServices.shared.localizationController.refreshSystemLocaleIfNeeded()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        // Called as the scene transitions from the foreground to the background.
-        // Use this method to save data, release shared resources, and store enough scene-specific state information
-        // to restore the scene back to its current state.
+        // 在此保存数据，并释放可在下次进入前台时重新创建的共享资源。
     }
 
-    private func reloadAllScenes(forCurrentLocalization services: TodayLocalizationServices) {
-        let locale = services.localizationController.currentLocale
-        let change = LocalizationChange(previousLocale: locale, currentLocale: locale)
-        UIWindowSceneLocalizationCoordinator().reloadAllScenes(
-            for: change,
-            rebuildRootWindows: false,
-            animateRootRebuild: true,
-            updateAppearanceProxies: false
-        )
-    }
-
-    private func reloadAllScenes(for change: LocalizationChange) {
-        UIWindowSceneLocalizationCoordinator().reloadAllScenes(
-            for: change,
-            rebuildRootWindows: false,
-            animateRootRebuild: true,
-            updateAppearanceProxies: false
-        )
-    }
 }

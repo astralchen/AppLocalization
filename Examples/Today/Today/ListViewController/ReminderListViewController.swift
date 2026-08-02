@@ -1,8 +1,9 @@
 /*
- See LICENSE folder for this sample’s licensing information.
+ 有关此示例的许可信息，请参阅 LICENSE 文件夹。
  */
 
 import UIKit
+import AppLocalization
 
 class ReminderListViewController: UICollectionViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
     let services = TodayLocalizationServices.shared

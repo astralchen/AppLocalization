@@ -2,17 +2,16 @@
 import SwiftUI
 
 public extension AppUserInterfaceLayoutDirection {
-    /// 转成 SwiftUI 的 `LayoutDirection`。
+    /// 对应的 SwiftUI `LayoutDirection`。
     var swiftUILayoutDirection: LayoutDirection {
         self == .rightToLeft ? .rightToLeft : .leftToRight
     }
 }
 
-/// 给 SwiftUI 内容注入 App 内 locale 环境。
+/// 向 SwiftUI 内容注入应用内本地化环境的容器视图。
 ///
-/// 每个 scene root 都应该包一层，让 SwiftUI 在 `currentLocale` 变化时同步拿到
-/// 最新的 `Locale` 和 `LayoutDirection`。不要只在单个窗口里注入，否则 iPad
-/// 多窗口场景会出现某些窗口不刷新的问题。
+/// 每个场景的根视图都应使用此类型，使 SwiftUI 在 ``LocalizationController/currentLocale``
+/// 变化时获取最新的 `Locale` 和 `LayoutDirection`。
 ///
 /// ```swift
 /// WindowGroup {
@@ -21,35 +20,10 @@ public extension AppUserInterfaceLayoutDirection {
 /// }
 /// ```
 public struct LocalizationEnvironmentView<Content: View>: View {
-    /// 使用 `@ObservedObject` 让 locale 变化触发 SwiftUI body 重算。
+    // 观察控制器，使区域设置变化触发 SwiftUI 重新计算 `body`。
     @ObservedObject private var localizationController: LocalizationController
     private let resetContentOnLayoutDirectionChange: Bool
     private let content: Content
-
-    /// 创建环境包装视图。
-    public init(
-        localizationController: LocalizationController,
-        resetContentOnLayoutDirectionChange: Bool = true,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.localizationController = localizationController
-        self.resetContentOnLayoutDirectionChange = resetContentOnLayoutDirectionChange
-        self.content = content()
-    }
-
-    /// 注入 `EnvironmentObject`、`Locale` 和 `LayoutDirection`。
-    public var body: some View {
-        content
-            .environmentObject(localizationController)
-            .environment(\.locale, localizationController.locale)
-            .environment(\.layoutDirection, localizationController.layoutDirection.swiftUILayoutDirection)
-            // 修复点：SwiftUI 的 List、NavigationView、toolbar 等容器会复用内部宿主 view。
-            // 多次随机在 LTR/RTL 间切换时，如果只改 environment，旧方向下创建的 cell
-            // 可能和新语言文案混在同一棵树里，表现为文字反排、按钮位置错乱。
-            // 因此只在“布局方向”变化时切换 identity，让 SwiftUI 丢弃方向敏感子树；
-            // 同方向语言切换（例如 en <-> zh-Hans）仍走普通 body 重算，避免无谓重建。
-            .id(layoutDirectionIdentity)
-    }
 
     private var layoutDirectionIdentity: String {
         guard resetContentOnLayoutDirectionChange else {
@@ -63,22 +37,58 @@ public struct LocalizationEnvironmentView<Content: View>: View {
             return "AppLocalization.rightToLeft"
         }
     }
+
+    /// 创建本地化环境容器视图。
+///
+    /// `resetContentOnLayoutDirectionChange` 默认关闭，以保留内容树中的 `@State`、
+    /// 工作表和导航状态。仅当系统容器无法原地响应布局方向变化时才应启用该选项；
+    /// 启用后，方向变化会重建内容子树。
+    ///
+    /// - Parameters:
+    ///   - localizationController: 要注入内容树的本地化控制器。
+    ///   - resetContentOnLayoutDirectionChange: 是否在布局方向变化时重建内容子树。
+    ///   - content: 创建容器内容的视图构建闭包。
+    public init(
+        localizationController: LocalizationController,
+        resetContentOnLayoutDirectionChange: Bool = false,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.localizationController = localizationController
+        self.resetContentOnLayoutDirectionChange = resetContentOnLayoutDirectionChange
+        self.content = content()
+    }
+
+    /// 注入本地化环境值后的内容视图。
+    public var body: some View {
+        content
+            .environmentObject(localizationController)
+            .environment(\.locale, localizationController.locale)
+            .environment(\.layoutDirection, localizationController.layoutDirection.swiftUILayoutDirection)
+            // 某些旧系统容器无法原地刷新方向时，调用方可显式切换视图标识。
+            // 此回退方案会丢弃子树状态，因此不作为默认刷新路径。
+            .id(layoutDirectionIdentity)
+    }
 }
 
 public extension View {
-    /// 注入 `LocalizationController`、`Locale` 和 SwiftUI `LayoutDirection`。
+    /// 将 `LocalizationController`、`Locale` 和 SwiftUI `LayoutDirection` 注入视图层级。
     ///
-    /// SwiftUI 的 `Text(LocalizedStringKey)` 会读取环境中的 `locale`；自定义
-    /// UIKit bridge 则应在 `updateUIView` / `updateUIViewController` 里读取
+    /// SwiftUI 的 `Text(LocalizedStringKey)` 会读取环境中的 `locale`。自定义
+    /// UIKit 桥接类型应在 `updateUIView` 或 `updateUIViewController` 中读取
     /// `context.environment.locale` 和 `context.environment.layoutDirection`。
     ///
     /// ```swift
     /// RootView()
     ///     .appLocalizationEnvironment(localizationController)
     /// ```
+    ///
+    /// - Parameters:
+    ///   - localizationController: 要注入视图层级的本地化控制器。
+    ///   - resetContentOnLayoutDirectionChange: 是否在布局方向变化时重建接收者。
+    /// - Returns: 注入本地化环境值的视图。
     func appLocalizationEnvironment(
         _ localizationController: LocalizationController,
-        resetContentOnLayoutDirectionChange: Bool = true
+        resetContentOnLayoutDirectionChange: Bool = false
     ) -> some View {
         LocalizationEnvironmentView(
             localizationController: localizationController,

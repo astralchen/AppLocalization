@@ -3,45 +3,44 @@ import Foundation
 
 /// 应用内本地化状态的单一事实源。
 ///
-/// `LocalizationController` 只管理 App 自己选择的 locale，不修改系统语言，
-/// 也不依赖 `AppleLanguages` 或 Bundle swizzling。SwiftUI 可以观察
-/// `currentLocale`，UIKit 则通过通知触发显式刷新。
+/// `LocalizationController` 仅管理应用选择的区域设置，不修改系统语言，也不依赖
+/// `AppleLanguages` 或 `Bundle` 方法交换。SwiftUI 可观察 ``currentLocale``，
+/// UIKit 则通过通知触发显式刷新。
 ///
-/// 并发边界：语言状态会驱动 `@Published`、UIKit 刷新和 SwiftUI 环境更新，
-/// 必须固定在主 actor 上。不要把这个控制器标成 `Sendable` 后跨任务随意修改，
-/// 否则容易出现后台线程发布 UI 状态或多次切换时状态交错。
+/// 语言状态会驱动 `@Published`、UIKit 刷新和 SwiftUI 环境更新，因此控制器隔离在
+/// 主 actor 上。
 @MainActor
 public final class LocalizationController: ObservableObject {
-    /// App 内 locale 变化通知。
+    /// 应用内区域设置发生变化时发布的通知。
     ///
     /// UIKit 多窗口刷新通常监听这个通知，然后调用
     /// `UIWindowSceneLocalizationCoordinator.reloadAllScenes(for:)`。
     nonisolated public static let localizationDidChangeNotification = Notification.Name("LocalizationController.localizationDidChange")
 
-    /// 通知 `userInfo` 中保存 `LocalizationChange` 的 key。
+    /// 通知 `userInfo` 中用于保存 `LocalizationChange` 的键。
     nonisolated public static let localizationChangeUserInfoKey = "LocalizationController.localizationChange"
 
-    /// 持久化“跟随系统”的 sentinel。
+    /// 表示“跟随系统”设置状态的持久化标识符。
     ///
-    /// 这不是一个真实语言 identifier，而是一种选择状态。读取到它时，控制器会
-    /// 根据系统首选语言解析出 App 实际支持的 `currentLocale`。这样设置页可以显示
-    /// “跟随系统”，业务 UI 仍然只面对真实可渲染的 locale。
+    /// 此值不是实际的语言标识符。读取到此值时，控制器会根据系统首选语言解析应用
+    /// 实际支持的 ``currentLocale``。设置界面可据此显示“跟随系统”，其他界面则始终
+    /// 使用可渲染的区域设置。
     nonisolated public static let followSystemLocaleIdentifier = "system"
 
-    /// App 明确支持的 locale 列表。
+    /// 应用明确支持的区域设置列表。
     public let supportedLocales: [AppLocale]
 
-    /// 存储值不可用或缺失 key 时使用的 fallback locale。
+    /// 无法使用持久化值或缺少翻译时采用的回退区域设置。
     public let fallbackLocale: AppLocale
 
     private let preferenceStore: LocalePreferenceStore
     private let notificationCenter: NotificationCenter
-    private let systemLocaleIdentifierProvider: () -> String?
+    private let systemLocaleIdentifiersProvider: () -> [String]
 
-    /// 当前 App 内实际生效的 locale。
+    /// 当前在应用内生效的区域设置。
     ///
-    /// 当 `followsSystemLocale == true` 时，这里也不是 sentinel，而是根据系统语言
-    /// 映射出来的真实支持语言。例如系统是 `zh-Hant`，App 只支持 `zh-Hans`，
+    /// 当 ``followsSystemLocale`` 为 `true` 时，此属性仍保存根据系统语言映射出的
+    /// 受支持区域设置。例如，系统使用 `zh-Hant`，而应用仅支持 `zh-Hans`，
     /// 则 `currentLocale == .simplifiedChinese`。
     @Published public private(set) var currentLocale: AppLocale
 
@@ -51,34 +50,39 @@ public final class LocalizationController: ObservableObject {
     /// 选择简中”最终文案一样，但设置页的勾选位置不同。
     @Published public private(set) var followsSystemLocale: Bool
 
-    /// 创建本地化控制器。
+    /// 使用受支持的区域设置创建本地化控制器。
     ///
     /// - Parameters:
-    ///   - supportedLocales: App 可选 locale，不能为空。
-    ///   - fallbackLocale: 默认 locale；如果不在支持列表内，会退回到第一个支持项。
-    ///   - preferenceStore: locale 持久化实现，默认使用 `UserDefaults`。
+    ///   - supportedLocales: 应用可选择的区域设置。此数组不能为空。
+    ///   - fallbackLocale: 默认区域设置。不在支持列表中时使用第一项。
+    ///   - preferenceStore: 区域设置的持久化实现。默认使用 `UserDefaults`。
     ///   - notificationCenter: 通知中心，测试时可注入独立实例。
-    ///   - systemLocaleIdentifierProvider: 系统首选语言 provider，默认读取
-    ///     `Locale.preferredLanguages.first`，测试时可注入 `zh-Hant`、`ar-SA` 等场景。
+    ///   - systemLocaleIdentifiersProvider: 返回系统首选语言标识符的闭包。默认读取
+    ///     `Locale.preferredLanguages`。
+    ///
+    /// - Precondition: `supportedLocales` 至少包含一个元素。
     public init(
         supportedLocales: [AppLocale],
         fallbackLocale: AppLocale,
         preferenceStore: LocalePreferenceStore = UserDefaultsLocalePreferenceStore(),
         notificationCenter: NotificationCenter = .default,
-        systemLocaleIdentifierProvider: @escaping () -> String? = { Locale.preferredLanguages.first }
+        systemLocaleIdentifiersProvider: @escaping () -> [String] = { Locale.preferredLanguages }
     ) {
         precondition(!supportedLocales.isEmpty, "LocalizationController requires at least one supported locale.")
         self.supportedLocales = supportedLocales
-        self.fallbackLocale = supportedLocales.first(where: { $0.identifier == fallbackLocale.identifier }) ?? supportedLocales[0]
+        self.fallbackLocale = Self.supportedLocale(
+            matching: fallbackLocale.identifier,
+            in: supportedLocales
+        ) ?? supportedLocales[0]
         self.preferenceStore = preferenceStore
         self.notificationCenter = notificationCenter
-        self.systemLocaleIdentifierProvider = systemLocaleIdentifierProvider
+        self.systemLocaleIdentifiersProvider = systemLocaleIdentifiersProvider
 
         let storedIdentifier = preferenceStore.localeIdentifier
         if storedIdentifier == Self.followSystemLocaleIdentifier || storedIdentifier == nil {
             followsSystemLocale = true
             currentLocale = Self.resolveSupportedLocale(
-                forSystemIdentifier: systemLocaleIdentifierProvider(),
+                forSystemIdentifiers: systemLocaleIdentifiersProvider(),
                 supportedLocales: supportedLocales,
                 fallbackLocale: self.fallbackLocale
             )
@@ -95,14 +99,44 @@ public final class LocalizationController: ObservableObject {
         }
     }
 
-    /// 当前 locale 对应的 Foundation `Locale`。
+    /// 使用单个系统语言提供闭包创建本地化控制器。
     ///
-    /// SwiftUI root 会把它注入到 `EnvironmentValues.locale`。
+    /// - Parameters:
+    ///   - supportedLocales: 应用可选择的区域设置。此数组不能为空。
+    ///   - fallbackLocale: 默认区域设置。不在支持列表中时使用第一项。
+    ///   - preferenceStore: 区域设置的持久化实现。
+    ///   - notificationCenter: 用于发布变更通知的通知中心。
+    ///   - systemLocaleIdentifierProvider: 返回单个系统语言标识符的闭包。
+    ///
+    /// - Important: 新代码应优先使用接受 `systemLocaleIdentifiersProvider` 的初始化方法，
+    ///   以便在首选语言不受支持时继续检查后续系统语言偏好。
+    /// - Precondition: `supportedLocales` 至少包含一个元素。
+    public convenience init(
+        supportedLocales: [AppLocale],
+        fallbackLocale: AppLocale,
+        preferenceStore: LocalePreferenceStore = UserDefaultsLocalePreferenceStore(),
+        notificationCenter: NotificationCenter = .default,
+        systemLocaleIdentifierProvider: @escaping () -> String?
+    ) {
+        self.init(
+            supportedLocales: supportedLocales,
+            fallbackLocale: fallbackLocale,
+            preferenceStore: preferenceStore,
+            notificationCenter: notificationCenter,
+            systemLocaleIdentifiersProvider: {
+                systemLocaleIdentifierProvider().map { [$0] } ?? []
+            }
+        )
+    }
+
+    /// 与当前区域设置对应的 Foundation `Locale`。
+    ///
+    /// SwiftUI 根视图会将此值注入 `EnvironmentValues.locale`。
     public var locale: Locale {
         currentLocale.locale
     }
 
-    /// 当前 locale 对应的 UI 排版方向。
+    /// 与当前区域设置对应的界面布局方向。
     ///
     /// 用于 SwiftUI `layoutDirection`、UIKit `semanticContentAttribute`、
     /// 手势方向和自定义导航动画。
@@ -110,60 +144,56 @@ public final class LocalizationController: ObservableObject {
         currentLocale.layoutDirection
     }
 
-    /// 选择一个支持的 locale、持久化，并发布 `LocalizationChange`。
+    /// 选择并持久化受支持的区域设置，然后发布 `LocalizationChange`。
     ///
-    /// 在设置页或语言选择器里调用。传入不支持的 identifier，或已经明确选择
-    /// 同一个 locale 时会返回 `false`。如果当前是“跟随系统”且解析结果刚好也是
-    /// 这个 locale，仍然会返回 `true`，因为设置页的选择状态从“跟随系统”变成了
-    /// “手动选择该语言”。
+    /// 传入不受支持的标识符，或已经明确选择同一区域设置时，此方法返回 `false`。
+    /// 如果当前为“跟随系统”，即使解析结果与目标区域设置相同，此方法仍返回 `true`，
+    /// 因为选择状态已变为手动选择。
     ///
     /// ```swift
     /// Button("Arabic") {
     ///     localizationController.setLocale(identifier: "ar")
     /// }
     /// ```
+    ///
+    /// - Parameter identifier: 要选择的 BCP 47 区域设置标识符。
+    /// - Returns: 选择状态发生变化时为 `true`；否则为 `false`。
     @discardableResult
     public func setLocale(identifier: String) -> Bool {
         guard let nextLocale = Self.supportedLocale(matching: identifier, in: supportedLocales) else {
             return false
         }
 
-        guard followsSystemLocale || nextLocale != currentLocale else {
-            return false
-        }
-
-        let previousLocale = currentLocale
-        followsSystemLocale = false
-        currentLocale = nextLocale
-        preferenceStore.saveLocaleIdentifier(nextLocale.identifier)
-        postChange(from: previousLocale, to: nextLocale)
-        return true
+        return updateSelection(
+            to: nextLocale,
+            followsSystemLocale: false,
+            persistedIdentifier: nextLocale.identifier
+        )
     }
 
     /// 选择“跟随系统”并解析成当前系统下最合适的支持语言。
     ///
-    /// 逻辑是：先按完整 identifier 匹配，再按基础语言匹配，最后回退到
-    /// `fallbackLocale`。例如系统是 `zh-Hant`，App 只支持 `zh-Hans`，基础语言
-    /// 都是 `zh`，因此当前实际 locale 会落到 `zh-Hans`。
+    /// 控制器按系统语言偏好顺序逐项查找：先匹配完整标识符，再比较语言、脚本和
+    /// 地区，最后回退到 ``fallbackLocale``。例如，系统使用 `zh-Hant`，而应用仅支持
+    /// `zh-Hans`，则当前区域设置会解析为 `zh-Hans`。
+    ///
+    /// - Returns: 选择状态或当前区域设置发生变化时为 `true`；否则为 `false`。
     @discardableResult
     public func setFollowsSystemLocale() -> Bool {
         let nextLocale = resolvedSystemLocale()
-        guard !followsSystemLocale || nextLocale != currentLocale else {
-            return false
-        }
-
-        let previousLocale = currentLocale
-        followsSystemLocale = true
-        currentLocale = nextLocale
-        preferenceStore.saveLocaleIdentifier(Self.followSystemLocaleIdentifier)
-        postChange(from: previousLocale, to: nextLocale)
-        return true
+        return updateSelection(
+            to: nextLocale,
+            followsSystemLocale: true,
+            persistedIdentifier: Self.followSystemLocaleIdentifier
+        )
     }
 
-    /// 当 App 已经处于“跟随系统”时，重新读取系统语言并在需要时发布刷新。
+    /// 在应用跟随系统时重新读取系统语言，并按需发布变更。
     ///
-    /// 可在 App 回到前台、收到系统 locale 变化通知，或设置页重新出现时调用。
+    /// 可在应用进入前台、收到系统区域设置变更通知或设置界面重新出现时调用。
     /// 如果用户手动选择了某个语言，此方法不会做任何事。
+    ///
+    /// - Returns: 当前区域设置发生变化时为 `true`；否则为 `false`。
     @discardableResult
     public func refreshSystemLocaleIfNeeded() -> Bool {
         guard followsSystemLocale else { return false }
@@ -171,18 +201,38 @@ public final class LocalizationController: ObservableObject {
         let nextLocale = resolvedSystemLocale()
         guard nextLocale != currentLocale else { return false }
 
-        let previousLocale = currentLocale
-        currentLocale = nextLocale
-        postChange(from: previousLocale, to: nextLocale)
-        return true
+        return updateSelection(
+            to: nextLocale,
+            followsSystemLocale: true,
+            persistedIdentifier: nil
+        )
     }
 
     private func resolvedSystemLocale() -> AppLocale {
         Self.resolveSupportedLocale(
-            forSystemIdentifier: systemLocaleIdentifierProvider(),
+            forSystemIdentifiers: systemLocaleIdentifiersProvider(),
             supportedLocales: supportedLocales,
             fallbackLocale: fallbackLocale
         )
+    }
+
+    private func updateSelection(
+        to nextLocale: AppLocale,
+        followsSystemLocale nextFollowsSystemLocale: Bool,
+        persistedIdentifier: String?
+    ) -> Bool {
+        guard followsSystemLocale != nextFollowsSystemLocale || currentLocale != nextLocale else {
+            return false
+        }
+
+        let previousLocale = currentLocale
+        followsSystemLocale = nextFollowsSystemLocale
+        currentLocale = nextLocale
+        if let persistedIdentifier {
+            preferenceStore.saveLocaleIdentifier(persistedIdentifier)
+        }
+        postChange(from: previousLocale, to: nextLocale)
+        return true
     }
 
     private func postChange(from previousLocale: AppLocale, to currentLocale: AppLocale) {
@@ -198,41 +248,77 @@ public final class LocalizationController: ObservableObject {
     }
 
     private static func resolveSupportedLocale(
-        forSystemIdentifier systemIdentifier: String?,
+        forSystemIdentifiers systemIdentifiers: [String],
         supportedLocales: [AppLocale],
         fallbackLocale: AppLocale
     ) -> AppLocale {
-        guard let systemIdentifier, !systemIdentifier.isEmpty else {
-            return fallbackLocale
+        for systemIdentifier in systemIdentifiers {
+            if let supportedLocale = closestSupportedLocale(
+                matching: systemIdentifier,
+                in: supportedLocales
+            ) {
+                return supportedLocale
+            }
         }
 
-        if let exactLocale = supportedLocale(matching: systemIdentifier, in: supportedLocales) {
+        return fallbackLocale
+    }
+
+    private static func closestSupportedLocale(
+        matching identifier: String,
+        in supportedLocales: [AppLocale]
+    ) -> AppLocale? {
+        guard !AppLocaleIdentifier.normalized(identifier).isEmpty else {
+            return nil
+        }
+
+        if let exactLocale = supportedLocale(matching: identifier, in: supportedLocales) {
             return exactLocale
         }
 
-        let systemBaseLanguage = baseLanguageIdentifier(for: systemIdentifier)
-        return supportedLocales.first { $0.baseLanguageIdentifier == systemBaseLanguage }
-            ?? fallbackLocale
+        guard let preferredComponents = AppLocaleIdentifier.components(of: identifier) else {
+            return nil
+        }
+
+        var bestMatch: (locale: AppLocale, score: Int)?
+        for locale in supportedLocales {
+            guard let components = AppLocaleIdentifier.components(of: locale.identifier),
+                  components.language == preferredComponents.language else {
+                continue
+            }
+
+            var score = 0
+            if let preferredScript = preferredComponents.script {
+                if components.script == preferredScript {
+                    score += 4
+                } else if components.script != nil {
+                    score -= 4
+                }
+            }
+            if let preferredRegion = preferredComponents.region {
+                if components.region == preferredRegion {
+                    score += 2
+                } else if components.region != nil {
+                    score -= 1
+                }
+            }
+
+            if let existingMatch = bestMatch, score <= existingMatch.score {
+                continue
+            }
+            bestMatch = (locale, score)
+        }
+
+        return bestMatch?.locale
     }
 
     private static func supportedLocale(
         matching identifier: String,
         in supportedLocales: [AppLocale]
     ) -> AppLocale? {
-        let normalizedIdentifier = normalizedLocaleIdentifier(identifier)
+        let normalizedIdentifier = AppLocaleIdentifier.normalized(identifier)
         return supportedLocales.first {
-            normalizedLocaleIdentifier($0.identifier) == normalizedIdentifier
+            AppLocaleIdentifier.normalized($0.identifier) == normalizedIdentifier
         }
-    }
-
-    private static func normalizedLocaleIdentifier(_ identifier: String) -> String {
-        identifier.replacingOccurrences(of: "_", with: "-").lowercased()
-    }
-
-    private static func baseLanguageIdentifier(for identifier: String) -> String {
-        identifier
-            .split(whereSeparator: { $0 == "-" || $0 == "_" })
-            .first
-            .map(String.init) ?? identifier
     }
 }

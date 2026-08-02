@@ -1,8 +1,8 @@
 import XCTest
 @testable import AppLocalization
 
-/// NotificationCenter 的 observer 闭包在 Swift 6 中会被视为可能并发执行。
-/// 测试不能在闭包里直接修改外层 var，因此用带锁 recorder 保存观测结果。
+/// `NotificationCenter` 的观察者闭包在 Swift 6 中会被视为可能并发执行。
+/// 测试不能在闭包中直接修改外部变量，因此使用带锁记录器保存观察结果。
 private final class LockedValue<Value>: @unchecked Sendable {
     private let lock = NSLock()
     private var storage: Value
@@ -114,7 +114,7 @@ final class LocalizationControllerTests: XCTestCase {
             supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
             fallbackLocale: .englishUS,
             preferenceStore: store,
-            systemLocaleIdentifierProvider: { "zh-Hant" }
+            systemLocaleIdentifiersProvider: { ["zh-Hant"] }
         )
 
         XCTAssertTrue(center.followsSystemLocale)
@@ -130,7 +130,7 @@ final class LocalizationControllerTests: XCTestCase {
             fallbackLocale: .englishUS,
             preferenceStore: store,
             notificationCenter: notificationCenter,
-            systemLocaleIdentifierProvider: { "ar-SA" }
+            systemLocaleIdentifiersProvider: { ["ar-SA"] }
         )
 
         let observedChange = LockedValue<LocalizationChange?>(nil)
@@ -159,7 +159,7 @@ final class LocalizationControllerTests: XCTestCase {
             supportedLocales: [.englishUS, .simplifiedChinese],
             fallbackLocale: .englishUS,
             preferenceStore: store,
-            systemLocaleIdentifierProvider: { "zh-Hant" }
+            systemLocaleIdentifiersProvider: { ["zh-Hant"] }
         )
 
         XCTAssertEqual(center.currentLocale, .simplifiedChinese)
@@ -167,6 +167,68 @@ final class LocalizationControllerTests: XCTestCase {
         XCTAssertFalse(center.followsSystemLocale)
         XCTAssertEqual(center.currentLocale, .simplifiedChinese)
         XCTAssertEqual(store.localeIdentifier, "zh-Hans")
+    }
+
+    @MainActor
+    func testFollowSystemChecksLaterPreferredLanguagesBeforeUsingFallback() {
+        let store = InMemoryLocalePreferenceStore(
+            localeIdentifier: LocalizationController.followSystemLocaleIdentifier
+        )
+        var preferredLanguages = ["fr-FR", "ar-SA"]
+        let center = LocalizationController(
+            supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
+            fallbackLocale: .englishUS,
+            preferenceStore: store,
+            systemLocaleIdentifiersProvider: { preferredLanguages }
+        )
+
+        XCTAssertEqual(center.currentLocale, .arabic)
+
+        preferredLanguages = ["fr-FR", "zh-Hant"]
+        XCTAssertTrue(center.refreshSystemLocaleIfNeeded())
+        XCTAssertEqual(center.currentLocale, .simplifiedChinese)
+    }
+
+    @MainActor
+    func testFollowSystemPrefersMatchingScriptWithinLanguage() {
+        let traditionalChinese = AppLocale(
+            identifier: "zh-Hant",
+            displayName: "Traditional Chinese"
+        )
+        let center = LocalizationController(
+            supportedLocales: [.simplifiedChinese, traditionalChinese, .englishUS],
+            fallbackLocale: .englishUS,
+            preferenceStore: InMemoryLocalePreferenceStore(
+                localeIdentifier: LocalizationController.followSystemLocaleIdentifier
+            ),
+            systemLocaleIdentifiersProvider: { ["zh-Hant-HK"] }
+        )
+
+        XCTAssertEqual(center.currentLocale, traditionalChinese)
+    }
+
+    @MainActor
+    func testFallbackLocaleMatchingNormalizesCaseAndSeparators() {
+        let center = LocalizationController(
+            supportedLocales: [.arabic, .englishUS],
+            fallbackLocale: AppLocale(identifier: "EN_us"),
+            preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: "unsupported")
+        )
+
+        XCTAssertEqual(center.fallbackLocale, .englishUS)
+        XCTAssertEqual(center.currentLocale, .englishUS)
+    }
+
+    @MainActor
+    func testSingleSystemLocaleProviderInitializerRemainsCompatible() {
+        let center = LocalizationController(
+            supportedLocales: [.englishUS, .arabic],
+            fallbackLocale: .englishUS,
+            preferenceStore: InMemoryLocalePreferenceStore(),
+            systemLocaleIdentifierProvider: { "ar-SA" }
+        )
+
+        XCTAssertEqual(center.currentLocale, .arabic)
     }
 
 }

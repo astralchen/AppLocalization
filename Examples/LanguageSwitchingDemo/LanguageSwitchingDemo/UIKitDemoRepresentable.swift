@@ -1,4 +1,5 @@
 import SwiftUI
+import AppLocalization
 
 struct UIKitDemoRepresentable: UIViewControllerRepresentable {
     let localizationController: LocalizationController

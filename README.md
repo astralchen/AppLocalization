@@ -78,9 +78,17 @@ open Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj
 
 ## 基本集成方式
 
+将仓库根目录添加为本地 Swift Package，并在 App target 中链接 `AppLocalization` library product。使用框架 API 的 Swift 文件需要导入模块：
+
+```swift
+import AppLocalization
+```
+
 创建全局语言服务：
 
 ```swift
+import AppLocalization
+
 let localizationController = LocalizationController(
     supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
     fallbackLocale: .englishUS,
@@ -129,7 +137,8 @@ final class SettingsViewController: UIViewController,
 ```swift
 UIWindowSceneLocalizationCoordinator().reloadAllScenes(
     for: change,
-    rebuildRootWindows: change.layoutDirectionChanged,
+    // 默认原地刷新；只有系统容器无法响应方向变化时才重建 root。
+    rebuildRootWindows: false,
     animateRootRebuild: true
 )
 ```
