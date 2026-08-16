@@ -29,8 +29,8 @@ public struct LocalizationChange: Equatable, Sendable {
 
     /// 指示界面布局方向是否发生变化。
     ///
-    /// 仅当此值为 `true` 时，才需要使集合视图布局失效、更新语义内容属性、
-    /// 重新计算手势方向，或考虑重建根视图控制器。
+    /// 仅当此值为 `true` 时，才需要刷新表格可见视图的方向布局、使集合视图布局失效、
+    /// 更新语义内容属性、重新计算手势方向，或考虑重建根视图控制器。
     public var layoutDirectionChanged: Bool {
         previousLocale.layoutDirection != currentLocale.layoutDirection
     }

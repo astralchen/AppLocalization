@@ -11,9 +11,10 @@ public protocol LocalizedContentUpdating: AnyObject {
     func reloadLocalizedContent()
 }
 
-/// 为需要响应布局方向变化的 UIKit 视图控制器提供接口。
+/// 为需要响应布局方向变化的 UIKit 对象提供接口。
 ///
-/// 实现者可更新 `semanticContentAttribute`、集合视图布局、手势边缘和自定义动画方向。
+/// 视图控制器可更新列表/集合视图布局、手势边缘和自定义动画方向；自定义 cell、
+/// header 和 footer 可用它刷新显式设置的 `semanticContentAttribute` 和内部布局。
 @MainActor
 public protocol UserInterfaceLayoutDirectionUpdating: AnyObject {
     /// 使用指定的 UIKit 布局方向刷新接收者。
@@ -361,9 +362,117 @@ public extension DirectionalLayout {
     }
 }
 
+public extension UITableView {
+    /// 应用布局方向、刷新表格布局，并按需保留当前逻辑行。
+    ///
+    /// 表格视图通常沿垂直方向滚动，因此 LTR/RTL 切换不需要像横向集合视图一样
+    /// 反转滚动位置。如果布局变化影响行的位置，此方法会使用最上方可见行及其
+    /// 相对位置作为锚点。
+    ///
+    /// ```swift
+    /// func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
+    ///     tableView.applyUserInterfaceLayoutDirection(
+    ///         direction.appLayoutDirection,
+    ///         preservingVisibleRow: true
+    ///     )
+    /// }
+    /// ```
+    ///
+    /// 此方法不会调用 `reloadData()`，因此可以与 `UITableViewDiffableDataSource` 一起
+    /// 使用。当前可见的 cell 和 section header/footer 会刷新方向回调、configuration、
+    /// 约束和布局；`tableHeaderView` 与 `tableFooterView` 也会刷新方向回调、约束和布局。
+    /// 需要替换本地化内容时，仍应由调用方通过当前 data source 刷新。对于 diffable
+    /// data source，优先在 snapshot 中使用 `reconfigureItems(_:)`。如果 snapshot 异步
+    /// 应用、使用动画或改变行顺序/高度，请在 snapshot completion 中再次调用此方法。
+    ///
+    /// cell 不必实现 `UserInterfaceLayoutDirectionUpdating`：使用 `.unspecified` semantic、
+    /// leading/trailing 约束或在布局时读取 `effectiveUserInterfaceLayoutDirection` 的 cell
+    /// 会自动响应。只有显式强制子视图方向、缓存方向或维护自定义左右状态的 reusable
+    /// view，才需要实现该协议。
+    ///
+    /// - Parameters:
+    ///   - layoutDirection: 要应用的布局方向。
+    ///   - shouldPreserveVisibleRow: 是否在布局刷新后保持最上方可见的逻辑行及其相对位置。
+    func applyUserInterfaceLayoutDirection(
+        _ layoutDirection: AppUserInterfaceLayoutDirection,
+        preservingVisibleRow shouldPreserveVisibleRow: Bool = true
+    ) {
+        let visibleRowAnchor: (indexPath: IndexPath, offsetFromViewportTop: CGFloat)? = {
+            guard shouldPreserveVisibleRow,
+                  let indexPath = indexPathsForVisibleRows?.sorted().first else {
+                return nil
+            }
+
+            return (
+                indexPath: indexPath,
+                offsetFromViewportTop: rectForRow(at: indexPath).minY - contentOffset.y
+            )
+        }()
+
+        semanticContentAttribute = layoutDirection.semanticContentAttribute
+        refreshVisibleContent(for: layoutDirection.uiLayoutDirection)
+        setNeedsLayout()
+        layoutIfNeeded()
+
+        guard let visibleRowAnchor,
+              containsRow(at: visibleRowAnchor.indexPath) else {
+            return
+        }
+
+        let proposedOffsetY = rectForRow(at: visibleRowAnchor.indexPath).minY
+            - visibleRowAnchor.offsetFromViewportTop
+        let minimumOffsetY = -adjustedContentInset.top
+        let maximumOffsetY = max(
+            minimumOffsetY,
+            contentSize.height - bounds.height + adjustedContentInset.bottom
+        )
+        var restoredContentOffset = contentOffset
+        restoredContentOffset.y = min(max(proposedOffsetY, minimumOffsetY), maximumOffsetY)
+        setContentOffset(restoredContentOffset, animated: false)
+    }
+
+    private func refreshVisibleContent(for layoutDirection: UIUserInterfaceLayoutDirection) {
+        for cell in visibleCells {
+            (cell as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(layoutDirection)
+            cell.setNeedsUpdateConfiguration()
+            cell.setNeedsUpdateConstraints()
+            cell.contentView.setNeedsUpdateConstraints()
+            cell.setNeedsLayout()
+            cell.contentView.setNeedsLayout()
+        }
+
+        for section in 0..<numberOfSections {
+            let visibleSupplementaryViews = [
+                headerView(forSection: section),
+                footerView(forSection: section)
+            ]
+
+            for view in visibleSupplementaryViews.compactMap({ $0 }) {
+                (view as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(layoutDirection)
+                view.setNeedsUpdateConfiguration()
+                view.setNeedsUpdateConstraints()
+                view.setNeedsLayout()
+            }
+        }
+
+        for view in [tableHeaderView, tableFooterView].compactMap({ $0 }) {
+            (view as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(layoutDirection)
+            view.setNeedsUpdateConstraints()
+            view.setNeedsLayout()
+        }
+    }
+
+    private func containsRow(at indexPath: IndexPath) -> Bool {
+        indexPath.section >= 0
+            && indexPath.section < numberOfSections
+            && indexPath.row >= 0
+            && indexPath.row < numberOfRows(inSection: indexPath.section)
+    }
+}
+
 public extension UICollectionView {
     /// 应用布局方向、使集合视图布局失效，并按需保留当前逻辑项目。
-///
+    ///
     /// 横向列表、分页轮播和依赖语义边缘的布局，均可在 `reloadLayoutDirection(_:)`
     /// 中调用此方法。切换方向时不应直接复用旧 `contentOffset`，因为物理偏移在不同
     /// 布局方向下含义不同；保留 `IndexPath` 更符合用户意图。

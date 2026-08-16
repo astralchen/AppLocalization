@@ -41,20 +41,23 @@ final class SettingsViewController: UITableViewController, LocalizedContentUpdat
         title = services.resolver.string("settings.title", bundle: .main)
         navigationItem.title = title
         doneButton.title = services.resolver.string("common.done", bundle: .main)
+        // 文本刷新由 data source 负责；方向 helper 本身不会重新加载表格数据。
         tableView.reloadData()
     }
 
     func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
         let appDirection = direction.appLayoutDirection
         view.semanticContentAttribute = appDirection.semanticContentAttribute
-        tableView.semanticContentAttribute = appDirection.semanticContentAttribute
+        tableView.applyUserInterfaceLayoutDirection(
+            appDirection,
+            preservingVisibleRow: true
+        )
         navigationController?.view.semanticContentAttribute = appDirection.semanticContentAttribute
         navigationItem.setBarButtonItem(
             doneButton,
             side: .trailing,
             layoutDirection: direction
         )
-        tableView.reloadData()
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -114,11 +117,13 @@ final class SettingsViewController: UITableViewController, LocalizedContentUpdat
     }
 }
 
-private final class LanguageOptionCell: UITableViewCell {
+private final class LanguageOptionCell: UITableViewCell, UserInterfaceLayoutDirectionUpdating {
     static let reuseIdentifier = String(describing: LanguageOptionCell.self)
 
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
+    private var titleLayoutDirection: AppUserInterfaceLayoutDirection = .leftToRight
+    private var appLayoutDirection: AppUserInterfaceLayoutDirection = .leftToRight
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -144,19 +149,29 @@ private final class LanguageOptionCell: UITableViewCell {
         appLayoutDirection: AppUserInterfaceLayoutDirection,
         isSelected: Bool
     ) {
-        semanticContentAttribute = appLayoutDirection.semanticContentAttribute
-        contentView.semanticContentAttribute = appLayoutDirection.semanticContentAttribute
-        let textAlignment = appLayoutDirection.textAlignment
+        self.titleLayoutDirection = titleLayoutDirection
+        self.appLayoutDirection = appLayoutDirection
 
         titleLabel.text = title
+        subtitleLabel.text = subtitle
+        accessoryType = isSelected ? .checkmark : .none
+        applyLayoutDirections()
+    }
+
+    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
+        appLayoutDirection = direction.appLayoutDirection
+        applyLayoutDirections()
+    }
+
+    private func applyLayoutDirections() {
+        semanticContentAttribute = appLayoutDirection.semanticContentAttribute
+        contentView.semanticContentAttribute = appLayoutDirection.semanticContentAttribute
+
         titleLabel.semanticContentAttribute = titleLayoutDirection.semanticContentAttribute
         titleLabel.textAlignment = titleLayoutDirection.textAlignment
 
-        subtitleLabel.text = subtitle
         subtitleLabel.semanticContentAttribute = appLayoutDirection.semanticContentAttribute
-        subtitleLabel.textAlignment = textAlignment
-
-        accessoryType = isSelected ? .checkmark : .none
+        subtitleLabel.textAlignment = appLayoutDirection.textAlignment
     }
 
     private func configureView() {

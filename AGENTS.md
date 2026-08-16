@@ -18,7 +18,7 @@ This repository contains a reusable Swift package, `AppLocalization`, plus a run
 - App icon source: `Design/AppIcon`
 - App icon asset catalog: `Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/Assets.xcassets`
 
-The package implements in-app language switching without restarting the app. It supports SwiftUI, UIKit, mixed stacks, multiple windows/scenes, presented view controllers, `UICollectionView` layout direction, navigation direction, semantic gestures, and modern `Localizable.xcstrings` resources.
+The package implements in-app language switching without restarting the app. It supports SwiftUI, UIKit, mixed stacks, multiple windows/scenes, presented view controllers, `UITableView` and `UICollectionView` layout direction, navigation direction, semantic gestures, and modern `Localizable.xcstrings` resources.
 
 ## App Icon Rules
 
@@ -44,7 +44,7 @@ The package implements in-app language switching without restarting the app. It 
 - Keep app-name localization out of `LocalizedStringResolver`; iOS reads `CFBundleDisplayName` from Info.plist localization resources and it does not participate in in-app live switching.
 - Split text refresh from direction refresh:
   - text changes update labels, titles, buttons, placeholders, menus, and visible cells
-  - direction changes update semantic content attributes, navigation side mapping, collection layouts, gestures, and transition directions
+  - direction changes update semantic content attributes, table/collection layouts, navigation side mapping, gestures, and transition directions
 - Default to lightweight UI reload. Root-window rebuild is an opt-in fallback for direction changes or system UI that cannot reliably update otherwise.
 
 ## UIKit Integration Rules
@@ -54,6 +54,7 @@ The package implements in-app language switching without restarting the app. It 
 - Use `UIWindowSceneLocalizationCoordinator.reloadAllScenes(for:)` to refresh all connected scenes. Do not use `UIApplication.shared.keyWindow` or refresh only one foreground window.
 - `UIWindowSceneLocalizationCoordinator.reloadAllScenes(for:rebuildRootWindows:animateRootRebuild:)` may be used when root rebuild is required.
 - Presented chains must be included. Ordinary presented view controllers can reload; alerts, menus, context menus, and third-party SDK views may need dismiss/recreate behavior.
+- For `UITableView`, use `applyUserInterfaceLayoutDirection(_:preservingVisibleRow:)` when LTR/RTL changes. It refreshes visible reusable-view layout without calling `reloadData()`, so diffable content remains snapshot-driven. Custom cells with explicit or cached direction state should implement `UserInterfaceLayoutDirectionUpdating`.
 - For `UICollectionView`, use `applyUserInterfaceLayoutDirection(_:preservingVisibleItem:)` when LTR/RTL changes.
 - Use `NavigationItemPlacement.leading/trailing` mapping instead of hard-coded left/right navigation items.
 
@@ -298,7 +299,19 @@ struct SettingsUIKitBridge: UIViewControllerRepresentable {
 }
 ```
 
-### 7. Refresh A Direction-Sensitive Collection View
+### 7. Refresh Direction-Sensitive Table And Collection Views
+
+```swift
+final class SettingsViewController: UITableViewController, UserInterfaceLayoutDirectionUpdating {
+    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
+        // Refreshes visible reusable-view layout without calling reloadData().
+        tableView.applyUserInterfaceLayoutDirection(
+            direction.appLayoutDirection,
+            preservingVisibleRow: true
+        )
+    }
+}
+```
 
 ```swift
 final class ProductsViewController: UIViewController, UserInterfaceLayoutDirectionUpdating {
@@ -480,6 +493,7 @@ If SwiftPM or Xcode needs to write compiler caches outside the sandbox, rerun th
 - Updating only the current window instead of every connected `UIWindowScene`.
 - Forgetting presented view controllers.
 - Refreshing text but not layout direction.
+- Calling `reloadData()` inside the table direction helper instead of leaving diffable content snapshot-driven.
 - Invalidating a collection layout without preserving the logical visible item.
 - Storing translated strings instead of localization keys or recomputable values.
 - Assuming `.xcstrings` will remain visible at runtime exactly as authored; Xcode may compile String Catalogs into `.lproj/*.strings` outputs.

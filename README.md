@@ -1,6 +1,6 @@
 # AppLocalization
 
-`AppLocalization` 是一套用于 iOS 应用内语言切换的示例框架和演示工程。目标是在不重启 App 的前提下，让 SwiftUI、UIKit、混合栈、多窗口、present/modal、`UICollectionView`、导航栏和手势方向都能随语言与 RTL/LTR 变化正确刷新。
+`AppLocalization` 是一套用于 iOS 应用内语言切换的示例框架和演示工程。目标是在不重启 App 的前提下，让 SwiftUI、UIKit、混合栈、多窗口、present/modal、`UITableView`、`UICollectionView`、导航栏和手势方向都能随语言与 RTL/LTR 变化正确刷新。
 
 这个仓库同时包含：
 
@@ -23,7 +23,7 @@
 - 多 scene / 多 window 刷新，不依赖单个 `keyWindow`。
 - 支持 presented view controller 链路刷新。
 - 覆盖 RTL/LTR 下的导航按钮位置、返回图标、pop 手势方向、push/pop 动画方向。
-- 覆盖 `UICollectionView` 横向布局、可见 item 保持、RTL 滚动方向和 layout invalidation。
+- 覆盖 `UITableView` 可见内容方向刷新与可见 row 保持，以及 `UICollectionView` 横向布局、可见 item 保持、RTL 滚动方向和 layout invalidation。
 - 区分普通界面镜像和空间语义内容，避免地图、图表、播放进度等被错误镜像。
 - 通过 `InfoPlist.xcstrings` 演示应用名国际化。
 
@@ -176,7 +176,44 @@ let imageName = DirectionalLayout.backChevronSystemName(
 )
 ```
 
-`UICollectionView` 在方向变化时需要更新 semantic、invalidate layout，并尽量保持逻辑上的可见 item，而不是直接复用旧 `contentOffset`。
+`UITableView` 在方向变化时更新 semantic 和布局，同时保持最上方可见 row 及其相对位置：
+
+```swift
+tableView.applyUserInterfaceLayoutDirection(
+    localizationController.layoutDirection,
+    preservingVisibleRow: true
+)
+```
+
+该方法不会调用 `reloadData()`。使用 `UITableViewDiffableDataSource` 时，内容刷新仍由
+snapshot 管理。例如，可以重新配置当前 item，并在 snapshot 完成后应用方向：
+
+```swift
+var snapshot = dataSource.snapshot()
+snapshot.reconfigureItems(snapshot.itemIdentifiers)
+dataSource.apply(snapshot, animatingDifferences: false) {
+    tableView.applyUserInterfaceLayoutDirection(
+        localizationController.layoutDirection,
+        preservingVisibleRow: true
+    )
+}
+```
+
+如果 snapshot 使用动画或会改变行顺序/高度，应在 completion 中再次调用方向 API，
+避免方向布局与 snapshot 更新交叠。
+
+普通 cell 无需实现额外协议：使用 `.unspecified` semantic、leading/trailing 约束或在
+布局时读取 `effectiveUserInterfaceLayoutDirection` 即会跟随 table 刷新。只有显式强制
+内部方向或缓存方向状态的自定义 cell，才需要实现 `UserInterfaceLayoutDirectionUpdating`。
+
+`UICollectionView` 在方向变化时需要更新 semantic、invalidate layout，并尽量保持逻辑上的可见 item，而不是直接复用旧 `contentOffset`：
+
+```swift
+collectionView.applyUserInterfaceLayoutDirection(
+    localizationController.layoutDirection,
+    preservingVisibleItem: true
+)
+```
 
 ## App Icon
 
@@ -234,6 +271,7 @@ xcodebuild \
 - SwiftUI 文案即时刷新。
 - UIKit label、button、navigation item、tab item 即时刷新。
 - presented 页面和 modal 链路能刷新或被正确重建。
+- `UITableView` 切换方向后 cell、header、footer 和当前可见 row 正确。
 - `UICollectionView` RTL 下滚动方向、顺序、当前 item 正确。
 - LTR/RTL 下导航按钮位置、返回图标、pop 手势方向正确。
 - “跟随系统”能解析到最合适的支持语言。
