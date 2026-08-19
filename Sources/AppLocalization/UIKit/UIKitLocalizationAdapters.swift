@@ -481,17 +481,24 @@ public extension UICollectionView {
     /// func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
     ///     collectionView.applyUserInterfaceLayoutDirection(
     ///         direction.appLayoutDirection,
-    ///         preservingVisibleItem: true
+    ///         preservingVisibleItem: true,
+    ///         rebuildingLayoutWith: makeCollectionViewLayout
     ///     )
     /// }
     /// ```
     ///
+    /// 大多数 flow layout 只需要失效当前 layout。部分 compositional layout 会缓存
+    /// 与 LTR/RTL 有关的私有坐标映射；此时可传入 `makeLayout`，方向改变时使用新
+    /// layout 实例清除旧映射。方向未改变时不会调用闭包，只失效当前 layout。
+    ///
     /// - Parameters:
     ///   - layoutDirection: 要应用的布局方向。
     ///   - shouldPreserveVisibleItem: 是否在布局失效后保持当前可见的逻辑项目。
+    ///   - makeLayout: 方向改变时用于创建新集合布局的闭包；默认只失效当前布局。
     func applyUserInterfaceLayoutDirection(
         _ layoutDirection: AppUserInterfaceLayoutDirection,
-        preservingVisibleItem shouldPreserveVisibleItem: Bool = true
+        preservingVisibleItem shouldPreserveVisibleItem: Bool = true,
+        rebuildingLayoutWith makeLayout: (() -> UICollectionViewLayout)? = nil
     ) {
         let visibleIndexPath = shouldPreserveVisibleItem
             ? indexPathsForVisibleItems.sorted().first
@@ -501,8 +508,18 @@ public extension UICollectionView {
         // 停在物理左端。
         let targetIndexPath = visibleIndexPath ?? (shouldPreserveVisibleItem ? firstItemIndexPathForDirectionReset() : nil)
 
-        semanticContentAttribute = layoutDirection.semanticContentAttribute
-        collectionViewLayout.invalidateLayout()
+        let semanticContentAttribute = layoutDirection.semanticContentAttribute
+        let directionChanged = self.semanticContentAttribute
+            != semanticContentAttribute
+        self.semanticContentAttribute = semanticContentAttribute
+
+        if directionChanged, let makeLayout {
+            // Compositional layout 可能缓存旧方向的 counter-mirroring；只有替换
+            // layout 实例才能清除这类不属于 invalidation context 的私有状态。
+            setCollectionViewLayout(makeLayout(), animated: false)
+        } else {
+            collectionViewLayout.invalidateLayout()
+        }
         // 布局失效后立即执行布局，确保滚动操作使用新方向下的布局属性。
         layoutIfNeeded()
 
