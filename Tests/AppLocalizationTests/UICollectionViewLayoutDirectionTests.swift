@@ -10,7 +10,7 @@ final class UICollectionViewLayoutDirectionTests: XCTestCase {
         let context = UIKitLocalizationContext { snapshotBox.snapshot }
         let cell = UICollectionViewListCell()
 
-        context.restoreBeforeConfiguration(cell)
+        context.prepareForConfiguration(cell)
 
         XCTAssertEqual(cell.semanticContentAttribute, .forceRightToLeft)
         XCTAssertEqual(cell.contentView.semanticContentAttribute, .forceRightToLeft)

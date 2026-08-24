@@ -10,7 +10,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
         let context = UIKitLocalizationContext { snapshotBox.snapshot }
         let cell = ReusableTrackingTableCell()
 
-        context.restoreBeforeConfiguration(cell)
+        context.prepareForConfiguration(cell)
 
         XCTAssertEqual(cell.receivedUpdates.count, 1)
         let configurationUpdate = try XCTUnwrap(cell.receivedUpdates.last)
@@ -38,7 +38,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
         let context = UIKitLocalizationContext { snapshotBox.snapshot }
         let cell = UICollectionViewListCell()
 
-        context.restoreBeforeConfiguration(cell)
+        context.prepareForConfiguration(cell)
         snapshotBox.snapshot = makeSnapshot(.leftToRight, revision: 2)
         context.restoreOnAttachment(cell)
 
@@ -52,8 +52,8 @@ final class UIKitReusableLocalizationTests: XCTestCase {
         let header = ReusableTrackingHeaderFooterView()
         let supplementary = ReusableTrackingSupplementaryView()
 
-        context.restoreBeforeConfiguration(header)
-        context.restoreBeforeConfiguration(supplementary)
+        context.prepareForConfiguration(header)
+        context.prepareForConfiguration(supplementary)
         snapshotBox.snapshot = makeSnapshot(.leftToRight, revision: 8)
         context.restoreOnAttachment(header)
         context.restoreOnAttachment(supplementary)
@@ -75,7 +75,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
         inheritedCell.semanticContentAttribute = .forceRightToLeft
         UIKitLocalizationContext {
             self.makeSnapshot(.leftToRight, revision: 1)
-        }.restoreBeforeConfiguration(inheritedCell, policy: .inherited)
+        }.prepareForConfiguration(inheritedCell, policy: .inherited)
         XCTAssertEqual(inheritedCell.semanticContentAttribute, .forceRightToLeft)
 
         let container = UIView()
@@ -91,7 +91,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
         let fixedCell = UICollectionViewListCell()
         UIKitLocalizationContext {
             self.makeSnapshot(.rightToLeft, revision: 3)
-        }.restoreBeforeConfiguration(fixedCell, policy: .fixed(.playback))
+        }.prepareForConfiguration(fixedCell, policy: .fixed(.playback))
         XCTAssertEqual(fixedCell.semanticContentAttribute, .playback)
         XCTAssertEqual(fixedCell.contentView.semanticContentAttribute, .playback)
     }
@@ -104,7 +104,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
 
         UIKitLocalizationContext {
             self.makeSnapshot(.rightToLeft, revision: 1)
-        }.restoreBeforeConfiguration(header)
+        }.prepareForConfiguration(header)
 
         XCTAssertGreaterThan(tracker.materializationCount, initialMaterializationCount)
     }
@@ -137,7 +137,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
 
         UIKitLocalizationContext {
             self.makeSnapshot(.rightToLeft, revision: 1)
-        }.restoreBeforeConfiguration(cell)
+        }.prepareForConfiguration(cell)
 
         XCTAssertEqual(cell.accessories.count, 2)
         XCTAssertEqual(cell.semanticContentAttribute, .forceRightToLeft)

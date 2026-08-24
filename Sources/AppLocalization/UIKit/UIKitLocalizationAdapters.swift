@@ -339,7 +339,7 @@ public extension UICollectionViewCell {
 /// 为 reusable UIKit 内容提供最新本地化状态，而不缓存具体 snapshot。
 ///
 /// Collection registration 和 table dequeue 包装在业务 configuration 之前调用
-/// `restoreBeforeConfiguration`；delegate 在 `willDisplay` 中调用
+/// `prepareForConfiguration`；delegate 在 `willDisplay` 中调用
 /// `restoreOnAttachment`。Context 每次都会重新读取 provider，因此复用池、离层重挂和
 /// 异步新物化内容不会应用创建 Context 时的旧 revision。
 @MainActor
@@ -358,7 +358,7 @@ public struct UIKitLocalizationContext {
         }
     }
 
-    public func restoreBeforeConfiguration(
+    public func prepareForConfiguration(
         _ cell: UITableViewCell,
         policy: UIViewLayoutDirectionPolicy = .followApplication
     ) {
@@ -369,7 +369,7 @@ public struct UIKitLocalizationContext {
         )
     }
 
-    public func restoreBeforeConfiguration(
+    public func prepareForConfiguration(
         _ view: UITableViewHeaderFooterView,
         policy: UIViewLayoutDirectionPolicy = .followApplication
     ) {
@@ -380,7 +380,7 @@ public struct UIKitLocalizationContext {
         )
     }
 
-    public func restoreBeforeConfiguration(
+    public func prepareForConfiguration(
         _ view: UICollectionReusableView,
         policy: UIViewLayoutDirectionPolicy = .followApplication
     ) {
@@ -434,7 +434,7 @@ public struct UIKitLocalizationContext {
         handler: @escaping UICollectionView.CellRegistration<Cell, Item>.Handler
     ) -> UICollectionView.CellRegistration<Cell, Item> {
         UICollectionView.CellRegistration<Cell, Item> { cell, indexPath, item in
-            restoreBeforeConfiguration(cell, policy: policy)
+            prepareForConfiguration(cell, policy: policy)
             handler(cell, indexPath, item)
         }
     }
@@ -449,7 +449,7 @@ public struct UIKitLocalizationContext {
             cell,
             indexPath,
             item in
-            restoreBeforeConfiguration(cell, policy: policy)
+            prepareForConfiguration(cell, policy: policy)
             handler(cell, indexPath, item)
         }
     }
@@ -463,7 +463,7 @@ public struct UIKitLocalizationContext {
         UICollectionView.SupplementaryRegistration<Supplementary>(
             elementKind: elementKind
         ) { view, elementKind, indexPath in
-            restoreBeforeConfiguration(view, policy: policy)
+            prepareForConfiguration(view, policy: policy)
             handler(view, elementKind, indexPath)
         }
     }
@@ -482,7 +482,7 @@ public struct UIKitLocalizationContext {
             view,
             elementKind,
             indexPath in
-            restoreBeforeConfiguration(view, policy: policy)
+            prepareForConfiguration(view, policy: policy)
             handler(view, elementKind, indexPath)
         }
     }
@@ -957,7 +957,7 @@ public extension UITableView {
                 "Registered cell for \(identifier) is not \(String(reflecting: cellType))"
             )
         }
-        context.restoreBeforeConfiguration(cell, policy: policy)
+        context.prepareForConfiguration(cell, policy: policy)
         return cell
     }
 
@@ -976,7 +976,7 @@ public extension UITableView {
                 "Registered header/footer for \(identifier) is not \(String(reflecting: viewType))"
             )
         }
-        context.restoreBeforeConfiguration(view, policy: policy)
+        context.prepareForConfiguration(view, policy: policy)
         return view
     }
 
