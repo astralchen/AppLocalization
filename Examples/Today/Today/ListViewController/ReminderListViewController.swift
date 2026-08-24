@@ -5,7 +5,7 @@
 import UIKit
 import AppLocalization
 
-class ReminderListViewController: UICollectionViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
+class ReminderListViewController: UICollectionViewController, UIKitLocalizationApplying {
     let services = TodayLocalizationServices.shared
     private let settingsButton = UIBarButtonItem()
     private let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: nil)
@@ -39,7 +39,13 @@ class ReminderListViewController: UICollectionViewController, LocalizedContentUp
         let listLayout = listLayout()
         collectionView.collectionViewLayout = listLayout
 
-        let cellRegistration = UICollectionView.CellRegistration(handler: cellRegistrationHandler)
+        let cellRegistration = UICollectionView.CellRegistration<
+            UICollectionViewListCell,
+            Reminder.ID
+        >.localized(
+            using: services.localizationContext,
+            handler: cellRegistrationHandler
+        )
 
         dataSource = DataSource(collectionView: collectionView) {
             (collectionView: UICollectionView, indexPath: IndexPath, itemIdentifier: Reminder.ID) in
@@ -47,8 +53,13 @@ class ReminderListViewController: UICollectionViewController, LocalizedContentUp
                 using: cellRegistration, for: indexPath, item: itemIdentifier)
         }
 
-        let headerRegistration = UICollectionView.SupplementaryRegistration(
-            elementKind: ProgressHeaderView.elementKind, handler: supplementaryRegistrationHandler)
+        let headerRegistration = UICollectionView.SupplementaryRegistration<
+            ProgressHeaderView
+        >.localized(
+            elementKind: ProgressHeaderView.elementKind,
+            using: services.localizationContext,
+            handler: supplementaryRegistrationHandler
+        )
         dataSource?.supplementaryViewProvider = { supplementaryView, elementKind, indexPath in
             return self.collectionView.dequeueConfiguredReusableSupplementary(
                 using: headerRegistration, for: indexPath)
@@ -65,8 +76,7 @@ class ReminderListViewController: UICollectionViewController, LocalizedContentUp
             self, action: #selector(didChangeListStyle(_:)), for: .valueChanged)
         navigationItem.titleView = listStyleSegmentedControl
         navigationItem.style = .navigator
-        reloadLocalizedContent()
-        reloadLayoutDirection(services.localizationController.layoutDirection.uiLayoutDirection)
+        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
 
         updateSnapshot()
 
@@ -88,9 +98,18 @@ class ReminderListViewController: UICollectionViewController, LocalizedContentUp
     }
 
     override func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplay cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        services.localizationContext.restoreOnAttachment(cell)
+    }
+
+    override func collectionView(
         _ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView,
         forElementKind elementKind: String, at indexPath: IndexPath
     ) {
+        services.localizationContext.restoreOnAttachment(view)
         guard elementKind == ProgressHeaderView.elementKind,
               let progressView = view as? ProgressHeaderView
         else {
@@ -107,7 +126,24 @@ class ReminderListViewController: UICollectionViewController, LocalizedContentUp
         collectionView.backgroundView = backgroundView
     }
 
-    func reloadLocalizedContent() {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        if update.requiresLayoutDirectionRefresh {
+            collectionView.applyLocalization(
+                update,
+                rebuildingLayoutWith: listLayout
+            )
+            navigationItem.setBarButtonItem(
+                settingsButton,
+                side: .leading,
+                layoutDirection: update.layoutDirection
+            )
+            navigationItem.setBarButtonItem(
+                addButton,
+                side: .trailing,
+                layoutDirection: update.layoutDirection
+            )
+        }
+        guard update.requiresLocalizedContentRefresh else { return }
         #if DEBUG
         if usesLocalizedSampleData {
             reminders = Reminder.sampleData(resolver: services.resolver)
@@ -137,22 +173,6 @@ class ReminderListViewController: UICollectionViewController, LocalizedContentUp
         )
         updateSnapshot(reloading: filteredReminders.map(\.id))
         headerView?.reloadLocalizedContent()
-    }
-
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        let appDirection = direction.appLayoutDirection
-        view.semanticContentAttribute = appDirection.semanticContentAttribute
-        collectionView.applyUserInterfaceLayoutDirection(appDirection)
-        navigationItem.setBarButtonItem(
-            settingsButton,
-            side: .leading,
-            layoutDirection: direction
-        )
-        navigationItem.setBarButtonItem(
-            addButton,
-            side: .trailing,
-            layoutDirection: direction
-        )
     }
 
     func pushDetailViewForReminder(withId id: Reminder.ID) {

@@ -1,26 +1,489 @@
 #if canImport(UIKit)
 import UIKit
 
-/// 为需要在区域设置变化时刷新可见文本的 UIKit 视图控制器提供接口。
-///
-/// UIKit 的 `UILabel.text`、按钮标题和导航标题等值不会像 SwiftUI 一样自动根据
-/// 环境重新计算，因此实现者必须显式更新这些值。
-@MainActor
-public protocol LocalizedContentUpdating: AnyObject {
-    /// 重新加载接收者显示的所有本地化文本。
-    func reloadLocalizedContent()
+/// 触发一次 UIKit 本地化刷新的原因。
+public struct UIKitLocalizationUpdateReason: OptionSet, Sendable {
+    public let rawValue: UInt8
+
+    public init(rawValue: UInt8) {
+        self.rawValue = rawValue
+    }
+
+    public static let initial = Self(rawValue: 1 << 0)
+    public static let selection = Self(rawValue: 1 << 1)
+    public static let locale = Self(rawValue: 1 << 2)
+    public static let layoutDirection = Self(rawValue: 1 << 3)
+    public static let attachment = Self(rawValue: 1 << 4)
+    public static let configuration = Self(rawValue: 1 << 5)
 }
 
-/// 为需要响应布局方向变化的 UIKit 对象提供接口。
-///
-/// 视图控制器可更新列表/集合视图布局、手势边缘和自定义动画方向；自定义 cell、
-/// header 和 footer 可用它刷新显式设置的 `semanticContentAttribute` 和内部布局。
+/// UIKit 一次原子本地化刷新的不可变输入。
+public struct UIKitLocalizationUpdate: Equatable, Sendable {
+    public let snapshot: LocalizationSnapshot
+    public let reasons: UIKitLocalizationUpdateReason
+
+    public init(
+        snapshot: LocalizationSnapshot,
+        reasons: UIKitLocalizationUpdateReason
+    ) {
+        self.snapshot = snapshot
+        self.reasons = reasons
+    }
+
+    public static func initial(
+        snapshot: LocalizationSnapshot
+    ) -> Self {
+        Self(
+            snapshot: snapshot,
+            reasons: [.initial, .selection, .locale, .layoutDirection]
+        )
+    }
+
+    public static func change(_ change: LocalizationChange) -> Self {
+        var reasons: UIKitLocalizationUpdateReason = []
+        if change.selectionChanged {
+            reasons.insert(.selection)
+        }
+        if change.localeChanged {
+            reasons.insert(.locale)
+        }
+        if change.layoutDirectionChanged {
+            reasons.insert(.layoutDirection)
+        }
+        return Self(snapshot: change.current, reasons: reasons)
+    }
+
+    public static func attachment(
+        snapshot: LocalizationSnapshot
+    ) -> Self {
+        Self(snapshot: snapshot, reasons: [.attachment, .layoutDirection])
+    }
+
+    public static func configuration(
+        snapshot: LocalizationSnapshot
+    ) -> Self {
+        Self(snapshot: snapshot, reasons: [.configuration, .layoutDirection])
+    }
+
+    public var requiresLocalizedContentRefresh: Bool {
+        !reasons.intersection([.initial, .selection, .locale]).isEmpty
+    }
+
+    public var requiresLayoutDirectionRefresh: Bool {
+        !reasons.intersection([
+            .initial,
+            .layoutDirection,
+            .attachment,
+            .configuration
+        ]).isEmpty
+    }
+
+    public var layoutDirection: UIUserInterfaceLayoutDirection {
+        snapshot.layoutDirection.uiLayoutDirection
+    }
+
+    public var semanticContentAttribute: UISemanticContentAttribute {
+        snapshot.layoutDirection.semanticContentAttribute
+    }
+}
+
+/// 为 UIKit 对象提供一次原子的本地化状态更新。
 @MainActor
-public protocol UserInterfaceLayoutDirectionUpdating: AnyObject {
-    /// 使用指定的 UIKit 布局方向刷新接收者。
-    ///
-    /// - Parameter direction: 要应用的界面布局方向。
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection)
+public protocol UIKitLocalizationApplying: AnyObject {
+    /// 方向边界应先于文案、configuration 和布局缓存更新。
+    func applyLocalization(_ update: UIKitLocalizationUpdate)
+}
+
+/// 一个 UIView 在应用内方向变化时采用的语义策略。
+public enum UIViewLayoutDirectionPolicy: Equatable, Sendable {
+    /// 不写入 semantic，由当前 UIKit 层级自然解析。
+    case inherited
+    /// 显式跟随应用当前语言方向。
+    case followApplication
+    /// 显式跟随直接父容器当前有效方向。
+    case followContainer
+    /// 保留指定的局部语义方向。
+    case fixed(UISemanticContentAttribute)
+}
+
+/// 一次更新中由组件明确拥有的 UIView 方向边界。
+@MainActor
+public struct UIViewLayoutDirectionTarget {
+    public let view: UIView
+    public let policy: UIViewLayoutDirectionPolicy
+
+    public init(
+        _ view: UIView,
+        policy: UIViewLayoutDirectionPolicy
+    ) {
+        self.view = view
+        self.policy = policy
+    }
+}
+
+/// 声明一个组件直接拥有的 UIView 方向边界。
+@MainActor
+public protocol UIViewLayoutDirectionTargetProviding: AnyObject {
+    var layoutDirectionTargets: [UIViewLayoutDirectionTarget] { get }
+}
+
+/// 将最新应用方向应用到显式声明的 UIView 边界。
+@MainActor
+public enum UIViewLayoutDirectionUpdater {
+    public static func apply(
+        _ update: UIKitLocalizationUpdate,
+        to targets: [UIViewLayoutDirectionTarget]
+    ) {
+        guard update.requiresLayoutDirectionRefresh else { return }
+
+        var visited = Set<ObjectIdentifier>()
+        for target in targets {
+            guard visited.insert(ObjectIdentifier(target.view)).inserted else {
+                continue
+            }
+            apply(update, to: target)
+        }
+    }
+
+    public static func apply(
+        _ update: UIKitLocalizationUpdate,
+        to target: UIViewLayoutDirectionTarget
+    ) {
+        guard update.requiresLayoutDirectionRefresh else { return }
+
+        let attribute: UISemanticContentAttribute?
+        switch target.policy {
+        case .inherited:
+            attribute = nil
+        case .followApplication:
+            attribute = update.semanticContentAttribute
+        case .followContainer:
+            attribute = target.view.superview.map {
+                $0.effectiveUserInterfaceLayoutDirection
+                    .appLayoutDirection
+                    .semanticContentAttribute
+            }
+        case let .fixed(fixedAttribute):
+            attribute = fixedAttribute
+        }
+
+        if let attribute, target.view.semanticContentAttribute != attribute {
+            target.view.semanticContentAttribute = attribute
+        }
+        // 即使 `.inherited` 不写 semantic，也要让已物化 configuration 和布局缓存
+        // 在祖先方向变化后重新求值。
+        refreshConfigurationIfSupported(for: target.view)
+        target.view.setNeedsUpdateConstraints()
+        target.view.invalidateIntrinsicContentSize()
+        target.view.setNeedsLayout()
+    }
+
+    private static func refreshConfigurationIfSupported(for view: UIView) {
+        switch view {
+        case let button as UIButton:
+            button.setNeedsUpdateConfiguration()
+            // `setNeedsUpdateConfiguration()` may be coalesced until a later
+            // update cycle. Runtime language switches need the already
+            // materialized title/image hierarchy to observe the new semantic
+            // before the caller's atomic layout pass.
+            button.updateConfiguration()
+            if let configuration = button.configuration {
+                // UIKit may retain the old direction in the configuration's
+                // already materialized private content views. Re-entering the
+                // public configuration system rebuilds that local boundary;
+                // this deliberately avoids walking or mutating private views.
+                button.configuration = nil
+                button.configuration = configuration
+            }
+        case let tableCell as UITableViewCell:
+            tableCell.setNeedsUpdateConfiguration()
+            tableCell.updateConfiguration(using: tableCell.configurationState)
+            if let configuration = tableCell.contentConfiguration {
+                tableCell.contentConfiguration = nil
+                tableCell.contentConfiguration = configuration
+            }
+        case let listCell as UICollectionViewListCell:
+            listCell.setNeedsUpdateConfiguration()
+            listCell.updateConfiguration(using: listCell.configurationState)
+            if let configuration = listCell.contentConfiguration {
+                listCell.contentConfiguration = nil
+                listCell.contentConfiguration = configuration
+            }
+            let accessories = listCell.accessories
+            listCell.accessories = []
+            listCell.accessories = accessories
+        case let collectionCell as UICollectionViewCell:
+            collectionCell.setNeedsUpdateConfiguration()
+            collectionCell.updateConfiguration(using: collectionCell.configurationState)
+        case let headerFooter as UITableViewHeaderFooterView:
+            headerFooter.setNeedsUpdateConfiguration()
+            headerFooter.updateConfiguration(using: headerFooter.configurationState)
+            if let configuration = headerFooter.contentConfiguration {
+                headerFooter.contentConfiguration = nil
+                headerFooter.contentConfiguration = configuration
+            }
+        default:
+            break
+        }
+    }
+
+}
+
+@MainActor
+private enum UIKitReusableLocalizationDispatcher {
+    static func apply(
+        _ update: UIKitLocalizationUpdate,
+        to cell: UITableViewCell,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        apply(
+            update,
+            targets: [
+                UIViewLayoutDirectionTarget(cell, policy: policy),
+                UIViewLayoutDirectionTarget(cell.contentView, policy: policy)
+            ],
+            component: cell
+        )
+    }
+
+    static func apply(
+        _ update: UIKitLocalizationUpdate,
+        to cell: UICollectionViewCell,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        apply(
+            update,
+            targets: [
+                UIViewLayoutDirectionTarget(cell, policy: policy),
+                UIViewLayoutDirectionTarget(cell.contentView, policy: policy)
+            ],
+            component: cell
+        )
+    }
+
+    static func apply(
+        _ update: UIKitLocalizationUpdate,
+        to view: UITableViewHeaderFooterView,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        apply(
+            update,
+            targets: [UIViewLayoutDirectionTarget(view, policy: policy)],
+            component: view
+        )
+    }
+
+    static func apply(
+        _ update: UIKitLocalizationUpdate,
+        to view: UICollectionReusableView,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        if let cell = view as? UICollectionViewCell {
+            apply(update, to: cell, policy: policy)
+            return
+        }
+
+        apply(
+            update,
+            targets: [UIViewLayoutDirectionTarget(view, policy: policy)],
+            component: view
+        )
+    }
+
+    private static func apply(
+        _ update: UIKitLocalizationUpdate,
+        targets: [UIViewLayoutDirectionTarget],
+        component: UIView
+    ) {
+        UIViewLayoutDirectionUpdater.apply(update, to: targets)
+        (component as? UIKitLocalizationApplying)?.applyLocalization(update)
+    }
+}
+
+@MainActor
+public extension UITableViewCell {
+    /// 把一次 UIKit 本地化更新应用到 Cell 的公开方向边界。
+    func applyLocalizationDirection(
+        _ update: UIKitLocalizationUpdate,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIViewLayoutDirectionUpdater.apply(
+            update,
+            to: [
+                UIViewLayoutDirectionTarget(self, policy: policy),
+                UIViewLayoutDirectionTarget(contentView, policy: policy)
+            ]
+        )
+    }
+
+}
+
+@MainActor
+public extension UICollectionViewCell {
+    /// 把一次 UIKit 本地化更新应用到 Cell 的公开方向边界。
+    func applyLocalizationDirection(
+        _ update: UIKitLocalizationUpdate,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIViewLayoutDirectionUpdater.apply(
+            update,
+            to: [
+                UIViewLayoutDirectionTarget(self, policy: policy),
+                UIViewLayoutDirectionTarget(contentView, policy: policy)
+            ]
+        )
+    }
+
+}
+
+/// 为 reusable UIKit 内容提供最新本地化状态，而不缓存具体 snapshot。
+///
+/// Collection registration 和 table dequeue 包装在业务 configuration 之前调用
+/// `restoreBeforeConfiguration`；delegate 在 `willDisplay` 中调用
+/// `restoreOnAttachment`。Context 每次都会重新读取 provider，因此复用池、离层重挂和
+/// 异步新物化内容不会应用创建 Context 时的旧 revision。
+@MainActor
+public struct UIKitLocalizationContext {
+    private let snapshotProvider: @MainActor () -> LocalizationSnapshot
+
+    public init(
+        snapshotProvider: @escaping @MainActor () -> LocalizationSnapshot
+    ) {
+        self.snapshotProvider = snapshotProvider
+    }
+
+    public init(localizationController: LocalizationController) {
+        self.init { [localizationController] in
+            localizationController.currentSnapshot
+        }
+    }
+
+    public func restoreBeforeConfiguration(
+        _ cell: UITableViewCell,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIKitReusableLocalizationDispatcher.apply(
+            .configuration(snapshot: snapshotProvider()),
+            to: cell,
+            policy: policy
+        )
+    }
+
+    public func restoreBeforeConfiguration(
+        _ view: UITableViewHeaderFooterView,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIKitReusableLocalizationDispatcher.apply(
+            .configuration(snapshot: snapshotProvider()),
+            to: view,
+            policy: policy
+        )
+    }
+
+    public func restoreBeforeConfiguration(
+        _ view: UICollectionReusableView,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIKitReusableLocalizationDispatcher.apply(
+            .configuration(snapshot: snapshotProvider()),
+            to: view,
+            policy: policy
+        )
+    }
+
+    public func restoreOnAttachment(
+        _ cell: UITableViewCell,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIKitReusableLocalizationDispatcher.apply(
+            .attachment(snapshot: snapshotProvider()),
+            to: cell,
+            policy: policy
+        )
+    }
+
+    public func restoreOnAttachment(
+        _ view: UITableViewHeaderFooterView,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIKitReusableLocalizationDispatcher.apply(
+            .attachment(snapshot: snapshotProvider()),
+            to: view,
+            policy: policy
+        )
+    }
+
+    public func restoreOnAttachment(
+        _ view: UICollectionReusableView,
+        policy: UIViewLayoutDirectionPolicy = .followApplication
+    ) {
+        UIKitReusableLocalizationDispatcher.apply(
+            .attachment(snapshot: snapshotProvider()),
+            to: view,
+            policy: policy
+        )
+    }
+}
+
+@MainActor
+public extension UICollectionView.CellRegistration {
+    /// 创建一个在业务 handler 之前恢复最新本地化状态的 Cell registration。
+    static func localized(
+        using context: UIKitLocalizationContext,
+        policy: UIViewLayoutDirectionPolicy = .followApplication,
+        handler: @escaping Handler
+    ) -> Self {
+        Self { cell, indexPath, item in
+            context.restoreBeforeConfiguration(cell, policy: policy)
+            handler(cell, indexPath, item)
+        }
+    }
+
+    /// 创建一个基于 nib、在业务 handler 之前恢复最新本地化状态的 Cell registration。
+    static func localized(
+        cellNib: UINib,
+        using context: UIKitLocalizationContext,
+        policy: UIViewLayoutDirectionPolicy = .followApplication,
+        handler: @escaping Handler
+    ) -> Self {
+        Self(cellNib: cellNib) { cell, indexPath, item in
+            context.restoreBeforeConfiguration(cell, policy: policy)
+            handler(cell, indexPath, item)
+        }
+    }
+}
+
+@MainActor
+public extension UICollectionView.SupplementaryRegistration {
+    /// 创建一个在业务 handler 之前恢复最新本地化状态的 supplementary registration。
+    static func localized(
+        elementKind: String,
+        using context: UIKitLocalizationContext,
+        policy: UIViewLayoutDirectionPolicy = .followApplication,
+        handler: @escaping Handler
+    ) -> Self {
+        Self(elementKind: elementKind) { view, elementKind, indexPath in
+            context.restoreBeforeConfiguration(view, policy: policy)
+            handler(view, elementKind, indexPath)
+        }
+    }
+
+    /// 创建一个基于 nib、在业务 handler 之前恢复最新本地化状态的 registration。
+    static func localized(
+        supplementaryNib: UINib,
+        elementKind: String,
+        using context: UIKitLocalizationContext,
+        policy: UIViewLayoutDirectionPolicy = .followApplication,
+        handler: @escaping Handler
+    ) -> Self {
+        Self(supplementaryNib: supplementaryNib, elementKind: elementKind) {
+            view,
+            elementKind,
+            indexPath in
+            context.restoreBeforeConfiguration(view, policy: policy)
+            handler(view, elementKind, indexPath)
+        }
+    }
 }
 
 /// 为无法原地刷新的已呈现内容提供重建接口。
@@ -31,8 +494,15 @@ public protocol UserInterfaceLayoutDirectionUpdating: AnyObject {
 public protocol PresentedLocalizationBoundaryRebuilding: AnyObject {
     /// 根据本地化变更重建已呈现内容，或应用降级策略。
     ///
-    /// - Parameter change: 触发重建的本地化变更。
-    func rebuildPresentedBoundary(for change: LocalizationChange)
+    /// - Parameter update: 触发重建的最新本地化状态。
+    func rebuildPresentedBoundary(for update: UIKitLocalizationUpdate)
+}
+
+/// Window 无法原地刷新时采用的恢复级别。
+public enum UIWindowLocalizationRecoveryAction: Equatable, Sendable {
+    case none
+    case reattachExistingRoot
+    case recreateRoot
 }
 
 public extension AppUserInterfaceLayoutDirection {
@@ -57,132 +527,221 @@ public extension UIUserInterfaceLayoutDirection {
     }
 }
 
-/// 将本地化变更分发到所有已连接窗口场景的协调器。
+/// 将本地化变更分发到应用 Window 的协调器。
 ///
-/// 协调器会遍历每个窗口的根视图控制器、子视图控制器、导航栈、标签页和
-/// 已呈现层级。
-/// 此类型不依赖单一关键窗口，因此支持 iPad 多窗口、外接显示器和台前调度。
+/// 默认使用 `register(window:)` 明确声明应用拥有的 Window。调用方确认当前
+/// 进程内所有 connected scene Window 都可安全更新时，也可以显式选择
+/// `reloadAllScenes(for:)`。两条路径都会遍历根控制器、公共容器和已呈现层级。
 @MainActor
 public final class UIWindowSceneLocalizationCoordinator {
-    private let application: UIApplication
-    private let presentedBoundaryHandler: ((UIViewController, LocalizationChange) -> Bool)?
+    public typealias RootViewControllerFactory = @MainActor (
+        LocalizationSnapshot
+    ) -> UIViewController
+    public typealias RecoveryActionProvider = @MainActor (
+        UIWindow,
+        UIKitLocalizationUpdate
+    ) -> UIWindowLocalizationRecoveryAction
+    public typealias WindowSelection = @MainActor (UIWindow) -> Bool
+
+    private final class WindowRegistration {
+        weak var window: UIWindow?
+        let rootViewControllerFactory: RootViewControllerFactory?
+
+        init(
+            window: UIWindow,
+            rootViewControllerFactory: RootViewControllerFactory?
+        ) {
+            self.window = window
+            self.rootViewControllerFactory = rootViewControllerFactory
+        }
+    }
+
+    private let localizationController: LocalizationController
+    private let presentedBoundaryHandler: ((UIViewController, UIKitLocalizationUpdate) -> Bool)?
+    private var registrations: [ObjectIdentifier: WindowRegistration] = [:]
 
     /// 使用指定应用实例创建协调器。
     ///
     /// - Parameters:
-    ///   - application: 默认使用 `.shared`，测试或特殊宿主可注入。
+    ///   - localizationController: 应用本地化状态的单一来源。
     ///   - presentedBoundaryHandler: 处理已呈现视图控制器的可选闭包。返回 `true` 时，
     ///     协调器会关闭该视图控制器并停止遍历其层级。
     public init(
-        application: UIApplication,
-        presentedBoundaryHandler: ((UIViewController, LocalizationChange) -> Bool)? = nil
+        localizationController: LocalizationController,
+        presentedBoundaryHandler: ((UIViewController, UIKitLocalizationUpdate) -> Bool)? = nil
     ) {
-        self.application = application
+        self.localizationController = localizationController
         self.presentedBoundaryHandler = presentedBoundaryHandler
     }
 
-    /// 使用 `UIApplication.shared` 创建协调器。
-    ///
-    /// - Parameter presentedBoundaryHandler: 处理已呈现视图控制器的可选闭包。
-    public convenience init(
-        presentedBoundaryHandler: ((UIViewController, LocalizationChange) -> Bool)? = nil
+    /// 注册一个由应用拥有的 Window，并立即应用当前快照。
+    public func register(
+        window: UIWindow,
+        rootViewControllerFactory: RootViewControllerFactory? = nil
     ) {
-        self.init(
-            application: .shared,
-            presentedBoundaryHandler: presentedBoundaryHandler
+        registrations[ObjectIdentifier(window)] = WindowRegistration(
+            window: window,
+            rootViewControllerFactory: rootViewControllerFactory
+        )
+        apply(
+            .initial(snapshot: localizationController.currentSnapshot),
+            to: registrations[ObjectIdentifier(window)]!
         )
     }
 
-    /// 刷新所有已连接窗口场景中的可见窗口。
-///
-    /// 通常在监听 `LocalizationController.localizationDidChangeNotification` 时调用此方法。
-    /// 默认行为是原地刷新。当系统界面或布局方向变化需要完整刷新时，可选择重建
-    /// 根视图控制器。重建过程使用淡出快照减少闪烁。
-///
-    /// `updateAppearanceProxies` 默认为 `false`。运行时切换语言时，协调器优先更新窗口、
-    /// 根视图控制器和已加载界面，不修改 `UIView.appearance()` 的全局默认值。
+    /// 取消管理一个 Window。
+    public func unregister(window: UIWindow) {
+        registrations.removeValue(forKey: ObjectIdentifier(window))
+    }
+
+    /// 使用最新状态重新同步一个已注册 Window。
+    public func synchronize(window: UIWindow) {
+        guard let registration = registrations[ObjectIdentifier(window)] else {
+            return
+        }
+        apply(
+            .attachment(snapshot: localizationController.currentSnapshot),
+            to: registration
+        )
+    }
+
+    /// 将一次本地化变更应用到所有已注册 Window。
+    public func apply(
+        _ change: LocalizationChange,
+        animated: Bool = true,
+        recoveryAction: RecoveryActionProvider? = nil
+    ) {
+        guard change.current.revision == localizationController.currentSnapshot.revision else {
+            return
+        }
+
+        let update = UIKitLocalizationUpdate.change(change)
+        registrations = registrations.filter { $0.value.window != nil }
+        for registration in registrations.values {
+            apply(update, to: registration)
+            guard let window = registration.window else { continue }
+            recover(
+                window,
+                registration: registration,
+                update: update,
+                action: recoveryAction?(window, update) ?? .none,
+                animated: animated
+            )
+        }
+    }
+
+    /// 将一次本地化变更应用到所有已连接 Window Scene 中选中的 Window。
     ///
-    /// ```swift
-    /// UIWindowSceneLocalizationCoordinator().reloadAllScenes(
-    ///     for: change,
-    ///     rebuildRootWindows: change.layoutDirectionChanged,
-    ///     animateRootRebuild: true,
-    ///     updateAppearanceProxies: false
-    /// )
-    /// ```
+    /// 这是由调用方主动选择的发现模式。调用本方法即表示调用方确认 connected
+    /// scenes 可以批量更新；如果其中混有第三方或系统辅助 Window，应通过
+    /// `including` 缩小范围。扫描到的 Window 只参与本次分发，不会永久加入注册表。
     ///
     /// - Parameters:
-    ///   - change: 要分发的本地化变更。
-    ///   - rebuildRootWindows: 是否重建每个窗口的根视图控制器。
-    ///   - animateRootRebuild: 是否使用淡出快照过渡根视图控制器重建。
-    ///   - updateAppearanceProxies: 是否更新 UIKit 外观代理的全局布局方向。
+    ///   - change: 要应用的最新本地化状态变化。
+    ///   - animated: 执行 root recovery 时是否使用快照过渡。
+    ///   - including: 返回 `true` 的 connected-scene Window 才会被更新。
+    ///   - recoveryAction: 可选的 root 恢复策略。未注册 Window 没有 root
+    ///     factory，因此不能选择 `.recreateRoot`。
     public func reloadAllScenes(
         for change: LocalizationChange,
-        rebuildRootWindows: Bool = false,
-        animateRootRebuild: Bool = true,
-        updateAppearanceProxies: Bool = false
+        animated: Bool = true,
+        including shouldIncludeWindow: WindowSelection = { _ in true },
+        recoveryAction: RecoveryActionProvider? = nil
     ) {
-        let direction = change.currentLocale.layoutDirection.uiLayoutDirection
-        let scenes = application.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let connectedWindows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+        reload(
+            change,
+            windows: connectedWindows,
+            animated: animated,
+            including: shouldIncludeWindow,
+            recoveryAction: recoveryAction
+        )
+    }
 
-        // 外观代理是全局默认值，只影响之后创建的 UIKit 视图。SwiftUI 根视图可能延迟
-        // 创建 UIKit 宿主视图；运行时更新代理会使不同批次的方向状态混入同一视图树。
-        // 纯 UIKit 应用如需让后续视图继承方向，可显式启用 `updateAppearanceProxies`。
-        if change.layoutDirectionChanged && updateAppearanceProxies {
-            applyGlobalLayoutDirection(change.currentLocale)
+    func reload(
+        _ change: LocalizationChange,
+        windows: [UIWindow],
+        animated: Bool = true,
+        including shouldIncludeWindow: WindowSelection = { _ in true },
+        recoveryAction: RecoveryActionProvider? = nil
+    ) {
+        guard change.current.revision
+            == localizationController.currentSnapshot.revision else {
+            return
         }
 
-        for scene in scenes {
-            for window in scene.windows where !window.isHidden {
-                window.semanticContentAttribute = change.currentLocale.layoutDirection.semanticContentAttribute
-                var visited = Set<ObjectIdentifier>()
-                reloadTree(
-                    from: window.rootViewController,
-                    change: change,
-                    direction: direction,
-                    visited: &visited
+        let update = UIKitLocalizationUpdate.change(change)
+        registrations = registrations.filter { $0.value.window != nil }
+
+        for window in windows where shouldIncludeWindow(window) {
+            let registration = registrations[ObjectIdentifier(window)]
+                ?? WindowRegistration(
+                    window: window,
+                    rootViewControllerFactory: nil
                 )
-
-                if rebuildRootWindows {
-                    rebuildRootWindow(
-                        window,
-                        animated: animateRootRebuild && scene.activationState == .foregroundActive
-                    )
-                }
-            }
+            apply(update, to: registration)
+            recover(
+                window,
+                registration: registration,
+                update: update,
+                action: recoveryAction?(window, update) ?? .none,
+                animated: animated
+            )
         }
     }
 
-    /// 更新 UIKit 外观代理的全局语义方向。
-///
-    /// 此方法只影响之后创建的视图。已存在的界面仍需实现
-    /// `UserInterfaceLayoutDirectionUpdating`，或在必要时重建根视图控制器。
-///
-    /// - Important: 此方法修改全局默认值，而非执行局部刷新。在 SwiftUI 混合层级中，
-    ///   同时更新外观代理、窗口语义方向和 SwiftUI 环境，可能使延迟创建的 UIKit 宿主视图
-    ///   获得不同批次的方向状态。建议仅在纯 UIKit 应用或启动阶段使用。
-    ///
-    /// ```swift
-    /// UIWindowSceneLocalizationCoordinator().applyGlobalLayoutDirection(
-    ///     localizationController.currentLocale
-    /// )
-    /// ```
-    ///
-    /// - Parameter locale: 用于确定全局布局方向的区域设置。
-    public func applyGlobalLayoutDirection(_ locale: AppLocale) {
-        UIView.appearance().semanticContentAttribute = locale.layoutDirection.semanticContentAttribute
+    private func apply(
+        _ update: UIKitLocalizationUpdate,
+        to registration: WindowRegistration
+    ) {
+        guard let window = registration.window else { return }
+        if update.requiresLayoutDirectionRefresh {
+            window.semanticContentAttribute = update.semanticContentAttribute
+        }
+        var visited = Set<ObjectIdentifier>()
+        apply(
+            update,
+            from: window.rootViewController,
+            visited: &visited
+        )
     }
 
-    /// 通过重设根视图控制器，使系统容器重新读取布局方向和外观。
-    ///
-    /// 此回退方案适用于导航栏、标签栏或复杂 UIKit 容器无法原地刷新的场景。
-    /// 快照淡出用于减少重设根视图控制器时的闪烁。
-    private func rebuildRootWindow(_ window: UIWindow, animated: Bool) {
+    private func recover(
+        _ window: UIWindow,
+        registration: WindowRegistration,
+        update: UIKitLocalizationUpdate,
+        action: UIWindowLocalizationRecoveryAction,
+        animated: Bool
+    ) {
+        guard action != .none else { return }
         let snapshot = animated ? window.snapshotView(afterScreenUpdates: false) : nil
-        let currentRootViewController = window.rootViewController
 
-        window.rootViewController = nil
-        window.rootViewController = currentRootViewController
+        switch action {
+        case .none:
+            break
+        case .reattachExistingRoot:
+            let currentRootViewController = window.rootViewController
+            window.rootViewController = nil
+            window.rootViewController = currentRootViewController
+        case .recreateRoot:
+            guard let factory = registration.rootViewControllerFactory else {
+                assertionFailure("recreateRoot requires a registered root factory")
+                return
+            }
+            window.rootViewController = factory(update.snapshot)
+        }
+
+        // 重新挂载或重建之后，必须再次从新层级解析容器方向。合并原更新原因，
+        // 使新 root 同时获得本次文案变化，避免 factory 之外的 child 错过刷新。
+        apply(
+            UIKitLocalizationUpdate(
+                snapshot: update.snapshot,
+                reasons: update.reasons.union(.attachment)
+            ),
+            to: registration
+        )
 
         guard let snapshot else { return }
 
@@ -204,10 +763,9 @@ public final class UIWindowSceneLocalizationCoordinator {
     ///
     /// `visited` 防止自定义容器或异常层级形成循环。遍历范围包括普通子视图控制器、
     /// `UINavigationController` 栈、`UITabBarController` 子控制器和已呈现层级。
-    private func reloadTree(
+    private func apply(
+        _ update: UIKitLocalizationUpdate,
         from viewController: UIViewController?,
-        change: LocalizationChange,
-        direction: UIUserInterfaceLayoutDirection,
         visited: inout Set<ObjectIdentifier>
     ) {
         guard let viewController else { return }
@@ -215,43 +773,60 @@ public final class UIWindowSceneLocalizationCoordinator {
         let identifier = ObjectIdentifier(viewController)
         guard visited.insert(identifier).inserted else { return }
 
-        // 导航栈可能包含尚未加载视图的离屏界面。不要为了语言刷新主动加载它们：
-        // 它们应在自己的 `viewDidLoad` 中读取当前区域设置，而已经加载的离屏界面
-        // 仍需要在返回前刷新。
         if viewController.isViewLoaded {
-            (viewController as? LocalizedContentUpdating)?.reloadLocalizedContent()
-            if change.layoutDirectionChanged {
-                viewController.viewIfLoaded?.semanticContentAttribute = change.currentLocale
-                    .layoutDirection
+            if update.requiresLayoutDirectionRefresh {
+                viewController.viewIfLoaded?.semanticContentAttribute = update
                     .semanticContentAttribute
-                (viewController as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(direction)
+                applyContainerDirection(update, to: viewController)
             }
+            (viewController as? UIKitLocalizationApplying)?
+                .applyLocalization(update)
         }
 
         if let navigationController = viewController as? UINavigationController {
             for child in navigationController.viewControllers {
-                reloadTree(from: child, change: change, direction: direction, visited: &visited)
+                apply(update, from: child, visited: &visited)
             }
         }
 
         if let tabBarController = viewController as? UITabBarController {
             for child in tabBarController.viewControllers ?? [] {
-                reloadTree(from: child, change: change, direction: direction, visited: &visited)
+                apply(update, from: child, visited: &visited)
             }
         }
 
         for child in viewController.children {
-            reloadTree(from: child, change: change, direction: direction, visited: &visited)
+            apply(update, from: child, visited: &visited)
         }
 
         if let presented = viewController.presentedViewController {
-            if presentedBoundaryHandler?(presented, change) == true {
+            if presentedBoundaryHandler?(presented, update) == true {
                 presented.dismiss(animated: false)
             } else if let rebuildable = presented as? PresentedLocalizationBoundaryRebuilding {
-                rebuildable.rebuildPresentedBoundary(for: change)
+                rebuildable.rebuildPresentedBoundary(for: update)
             } else {
-                reloadTree(from: presented, change: change, direction: direction, visited: &visited)
+                apply(update, from: presented, visited: &visited)
             }
+        }
+    }
+
+    private func applyContainerDirection(
+        _ update: UIKitLocalizationUpdate,
+        to viewController: UIViewController
+    ) {
+        if let navigationController = viewController as? UINavigationController {
+            navigationController.view.semanticContentAttribute = update.semanticContentAttribute
+            navigationController.navigationBar.semanticContentAttribute = update.semanticContentAttribute
+        }
+        if let tabBarController = viewController as? UITabBarController {
+            tabBarController.view.semanticContentAttribute = update.semanticContentAttribute
+            tabBarController.tabBar.semanticContentAttribute = update.semanticContentAttribute
+        }
+        if let splitViewController = viewController as? UISplitViewController {
+            splitViewController.view.semanticContentAttribute = update.semanticContentAttribute
+        }
+        if let pageViewController = viewController as? UIPageViewController {
+            pageViewController.view.semanticContentAttribute = update.semanticContentAttribute
         }
     }
 }
@@ -363,6 +938,46 @@ public extension DirectionalLayout {
 }
 
 public extension UITableView {
+    /// 从复用池取得 Cell，并在返回业务代码前恢复最新本地化状态。
+    ///
+    /// Cell 必须已使用同一 identifier 注册。类型不匹配表示注册配置错误，会触发
+    /// precondition failure；这与 `dequeueReusableCell(withIdentifier:for:)` 的注册契约一致。
+    func dequeueLocalizedReusableCell<Cell: UITableViewCell>(
+        withIdentifier identifier: String,
+        for indexPath: IndexPath,
+        using context: UIKitLocalizationContext,
+        policy: UIViewLayoutDirectionPolicy = .followApplication,
+        as cellType: Cell.Type = Cell.self
+    ) -> Cell {
+        let dequeuedCell = dequeueReusableCell(withIdentifier: identifier, for: indexPath)
+        guard let cell = dequeuedCell as? Cell else {
+            preconditionFailure(
+                "Registered cell for \(identifier) is not \(String(reflecting: cellType))"
+            )
+        }
+        context.restoreBeforeConfiguration(cell, policy: policy)
+        return cell
+    }
+
+    /// 从复用池取得 Header/Footer，并在返回业务代码前恢复最新本地化状态。
+    func dequeueLocalizedReusableHeaderFooterView<View: UITableViewHeaderFooterView>(
+        withIdentifier identifier: String,
+        using context: UIKitLocalizationContext,
+        policy: UIViewLayoutDirectionPolicy = .followApplication,
+        as viewType: View.Type = View.self
+    ) -> View? {
+        guard let dequeuedView = dequeueReusableHeaderFooterView(withIdentifier: identifier) else {
+            return nil
+        }
+        guard let view = dequeuedView as? View else {
+            preconditionFailure(
+                "Registered header/footer for \(identifier) is not \(String(reflecting: viewType))"
+            )
+        }
+        context.restoreBeforeConfiguration(view, policy: policy)
+        return view
+    }
+
     /// 应用布局方向、刷新表格布局，并按需保留当前逻辑行。
     ///
     /// 表格视图通常沿垂直方向滚动，因此 LTR/RTL 切换不需要像横向集合视图一样
@@ -370,9 +985,9 @@ public extension UITableView {
     /// 相对位置作为锚点。
     ///
     /// ```swift
-    /// func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-    ///     tableView.applyUserInterfaceLayoutDirection(
-    ///         direction.appLayoutDirection,
+    /// func applyLocalization(_ update: UIKitLocalizationUpdate) {
+    ///     tableView.applyLocalization(
+    ///         update,
     ///         preservingVisibleRow: true
     ///     )
     /// }
@@ -385,7 +1000,7 @@ public extension UITableView {
     /// data source，优先在 snapshot 中使用 `reconfigureItems(_:)`。如果 snapshot 异步
     /// 应用、使用动画或改变行顺序/高度，请在 snapshot completion 中再次调用此方法。
     ///
-    /// cell 不必实现 `UserInterfaceLayoutDirectionUpdating`：使用 `.unspecified` semantic、
+    /// cell 不必实现 `UIKitLocalizationApplying`：使用 `.unspecified` semantic、
     /// leading/trailing 约束或在布局时读取 `effectiveUserInterfaceLayoutDirection` 的 cell
     /// 会自动响应。只有显式强制子视图方向、缓存方向或维护自定义左右状态的 reusable
     /// view，才需要实现该协议。
@@ -393,10 +1008,11 @@ public extension UITableView {
     /// - Parameters:
     ///   - layoutDirection: 要应用的布局方向。
     ///   - shouldPreserveVisibleRow: 是否在布局刷新后保持最上方可见的逻辑行及其相对位置。
-    func applyUserInterfaceLayoutDirection(
-        _ layoutDirection: AppUserInterfaceLayoutDirection,
+    func applyLocalization(
+        _ update: UIKitLocalizationUpdate,
         preservingVisibleRow shouldPreserveVisibleRow: Bool = true
     ) {
+        guard update.requiresLayoutDirectionRefresh else { return }
         let visibleRowAnchor: (indexPath: IndexPath, offsetFromViewportTop: CGFloat)? = {
             guard shouldPreserveVisibleRow,
                   let indexPath = indexPathsForVisibleRows?.sorted().first else {
@@ -409,8 +1025,8 @@ public extension UITableView {
             )
         }()
 
-        semanticContentAttribute = layoutDirection.semanticContentAttribute
-        refreshVisibleContent(for: layoutDirection.uiLayoutDirection)
+        semanticContentAttribute = update.semanticContentAttribute
+        refreshVisibleContent(for: update)
         setNeedsLayout()
         layoutIfNeeded()
 
@@ -431,14 +1047,9 @@ public extension UITableView {
         setContentOffset(restoredContentOffset, animated: false)
     }
 
-    private func refreshVisibleContent(for layoutDirection: UIUserInterfaceLayoutDirection) {
+    private func refreshVisibleContent(for update: UIKitLocalizationUpdate) {
         for cell in visibleCells {
-            (cell as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(layoutDirection)
-            cell.setNeedsUpdateConfiguration()
-            cell.setNeedsUpdateConstraints()
-            cell.contentView.setNeedsUpdateConstraints()
-            cell.setNeedsLayout()
-            cell.contentView.setNeedsLayout()
+            UIKitReusableLocalizationDispatcher.apply(update, to: cell)
         }
 
         for section in 0..<numberOfSections {
@@ -448,17 +1059,16 @@ public extension UITableView {
             ]
 
             for view in visibleSupplementaryViews.compactMap({ $0 }) {
-                (view as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(layoutDirection)
-                view.setNeedsUpdateConfiguration()
-                view.setNeedsUpdateConstraints()
-                view.setNeedsLayout()
+                UIKitReusableLocalizationDispatcher.apply(update, to: view)
             }
         }
 
         for view in [tableHeaderView, tableFooterView].compactMap({ $0 }) {
-            (view as? UserInterfaceLayoutDirectionUpdating)?.reloadLayoutDirection(layoutDirection)
-            view.setNeedsUpdateConstraints()
-            view.setNeedsLayout()
+            UIViewLayoutDirectionUpdater.apply(
+                update,
+                to: UIViewLayoutDirectionTarget(view, policy: .followApplication)
+            )
+            (view as? UIKitLocalizationApplying)?.applyLocalization(update)
         }
     }
 
@@ -470,17 +1080,148 @@ public extension UITableView {
     }
 }
 
+/// A logical collection item and its visual position inside the adjusted
+/// scrollable viewport.
+///
+/// The leading distance is semantic rather than a raw physical `contentOffset.x`,
+/// so the same anchor can be restored after an LTR/RTL direction change or onto
+/// a replacement collection view.
+public struct UICollectionViewLocalizationAnchor: Equatable {
+    public let indexPath: IndexPath
+    public let offsetFromViewportTop: CGFloat
+    public let offsetFromViewportLeading: CGFloat
+
+    public init(
+        indexPath: IndexPath,
+        offsetFromViewportTop: CGFloat,
+        offsetFromViewportLeading: CGFloat
+    ) {
+        self.indexPath = indexPath
+        self.offsetFromViewportTop = offsetFromViewportTop
+        self.offsetFromViewportLeading = offsetFromViewportLeading
+    }
+}
+
 public extension UICollectionView {
+    /// Captures the first visible logical item and its position relative to the
+    /// adjusted viewport's top and semantic leading edges.
+    func captureLocalizationAnchor()
+        -> UICollectionViewLocalizationAnchor? {
+        layoutIfNeeded()
+        let visibleViewport = CGRect(
+            x: contentOffset.x + adjustedContentInset.left,
+            y: contentOffset.y + adjustedContentInset.top,
+            width: max(
+                0,
+                bounds.width
+                    - adjustedContentInset.left
+                    - adjustedContentInset.right
+            ),
+            height: max(
+                0,
+                bounds.height
+                    - adjustedContentInset.top
+                    - adjustedContentInset.bottom
+            )
+        )
+        let visibleAttributes = indexPathsForVisibleItems
+            .compactMap { layoutAttributesForItem(at: $0) }
+            .filter { $0.frame.intersects(visibleViewport) }
+        let attributes = visibleAttributes.min { lhs, rhs in
+            if abs(lhs.frame.minY - rhs.frame.minY) > 0.5 {
+                return lhs.frame.minY < rhs.frame.minY
+            }
+            if effectiveUserInterfaceLayoutDirection == .rightToLeft {
+                return lhs.frame.maxX > rhs.frame.maxX
+            }
+            return lhs.frame.minX < rhs.frame.minX
+        }
+        guard let attributes else {
+            return nil
+        }
+
+        let indexPath = attributes.indexPath
+        let frame = attributes.frame
+        let viewportTop = contentOffset.y + adjustedContentInset.top
+        let offsetFromViewportLeading: CGFloat
+        if effectiveUserInterfaceLayoutDirection == .rightToLeft {
+            let viewportRight = contentOffset.x
+                + bounds.width
+                - adjustedContentInset.right
+            offsetFromViewportLeading = viewportRight - frame.maxX
+        } else {
+            let viewportLeft = contentOffset.x + adjustedContentInset.left
+            offsetFromViewportLeading = frame.minX - viewportLeft
+        }
+
+        return UICollectionViewLocalizationAnchor(
+            indexPath: indexPath,
+            offsetFromViewportTop: frame.minY - viewportTop,
+            offsetFromViewportLeading: offsetFromViewportLeading
+        )
+    }
+
+    /// Restores a captured logical item to the same visual position after the
+    /// current layout has finished self-sizing its content.
+    @discardableResult
+    func restoreLocalizationAnchor(
+        _ anchor: UICollectionViewLocalizationAnchor
+    ) -> Bool {
+        guard containsItem(at: anchor.indexPath) else { return false }
+        layoutIfNeeded()
+        guard let attributes = layoutAttributesForItem(
+            at: anchor.indexPath
+        ) else {
+            return false
+        }
+
+        let frame = attributes.frame
+        let minimumOffsetX = -adjustedContentInset.left
+        let maximumOffsetX = max(
+            minimumOffsetX,
+            contentSize.width - bounds.width + adjustedContentInset.right
+        )
+        let minimumOffsetY = -adjustedContentInset.top
+        let maximumOffsetY = max(
+            minimumOffsetY,
+            contentSize.height - bounds.height + adjustedContentInset.bottom
+        )
+
+        let proposedOffsetX: CGFloat
+        if effectiveUserInterfaceLayoutDirection == .rightToLeft {
+            proposedOffsetX = frame.maxX
+                + anchor.offsetFromViewportLeading
+                - bounds.width
+                + adjustedContentInset.right
+        } else {
+            proposedOffsetX = frame.minX
+                - anchor.offsetFromViewportLeading
+                - adjustedContentInset.left
+        }
+        let proposedOffsetY = frame.minY
+            - anchor.offsetFromViewportTop
+            - adjustedContentInset.top
+
+        setContentOffset(
+            CGPoint(
+                x: min(max(proposedOffsetX, minimumOffsetX), maximumOffsetX),
+                y: min(max(proposedOffsetY, minimumOffsetY), maximumOffsetY)
+            ),
+            animated: false
+        )
+        return true
+    }
+
     /// 应用布局方向、使集合视图布局失效，并按需保留当前逻辑项目。
     ///
-    /// 横向列表、分页轮播和依赖语义边缘的布局，均可在 `reloadLayoutDirection(_:)`
+    /// 横向列表、分页轮播和依赖语义边缘的布局，均可在 `applyLocalization(_:)`
     /// 中调用此方法。切换方向时不应直接复用旧 `contentOffset`，因为物理偏移在不同
     /// 布局方向下含义不同；保留 `IndexPath` 更符合用户意图。
     ///
     /// ```swift
-    /// func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-    ///     collectionView.applyUserInterfaceLayoutDirection(
-    ///         direction.appLayoutDirection,
+    /// func applyLocalization(_ update: UIKitLocalizationUpdate) {
+    ///     collectionView.applyLocalization(
+    ///         update,
     ///         preservingVisibleItem: true,
     ///         rebuildingLayoutWith: makeCollectionViewLayout
     ///     )
@@ -495,18 +1236,23 @@ public extension UICollectionView {
     ///   - layoutDirection: 要应用的布局方向。
     ///   - shouldPreserveVisibleItem: 是否在布局失效后保持当前可见的逻辑项目。
     ///   - makeLayout: 方向改变时用于创建新集合布局的闭包；默认只失效当前布局。
-    func applyUserInterfaceLayoutDirection(
-        _ layoutDirection: AppUserInterfaceLayoutDirection,
+    func applyLocalization(
+        _ update: UIKitLocalizationUpdate,
         preservingVisibleItem shouldPreserveVisibleItem: Bool = true,
         rebuildingLayoutWith makeLayout: (() -> UICollectionViewLayout)? = nil
     ) {
-        let visibleIndexPath = shouldPreserveVisibleItem
-            ? indexPathsForVisibleItems.sorted().first
+        guard update.requiresLayoutDirectionRefresh else { return }
+        let layoutDirection = update.snapshot.layoutDirection
+        let visibleAnchor = shouldPreserveVisibleItem
+            ? captureLocalizationAnchor()
             : nil
         // 旧偏移使用物理坐标，切换方向后含义会反转，因此这里保留逻辑 `IndexPath`。
         // 首次布局没有可见项目时，定位到第一个逻辑项目，避免从右向左布局
         // 停在物理左端。
-        let targetIndexPath = visibleIndexPath ?? (shouldPreserveVisibleItem ? firstItemIndexPathForDirectionReset() : nil)
+        let targetIndexPath = visibleAnchor?.indexPath
+            ?? (shouldPreserveVisibleItem
+                ? firstItemIndexPathForDirectionReset()
+                : nil)
 
         let semanticContentAttribute = layoutDirection.semanticContentAttribute
         let directionChanged = self.semanticContentAttribute
@@ -520,16 +1266,35 @@ public extension UICollectionView {
         } else {
             collectionViewLayout.invalidateLayout()
         }
+        refreshVisibleContent(for: update)
         // 布局失效后立即执行布局，确保滚动操作使用新方向下的布局属性。
         layoutIfNeeded()
 
-        if let targetIndexPath {
+        if let visibleAnchor {
+            restoreLocalizationAnchor(visibleAnchor)
+        } else if let targetIndexPath {
             scrollToItem(
                 at: targetIndexPath,
                 // 从右向左布局的逻辑起点在右侧，从左向右布局的逻辑起点在左侧。
                 at: layoutDirection == .rightToLeft ? .right : .left,
                 animated: false
             )
+        }
+    }
+
+    private func refreshVisibleContent(for update: UIKitLocalizationUpdate) {
+        for cell in visibleCells {
+            UIKitReusableLocalizationDispatcher.apply(update, to: cell)
+        }
+
+        let supplementaryKinds = Set(
+            (collectionViewLayout.layoutAttributesForElements(in: bounds) ?? [])
+                .compactMap(\.representedElementKind)
+        )
+        for kind in supplementaryKinds {
+            for view in visibleSupplementaryViews(ofKind: kind) {
+                UIKitReusableLocalizationDispatcher.apply(update, to: view)
+            }
         }
     }
 
@@ -541,6 +1306,13 @@ public extension UICollectionView {
         }
 
         return nil
+    }
+
+    private func containsItem(at indexPath: IndexPath) -> Bool {
+        indexPath.section >= 0
+            && indexPath.section < numberOfSections
+            && indexPath.item >= 0
+            && indexPath.item < numberOfItems(inSection: indexPath.section)
     }
 }
 #endif

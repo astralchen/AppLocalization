@@ -13,6 +13,7 @@
 		24E3AC56DDDA4B2BB6B70BF9 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 1965C4D6BDCF4E0A9899A60D /* Localizable.xcstrings */; };
 		33D11F4B301FA2D200BDC06E /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = 33D11F4A301FA2D200BDC06E /* AppLocalization */; };
 		7737775F2D80479CB568F2BC /* UIKitDemoRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22206F1284E401FB5BF4445 /* UIKitDemoRepresentable.swift */; };
+		77F43B8F3037044100B8EF29 /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = 77F43B8E3037044100B8EF29 /* AppLocalization */; };
 		7FAB7D232A084EAA915B1C6D /* DemoRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903444C8CC7646E49183540E /* DemoRootView.swift */; };
 		9B0F5AA6F3B14CBCA5010001 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 9B0F5AA6F3B14CBCA5010002 /* InfoPlist.xcstrings */; };
 		A7C9E0115A5C4E138A010001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A7C9E0115A5C4E138A010002 /* Assets.xcassets */; };
@@ -42,6 +43,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				33D11F4B301FA2D200BDC06E /* AppLocalization in Frameworks */,
+				77F43B8F3037044100B8EF29 /* AppLocalization in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -129,7 +131,7 @@
 			);
 			mainGroup = B85B45A7972A4BEBA24EEE4D;
 			packageReferences = (
-				33D11F49301FA2D200BDC06E /* XCLocalSwiftPackageReference "../.." */,
+				77F43B8D3037044100B8EF29 /* XCLocalSwiftPackageReference "../../../AppLocalization" */,
 			);
 			productRefGroup = C50D72E06A3C432CA0D4A2C4 /* Products */;
 			projectDirPath = "";
@@ -381,14 +383,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		33D11F49301FA2D200BDC06E /* XCLocalSwiftPackageReference "../.." */ = {
+		77F43B8D3037044100B8EF29 /* XCLocalSwiftPackageReference "../../../AppLocalization" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../..;
+			relativePath = ../../../AppLocalization;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		33D11F4A301FA2D200BDC06E /* AppLocalization */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppLocalization;
+		};
+		77F43B8E3037044100B8EF29 /* AppLocalization */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppLocalization;
 		};

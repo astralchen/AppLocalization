@@ -42,20 +42,24 @@ The package implements in-app language switching without restarting the app. It 
 - Keep translation lookup behind `LocalizedStringResolver`.
 - Prefer `Localizable.xcstrings` for app UI strings and `InfoPlist.xcstrings` for bundle metadata such as `CFBundleDisplayName`. Legacy `.strings` files may appear as compiled build outputs, but source resources should use String Catalogs.
 - Keep app-name localization out of `LocalizedStringResolver`; iOS reads `CFBundleDisplayName` from Info.plist localization resources and it does not participate in in-app live switching.
-- Split text refresh from direction refresh:
+- Deliver text and direction as one `UIKitLocalizationUpdate`, while preserving this internal order:
   - text changes update labels, titles, buttons, placeholders, menus, and visible cells
   - direction changes update semantic content attributes, table/collection layouts, navigation side mapping, gestures, and transition directions
 - Default to lightweight UI reload. Root-window rebuild is an opt-in fallback for direction changes or system UI that cannot reliably update otherwise.
 
 ## UIKit Integration Rules
 
-- UIKit screens that display localized content should implement `LocalizedContentUpdating`.
-- Direction-sensitive UIKit screens should implement `UserInterfaceLayoutDirectionUpdating`.
-- Use `UIWindowSceneLocalizationCoordinator.reloadAllScenes(for:)` to refresh all connected scenes. Do not use `UIApplication.shared.keyWindow` or refresh only one foreground window.
-- `UIWindowSceneLocalizationCoordinator.reloadAllScenes(for:rebuildRootWindows:animateRootRebuild:)` may be used when root rebuild is required.
+- UIKit screens should implement `UIKitLocalizationApplying`; apply direction targets before text, menus, and configurations.
+- Create one `UIWindowSceneLocalizationCoordinator(localizationController:)`, explicitly register only app-owned Windows, unregister them on disconnect, and synchronize them on activation.
+- Do not use `UIView.appearance()` for runtime semantic changes, enumerate system Windows, or recurse through UIKit private subviews.
+- Use `UIViewLayoutDirectionTarget` with `.inherited`, `.followApplication`, `.followContainer`, or `.fixed(...)` at public component boundaries.
+- Use `.reattachExistingRoot` or `.recreateRoot` only as explicit recovery actions; recreation requires a registered root factory.
 - Presented chains must be included. Ordinary presented view controllers can reload; alerts, menus, context menus, and third-party SDK views may need dismiss/recreate behavior.
-- For `UITableView`, use `applyUserInterfaceLayoutDirection(_:preservingVisibleRow:)` when LTR/RTL changes. It refreshes visible reusable-view layout without calling `reloadData()`, so diffable content remains snapshot-driven. Custom cells with explicit or cached direction state should implement `UserInterfaceLayoutDirectionUpdating`.
-- For `UICollectionView`, use `applyUserInterfaceLayoutDirection(_:preservingVisibleItem:)` when LTR/RTL changes.
+- For `UITableView`, use `applyLocalization(_:preservingVisibleRow:)`; for `UICollectionView`, use `applyLocalization(_:preservingVisibleItem:rebuildingLayoutWith:)`.
+- Create a `UIKitLocalizationContext` from a snapshot provider. It may retain the provider, but must read a fresh snapshot for every configuration or attachment and must not cache a `LocalizationSnapshot` or `UIKitLocalizationUpdate`.
+- Use `UICollectionView.CellRegistration.localized` and `SupplementaryRegistration.localized` so direction restoration runs before the business handler. For UITableView, use the localized dequeue helpers before assigning configuration or text. Use `restoreOnAttachment` from `willDisplay`.
+- The reusable lifecycle API owns only public reusable boundaries. Cells update themselves and `contentView`; header/footer/supplementary views update themselves. Business components declare only special owned targets such as fixed LTR, playback, spatial, manual-frame, horizontal-scroll, or cached-direction nodes.
+- Reapply the latest snapshot when reusable or detached content materializes again. Every async completion must validate `LocalizationSnapshot.revision`.
 - Use `NavigationItemPlacement.leading/trailing` mapping instead of hard-coded left/right navigation items.
 
 ## SwiftUI Integration Rules
@@ -71,6 +75,7 @@ The package implements in-app language switching without restarting the app. It 
   - main title: `locale.nativeDisplayName`, stable and not affected by the current app language
   - subtitle: `locale.localizedDisplayName(preferredBy: localizationController.currentLocale)`, refreshed with the current app language
 - Render the main title using the candidate locale's own layout direction. This prevents Chinese or English names from being visually reordered under an RTL app environment.
+- For full-width UIKit labels, keep the title label's semantic direction tied to the candidate locale, but align both title and subtitle to the current app's semantic leading edge. Writing direction and row alignment are separate concerns.
 - Display the "follow system" row as a setting state, not as a real locale:
   - main title comes from `resolver.string("language.follow.system", bundle: .main)` and follows the current app language
   - subtitle shows the resolved effective app locale
@@ -147,12 +152,7 @@ struct MyApp: App {
                     return
                 }
 
-                UIWindowSceneLocalizationCoordinator().reloadAllScenes(
-                    for: change,
-                    // Root rebuild is a fallback for system UI and RTL/LTR changes, not the default path.
-                    rebuildRootWindows: change.layoutDirectionChanged,
-                    animateRootRebuild: true
-                )
+                services.localizationCoordinator.apply(change)
             }
         }
     }
@@ -239,7 +239,7 @@ struct SettingsView: View {
 ### 5. Reload UIKit Screens
 
 ```swift
-final class SettingsViewController: UIViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
+final class SettingsViewController: UIViewController, UIKitLocalizationApplying {
     private let resolver: LocalizedStringResolver
     private let localizationController: LocalizationController
     private let titleLabel = UILabel()
@@ -258,21 +258,22 @@ final class SettingsViewController: UIViewController, LocalizedContentUpdating, 
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        reloadLocalizedContent()
-        reloadLayoutDirection(localizationController.layoutDirection.uiLayoutDirection)
+        applyLocalization(.initial(snapshot: localizationController.currentSnapshot))
     }
 
-    func reloadLocalizedContent() {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        if update.requiresLayoutDirectionRefresh {
+            UIViewLayoutDirectionUpdater.apply(
+                update,
+                to: [UIViewLayoutDirectionTarget(confirmButton, policy: .followApplication)]
+            )
+        }
+        guard update.requiresLocalizedContentRefresh else { return }
         // UIKit values are one-time assignments, so set every visible string again.
         title = resolver.string("settings.title", bundle: .main)
         navigationItem.title = title
         titleLabel.text = resolver.string("settings.language.title", bundle: .main)
         confirmButton.setTitle(resolver.string("common.confirm", bundle: .main), for: .normal)
-    }
-
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        // Propagate semantic direction to this subtree.
-        view.semanticContentAttribute = direction.appLayoutDirection.semanticContentAttribute
     }
 }
 ```
@@ -293,8 +294,9 @@ struct SettingsUIKitBridge: UIViewControllerRepresentable {
         _ = context.environment.locale
         _ = context.environment.layoutDirection
 
-        viewController.reloadLocalizedContent()
-        viewController.reloadLayoutDirection(localizationController.layoutDirection.uiLayoutDirection)
+        viewController.applyLocalization(
+            .initial(snapshot: localizationController.currentSnapshot)
+        )
     }
 }
 ```
@@ -302,11 +304,11 @@ struct SettingsUIKitBridge: UIViewControllerRepresentable {
 ### 7. Refresh Direction-Sensitive Table And Collection Views
 
 ```swift
-final class SettingsViewController: UITableViewController, UserInterfaceLayoutDirectionUpdating {
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
+final class SettingsViewController: UITableViewController, UIKitLocalizationApplying {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
         // Refreshes visible reusable-view layout without calling reloadData().
-        tableView.applyUserInterfaceLayoutDirection(
-            direction.appLayoutDirection,
+        tableView.applyLocalization(
+            update,
             preservingVisibleRow: true
         )
     }
@@ -314,15 +316,13 @@ final class SettingsViewController: UITableViewController, UserInterfaceLayoutDi
 ```
 
 ```swift
-final class ProductsViewController: UIViewController, UserInterfaceLayoutDirectionUpdating {
+final class ProductsViewController: UIViewController, UIKitLocalizationApplying {
     private let collectionView: UICollectionView
 
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        let appDirection = direction.appLayoutDirection
-
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
         // Updates semanticContentAttribute, invalidates layout, and keeps the logical visible item.
-        collectionView.applyUserInterfaceLayoutDirection(
-            appDirection,
+        collectionView.applyLocalization(
+            update,
             preservingVisibleItem: true
         )
     }
@@ -362,20 +362,21 @@ final class CardSwipeController: UIViewController {
 ### 9. Configure Custom Navigation Direction
 
 ```swift
-final class DetailViewController: UIViewController, UserInterfaceLayoutDirectionUpdating {
+final class DetailViewController: UIViewController, UIKitLocalizationApplying {
     private let closeItem = UIBarButtonItem(systemItem: .close)
 
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        guard update.requiresLayoutDirectionRefresh else { return }
         // Keep intent semantic: close belongs on trailing, regardless of physical left/right.
         navigationItem.setBarButtonItem(
             closeItem,
             side: .trailing,
-            layoutDirection: direction
+            layoutDirection: update.layoutDirection
         )
 
         // Custom back assets must flip with the app direction.
         let chevronName = DirectionalLayout.backChevronSystemName(
-            layoutDirection: direction.appLayoutDirection
+            layoutDirection: update.snapshot.layoutDirection
         )
         navigationItem.backBarButtonItem = UIBarButtonItem(
             image: UIImage(systemName: chevronName),

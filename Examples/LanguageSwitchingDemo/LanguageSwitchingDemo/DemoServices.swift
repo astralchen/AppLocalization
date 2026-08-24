@@ -1,10 +1,14 @@
 import Foundation
 import AppLocalization
+import UIKit
 
 @MainActor
 final class DemoServices: ObservableObject {
     let localizationController: LocalizationController
     let resolver: LocalizedStringResolver
+    lazy var localizationCoordinator = UIWindowSceneLocalizationCoordinator(
+        localizationController: localizationController
+    )
 
     init() {
         let localizationController = LocalizationController(

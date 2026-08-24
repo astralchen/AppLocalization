@@ -12,8 +12,17 @@ private enum LocalizationBundleFixtureError: Error {
 
 final class LocalizedStringResolverTests: XCTestCase {
     @MainActor
-    func testUsesStringCatalogSourceResource() {
+    func testUsesCompiledStringCatalogResources() {
+        // CLI SwiftPM keeps the catalog source in a macOS test bundle, while
+        // Xcode's iOS build compiles it into localized `.strings` resources.
+        // Verify the artifact appropriate to each resource pipeline; the
+        // resolver tests below verify the runtime values on both platforms.
+#if os(macOS)
         XCTAssertNotNil(Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings"))
+#else
+        XCTAssertTrue(Bundle.module.localizations.contains("en"))
+        XCTAssertTrue(Bundle.module.localizations.contains("zh-Hans"))
+#endif
     }
 
     @MainActor

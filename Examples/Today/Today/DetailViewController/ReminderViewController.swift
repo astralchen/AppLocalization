@@ -5,7 +5,7 @@
 import UIKit
 import AppLocalization
 
-class ReminderViewController: UICollectionViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
+class ReminderViewController: UICollectionViewController, UIKitLocalizationApplying {
     private typealias DataSource = UICollectionViewDiffableDataSource<Section, Row>
     private typealias Snapshot = NSDiffableDataSourceSnapshot<Section, Row>
 
@@ -26,11 +26,7 @@ class ReminderViewController: UICollectionViewController, LocalizedContentUpdati
         self.reminder = reminder
         self.workingReminder = reminder
         self.onChange = onChange
-        var listConfiguration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-        listConfiguration.showsSeparators = false
-        listConfiguration.headerMode = .firstItemInSection
-        let listLayout = UICollectionViewCompositionalLayout.list(using: listConfiguration)
-        super.init(collectionViewLayout: listLayout)
+        super.init(collectionViewLayout: Self.makeListLayout())
     }
 
     required init?(coder: NSCoder) {
@@ -39,7 +35,13 @@ class ReminderViewController: UICollectionViewController, LocalizedContentUpdati
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let cellRegistration = UICollectionView.CellRegistration(handler: cellRegistrationHandler)
+        let cellRegistration = UICollectionView.CellRegistration<
+            UICollectionViewListCell,
+            Row
+        >.localized(
+            using: services.localizationContext,
+            handler: cellRegistrationHandler
+        )
         dataSource = DataSource(collectionView: collectionView) {
             (collectionView: UICollectionView, indexPath: IndexPath, itemIdentifier: Row) in
             return collectionView.dequeueConfiguredReusableCell(
@@ -52,8 +54,7 @@ class ReminderViewController: UICollectionViewController, LocalizedContentUpdati
         editDoneButton.target = self
         editDoneButton.action = #selector(didToggleEditing)
 
-        reloadLocalizedContent()
-        reloadLayoutDirection(services.localizationController.layoutDirection.uiLayoutDirection)
+        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
         if isEditing {
             updateSnapshotForEditing()
         } else {
@@ -72,8 +73,15 @@ class ReminderViewController: UICollectionViewController, LocalizedContentUpdati
                 prepareForViewing()
             }
         }
-        reloadLocalizedContent()
-        reloadLayoutDirection(services.localizationController.layoutDirection.uiLayoutDirection)
+        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
+    }
+
+    override func collectionView(
+        _ collectionView: UICollectionView,
+        willDisplay cell: UICollectionViewCell,
+        forItemAt indexPath: IndexPath
+    ) {
+        services.localizationContext.restoreOnAttachment(cell)
     }
 
     func cellRegistrationHandler(cell: UICollectionViewListCell, indexPath: IndexPath, row: Row) {
@@ -108,7 +116,15 @@ class ReminderViewController: UICollectionViewController, LocalizedContentUpdati
         setEditing(!isEditing, animated: true)
     }
 
-    func reloadLocalizedContent() {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        if update.requiresLayoutDirectionRefresh {
+            collectionView.applyLocalization(
+                update,
+                rebuildingLayoutWith: Self.makeListLayout
+            )
+            configureNavigationButtons(layoutDirection: update.layoutDirection)
+        }
+        guard update.requiresLocalizedContentRefresh else { return }
         title = services.resolver.string(
             isAddingNewReminder ? "reminder.add.title" : "reminder.detail.title",
             bundle: .main
@@ -127,13 +143,6 @@ class ReminderViewController: UICollectionViewController, LocalizedContentUpdati
                 updateSnapshotForViewing()
             }
         }
-    }
-
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        let appDirection = direction.appLayoutDirection
-        view.semanticContentAttribute = appDirection.semanticContentAttribute
-        collectionView.applyUserInterfaceLayoutDirection(appDirection)
-        configureNavigationButtons(layoutDirection: direction)
     }
 
     private func prepareForEditing() {
@@ -212,5 +221,12 @@ class ReminderViewController: UICollectionViewController, LocalizedContentUpdati
                 layoutDirection: layoutDirection
             )
         }
+    }
+
+    private static func makeListLayout() -> UICollectionViewCompositionalLayout {
+        var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+        configuration.showsSeparators = false
+        configuration.headerMode = .firstItemInSection
+        return UICollectionViewCompositionalLayout.list(using: configuration)
     }
 }

@@ -13,8 +13,8 @@ import Foundation
 public final class LocalizationController: ObservableObject {
     /// 应用内区域设置发生变化时发布的通知。
     ///
-    /// UIKit 多窗口刷新通常监听这个通知，然后调用
-    /// `UIWindowSceneLocalizationCoordinator.reloadAllScenes(for:)`。
+    /// UIKit 多窗口刷新通常监听这个通知，然后将变更交给已注册窗口的
+    /// `UIWindowSceneLocalizationCoordinator.apply(_:)`。
     nonisolated public static let localizationDidChangeNotification = Notification.Name("LocalizationController.localizationDidChange")
 
     /// 通知 `userInfo` 中用于保存 `LocalizationChange` 的键。
@@ -49,6 +49,17 @@ public final class LocalizationController: ObservableObject {
     /// 这个状态和 `currentLocale` 分开保存，因为“跟随系统解析到简中”和“用户手动
     /// 选择简中”最终文案一样，但设置页的勾选位置不同。
     @Published public private(set) var followsSystemLocale: Bool
+
+    private var revision: UInt64 = 0
+
+    /// 当前应用内本地化状态的不可变快照。
+    public var currentSnapshot: LocalizationSnapshot {
+        LocalizationSnapshot(
+            locale: currentLocale,
+            followsSystemLocale: followsSystemLocale,
+            revision: revision
+        )
+    }
 
     /// 使用受支持的区域设置创建本地化控制器。
     ///
@@ -225,20 +236,24 @@ public final class LocalizationController: ObservableObject {
             return false
         }
 
-        let previousLocale = currentLocale
+        let previousSnapshot = currentSnapshot
         followsSystemLocale = nextFollowsSystemLocale
         currentLocale = nextLocale
+        revision &+= 1
         if let persistedIdentifier {
             preferenceStore.saveLocaleIdentifier(persistedIdentifier)
         }
-        postChange(from: previousLocale, to: nextLocale)
+        postChange(from: previousSnapshot, to: currentSnapshot)
         return true
     }
 
-    private func postChange(from previousLocale: AppLocale, to currentLocale: AppLocale) {
+    private func postChange(
+        from previous: LocalizationSnapshot,
+        to current: LocalizationSnapshot
+    ) {
         let change = LocalizationChange(
-            previousLocale: previousLocale,
-            currentLocale: currentLocale
+            previous: previous,
+            current: current
         )
         notificationCenter.post(
             name: Self.localizationDidChangeNotification,

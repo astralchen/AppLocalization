@@ -17,23 +17,27 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
         let cellRequestCount = dataSource.cellRequestCount
         let layoutPassCount = cell.layoutPassCount
 
-        tableView.applyUserInterfaceLayoutDirection(
-            .rightToLeft,
+        tableView.applyLocalization(
+            makeUpdate(.rightToLeft),
             preservingVisibleRow: false
         )
 
         XCTAssertEqual(tableView.semanticContentAttribute, .forceRightToLeft)
+        XCTAssertEqual(cell.semanticContentAttribute, .forceRightToLeft)
+        XCTAssertEqual(cell.contentView.semanticContentAttribute, .forceRightToLeft)
         XCTAssertEqual(tableView.reloadDataCallCount, reloadCount)
         XCTAssertEqual(dataSource.cellRequestCount, cellRequestCount)
         XCTAssertGreaterThan(cell.layoutPassCount, layoutPassCount)
         XCTAssertEqual(cell.observedLayoutDirections.last, .rightToLeft)
 
-        tableView.applyUserInterfaceLayoutDirection(
-            .leftToRight,
+        tableView.applyLocalization(
+            makeUpdate(.leftToRight),
             preservingVisibleRow: false
         )
 
         XCTAssertEqual(tableView.semanticContentAttribute, .forceLeftToRight)
+        XCTAssertEqual(cell.semanticContentAttribute, .forceLeftToRight)
+        XCTAssertEqual(cell.contentView.semanticContentAttribute, .forceLeftToRight)
         XCTAssertEqual(tableView.reloadDataCallCount, reloadCount)
         XCTAssertEqual(dataSource.cellRequestCount, cellRequestCount)
     }
@@ -50,7 +54,7 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
         let layoutPassCount = cell.layoutPassCount
         let configurationUpdateCount = cell.configurationUpdateCount
 
-        tableView.applyUserInterfaceLayoutDirection(.rightToLeft)
+        tableView.applyLocalization(makeUpdate(.rightToLeft))
 
         XCTAssertEqual(try XCTUnwrap(cell.receivedDirections.last), .rightToLeft)
         XCTAssertEqual(cell.semanticContentAttribute, .forceRightToLeft)
@@ -72,7 +76,7 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
         let layoutPassCount = header.layoutPassCount
         let configurationUpdateCount = header.configurationUpdateCount
 
-        tableView.applyUserInterfaceLayoutDirection(.rightToLeft)
+        tableView.applyLocalization(makeUpdate(.rightToLeft))
 
         XCTAssertEqual(try XCTUnwrap(header.receivedDirections.last), .rightToLeft)
         XCTAssertGreaterThan(header.layoutPassCount, layoutPassCount)
@@ -93,7 +97,7 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
         let headerLayoutPassCount = header.layoutPassCount
         let footerLayoutPassCount = footer.layoutPassCount
 
-        tableView.applyUserInterfaceLayoutDirection(.rightToLeft)
+        tableView.applyLocalization(makeUpdate(.rightToLeft))
 
         XCTAssertEqual(header.receivedDirections.last, .rightToLeft)
         XCTAssertEqual(footer.receivedDirections.last, .rightToLeft)
@@ -131,7 +135,7 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
             tableView.contentOffset = shiftedOffset
         }
 
-        tableView.applyUserInterfaceLayoutDirection(.rightToLeft)
+        tableView.applyLocalization(makeUpdate(.rightToLeft))
 
         let restoredRows = try XCTUnwrap(tableView.indexPathsForVisibleRows)
         XCTAssertTrue(restoredRows.contains(originalAnchor))
@@ -159,7 +163,7 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
         tableView.layoutIfNeeded()
         let reloadCount = tableView.reloadDataCallCount
 
-        tableView.applyUserInterfaceLayoutDirection(.rightToLeft)
+        tableView.applyLocalization(makeUpdate(.rightToLeft))
 
         XCTAssertEqual(tableView.reloadDataCallCount, reloadCount)
         XCTAssertEqual(dataSource.snapshot().sectionIdentifiers, [0])
@@ -172,7 +176,7 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
         let tableView = fixture.tableView
         tableView.dataSource = dataSource
 
-        tableView.applyUserInterfaceLayoutDirection(.rightToLeft)
+        tableView.applyLocalization(makeUpdate(.rightToLeft))
 
         XCTAssertEqual(tableView.semanticContentAttribute, .forceRightToLeft)
         XCTAssertTrue(tableView.indexPathsForVisibleRows?.isEmpty ?? true)
@@ -180,6 +184,19 @@ final class UITableViewLayoutDirectionTests: XCTestCase {
 
     private func makeTableFixture() -> TableFixture {
         TableFixture(frame: CGRect(x: 0, y: 0, width: 320, height: 200))
+    }
+
+    private func makeUpdate(
+        _ direction: AppUserInterfaceLayoutDirection
+    ) -> UIKitLocalizationUpdate {
+        UIKitLocalizationUpdate(
+            snapshot: LocalizationSnapshot(
+                locale: direction == .rightToLeft ? .arabic : .englishUS,
+                followsSystemLocale: false,
+                revision: 1
+            ),
+            reasons: [.layoutDirection]
+        )
     }
 }
 
@@ -226,14 +243,14 @@ private final class DirectionObservingCell: UITableViewCell {
 }
 
 @MainActor
-private final class DirectionTrackingCell: UITableViewCell, UserInterfaceLayoutDirectionUpdating {
+private final class DirectionTrackingCell: UITableViewCell, UIKitLocalizationApplying {
     private(set) var receivedDirections: [UIUserInterfaceLayoutDirection] = []
     private(set) var layoutPassCount = 0
     private(set) var configurationUpdateCount = 0
 
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        receivedDirections.append(direction)
-        semanticContentAttribute = direction.appLayoutDirection.semanticContentAttribute
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        receivedDirections.append(update.layoutDirection)
+        semanticContentAttribute = update.semanticContentAttribute
     }
 
     override func updateConfiguration(using state: UICellConfigurationState) {
@@ -249,14 +266,14 @@ private final class DirectionTrackingCell: UITableViewCell, UserInterfaceLayoutD
 
 @MainActor
 private final class DirectionTrackingHeaderFooterView: UITableViewHeaderFooterView,
-    UserInterfaceLayoutDirectionUpdating {
+    UIKitLocalizationApplying {
     private(set) var receivedDirections: [UIUserInterfaceLayoutDirection] = []
     private(set) var layoutPassCount = 0
     private(set) var configurationUpdateCount = 0
 
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        receivedDirections.append(direction)
-        semanticContentAttribute = direction.appLayoutDirection.semanticContentAttribute
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        receivedDirections.append(update.layoutDirection)
+        semanticContentAttribute = update.semanticContentAttribute
     }
 
     override func updateConfiguration(using state: UIViewConfigurationState) {
@@ -288,13 +305,13 @@ private final class TableHeaderDelegate: NSObject, UITableViewDelegate {
 }
 
 @MainActor
-private final class DirectionTrackingView: UIView, UserInterfaceLayoutDirectionUpdating {
+private final class DirectionTrackingView: UIView, UIKitLocalizationApplying {
     private(set) var receivedDirections: [UIUserInterfaceLayoutDirection] = []
     private(set) var layoutPassCount = 0
 
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        receivedDirections.append(direction)
-        semanticContentAttribute = direction.appLayoutDirection.semanticContentAttribute
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        receivedDirections.append(update.layoutDirection)
+        semanticContentAttribute = update.semanticContentAttribute
     }
 
     override func layoutSubviews() {

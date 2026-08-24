@@ -5,7 +5,7 @@
 import UIKit
 import AppLocalization
 
-final class SettingsViewController: UITableViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
+final class SettingsViewController: UITableViewController, UIKitLocalizationApplying {
     private enum Row: Hashable {
         case followSystem
         case locale(AppLocale)
@@ -33,11 +33,19 @@ final class SettingsViewController: UITableViewController, LocalizedContentUpdat
         doneButton.style = .done
         doneButton.target = self
         doneButton.action = #selector(close)
-        reloadLocalizedContent()
-        reloadLayoutDirection(services.localizationController.layoutDirection.uiLayoutDirection)
+        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
     }
 
-    func reloadLocalizedContent() {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        if update.requiresLayoutDirectionRefresh {
+            tableView.applyLocalization(update, preservingVisibleRow: true)
+            navigationItem.setBarButtonItem(
+                doneButton,
+                side: .trailing,
+                layoutDirection: update.layoutDirection
+            )
+        }
+        guard update.requiresLocalizedContentRefresh else { return }
         title = services.resolver.string("settings.title", bundle: .main)
         navigationItem.title = title
         doneButton.title = services.resolver.string("common.done", bundle: .main)
@@ -45,32 +53,16 @@ final class SettingsViewController: UITableViewController, LocalizedContentUpdat
         tableView.reloadData()
     }
 
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        let appDirection = direction.appLayoutDirection
-        view.semanticContentAttribute = appDirection.semanticContentAttribute
-        tableView.applyUserInterfaceLayoutDirection(
-            appDirection,
-            preservingVisibleRow: true
-        )
-        navigationController?.view.semanticContentAttribute = appDirection.semanticContentAttribute
-        navigationItem.setBarButtonItem(
-            doneButton,
-            side: .trailing,
-            layoutDirection: direction
-        )
-    }
-
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         rows.count
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(
+        let cell: LanguageOptionCell = tableView.dequeueLocalizedReusableCell(
             withIdentifier: LanguageOptionCell.reuseIdentifier,
-            for: indexPath
-        ) as? LanguageOptionCell else {
-            return UITableViewCell()
-        }
+            for: indexPath,
+            using: services.localizationContext
+        )
 
         switch rows[indexPath.row] {
         case .followSystem:
@@ -99,6 +91,14 @@ final class SettingsViewController: UITableViewController, LocalizedContentUpdat
         return cell
     }
 
+    override func tableView(
+        _ tableView: UITableView,
+        willDisplay cell: UITableViewCell,
+        forRowAt indexPath: IndexPath
+    ) {
+        services.localizationContext.restoreOnAttachment(cell)
+    }
+
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         defer {
             tableView.deselectRow(at: indexPath, animated: true)
@@ -117,7 +117,7 @@ final class SettingsViewController: UITableViewController, LocalizedContentUpdat
     }
 }
 
-private final class LanguageOptionCell: UITableViewCell, UserInterfaceLayoutDirectionUpdating {
+private final class LanguageOptionCell: UITableViewCell, UIKitLocalizationApplying {
     static let reuseIdentifier = String(describing: LanguageOptionCell.self)
 
     private let titleLabel = UILabel()
@@ -158,8 +158,8 @@ private final class LanguageOptionCell: UITableViewCell, UserInterfaceLayoutDire
         applyLayoutDirections()
     }
 
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        appLayoutDirection = direction.appLayoutDirection
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        appLayoutDirection = update.snapshot.layoutDirection
         applyLayoutDirections()
     }
 
@@ -167,8 +167,11 @@ private final class LanguageOptionCell: UITableViewCell, UserInterfaceLayoutDire
         semanticContentAttribute = appLayoutDirection.semanticContentAttribute
         contentView.semanticContentAttribute = appLayoutDirection.semanticContentAttribute
 
+        // 候选语言只决定标题文本自身的 bidi 书写语义；标题与副标题仍应对齐到
+        // 当前 App 的语义前缘。否则在中文界面中，Arabic 标题会独自靠右，
+        // 与同一行靠左的中文副标题视觉断裂。
         titleLabel.semanticContentAttribute = titleLayoutDirection.semanticContentAttribute
-        titleLabel.textAlignment = titleLayoutDirection.textAlignment
+        titleLabel.textAlignment = appLayoutDirection.textAlignment
 
         subtitleLabel.semanticContentAttribute = appLayoutDirection.semanticContentAttribute
         subtitleLabel.textAlignment = appLayoutDirection.textAlignment

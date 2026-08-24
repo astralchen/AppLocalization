@@ -17,6 +17,12 @@ struct LanguageSwitchingDemoApp: App {
                 services.localizationController,
                 resetContentOnLayoutDirectionChange: true
             )
+            .background(
+                WindowLocalizationRegistrationView(
+                    coordinator: services.localizationCoordinator
+                )
+                .frame(width: 0, height: 0)
+            )
             .onReceive(
                 NotificationCenter.default.publisher(
                     for: LocalizationController.localizationDidChangeNotification,
@@ -26,13 +32,8 @@ struct LanguageSwitchingDemoApp: App {
                 guard let change = notification.userInfo?[LocalizationController.localizationChangeUserInfoKey] as? LocalizationChange else {
                     return
                 }
-                UIWindowSceneLocalizationCoordinator().reloadAllScenes(
-                    for: change,
-                    // SwiftUI 环境会按需重建内容，无需同时重设窗口的根视图控制器。
-                    rebuildRootWindows: false,
-                    animateRootRebuild: true,
-                    updateAppearanceProxies: false
-                )
+                // SwiftUI 环境负责根内容重算；协调器负责已经物化的 UIKit 边界。
+                services.localizationCoordinator.apply(change)
             }
         }
     }

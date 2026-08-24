@@ -13,16 +13,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 故事板会自动创建窗口并将其关联到传入的窗口场景。
         guard let _ = (scene as? UIWindowScene) else { return }
 
-        let services = TodayLocalizationServices.shared
-        window?.semanticContentAttribute = services.localizationController.layoutDirection.semanticContentAttribute
+        guard let window else { return }
+        TodayLocalizationServices.shared.localizationCoordinator.register(window: window)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
-        // 在此释放场景下次连接时可以重新创建的资源。
+        if let window {
+            TodayLocalizationServices.shared.localizationCoordinator.unregister(window: window)
+        }
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        // 在此恢复场景处于非活跃状态时暂停的任务。
+        if let window {
+            TodayLocalizationServices.shared.localizationCoordinator.synchronize(window: window)
+        }
     }
 
     func sceneWillResignActive(_ scene: UIScene) {

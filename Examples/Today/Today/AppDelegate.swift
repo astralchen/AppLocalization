@@ -8,7 +8,6 @@ import AppLocalization
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-  private let localizationCoordinator = UIWindowSceneLocalizationCoordinator()
   private var localizationObserver: NSObjectProtocol?
 
   func application(
@@ -35,7 +34,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       }
 
       Task { @MainActor [weak self] in
-        self?.reloadAllScenes(for: change)
+        guard change.current.revision
+            == TodayLocalizationServices.shared.localizationController.currentSnapshot.revision
+        else {
+          return
+        }
+        self?.applyLocalizationChange(change)
       }
     }
     return true
@@ -64,13 +68,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // 在此释放被用户丢弃场景所独占的资源。
   }
 
-  private func reloadAllScenes(for change: LocalizationChange) {
-    localizationCoordinator.reloadAllScenes(
-      for: change,
-      rebuildRootWindows: false,
-      animateRootRebuild: true,
-      updateAppearanceProxies: false
-    )
+  private func applyLocalizationChange(_ change: LocalizationChange) {
+    TodayLocalizationServices.shared.localizationCoordinator.apply(change)
   }
 
 }

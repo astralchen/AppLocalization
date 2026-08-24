@@ -1,7 +1,7 @@
 import UIKit
 import AppLocalization
 
-final class UIKitLocalizationDemoViewController: UIViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
+final class UIKitLocalizationDemoViewController: UIViewController, UIKitLocalizationApplying {
     private let localizationController: LocalizationController
     private let resolver: LocalizedStringResolver
     private let titleLabel = UILabel()
@@ -75,11 +75,22 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
             collectionView.heightAnchor.constraint(equalToConstant: DemoSurfaceLayout.collectionHeight)
         ])
 
-        reloadLocalizedContent()
-        reloadLayoutDirection(localizationController.layoutDirection.uiLayoutDirection)
+        applyLocalization(.initial(snapshot: localizationController.currentSnapshot))
     }
 
-    func reloadLocalizedContent() {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        if update.requiresLayoutDirectionRefresh {
+            UIViewLayoutDirectionUpdater.apply(
+                update,
+                to: [
+                    UIViewLayoutDirectionTarget(modalButton, policy: .followApplication),
+                    UIViewLayoutDirectionTarget(pushButton, policy: .followApplication),
+                    UIViewLayoutDirectionTarget(collectionView, policy: .followApplication)
+                ]
+            )
+            collectionView.applyLocalization(update)
+        }
+        guard update.requiresLocalizedContentRefresh else { return }
         title = resolver.string("uikit.title", bundle: .main)
         navigationItem.title = title
         titleLabel.text = resolver.string("uikit.title", bundle: .main)
@@ -87,12 +98,6 @@ final class UIKitLocalizationDemoViewController: UIViewController, LocalizedCont
         modalButton.setTitle(resolver.string("show.modal", bundle: .main), for: .normal)
         pushButton.setTitle(resolver.string("pop.open", bundle: .main), for: .normal)
         collectionView.reloadData()
-    }
-
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        let appDirection = direction.appLayoutDirection
-        view.semanticContentAttribute = appDirection.semanticContentAttribute
-        collectionView.applyUserInterfaceLayoutDirection(appDirection)
     }
 
     @objc private func openPushPage() {
@@ -177,7 +182,7 @@ private final class LanguageDemoCollectionViewCell: UICollectionViewCell {
     }
 }
 
-final class DemoModalViewController: UIViewController, LocalizedContentUpdating, UserInterfaceLayoutDirectionUpdating {
+final class DemoModalViewController: UIViewController, UIKitLocalizationApplying {
     private let localizationController: LocalizationController
     private let resolver: LocalizedStringResolver
     private let messageLabel = UILabel()
@@ -214,24 +219,22 @@ final class DemoModalViewController: UIViewController, LocalizedContentUpdating,
             messageLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
         ])
 
-        reloadLocalizedContent()
-        reloadLayoutDirection(localizationController.layoutDirection.uiLayoutDirection)
+        applyLocalization(.initial(snapshot: localizationController.currentSnapshot))
     }
 
-    func reloadLocalizedContent() {
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        if update.requiresLayoutDirectionRefresh {
+            navigationItem.setBarButtonItem(
+                closeButton,
+                side: .leading,
+                layoutDirection: update.layoutDirection
+            )
+        }
+        guard update.requiresLocalizedContentRefresh else { return }
         title = resolver.string("modal.title", bundle: .main)
         navigationItem.title = title
         closeButton.title = resolver.string("close", bundle: .main)
         messageLabel.text = resolver.string("modal.message", bundle: .main)
-    }
-
-    func reloadLayoutDirection(_ direction: UIUserInterfaceLayoutDirection) {
-        view.semanticContentAttribute = direction.appLayoutDirection.semanticContentAttribute
-        navigationItem.setBarButtonItem(
-            closeButton,
-            side: .leading,
-            layoutDirection: direction
-        )
     }
 
     @objc private func close() {

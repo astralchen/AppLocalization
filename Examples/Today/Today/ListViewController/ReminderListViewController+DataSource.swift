@@ -3,6 +3,7 @@
  */
 
 import UIKit
+import AppLocalization
 
 extension ReminderListViewController {
     typealias DataSource = UICollectionViewDiffableDataSource<Int, Reminder.ID>

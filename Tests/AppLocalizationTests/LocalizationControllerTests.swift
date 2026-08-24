@@ -59,10 +59,13 @@ final class LocalizationControllerTests: XCTestCase {
         XCTAssertTrue(didChange)
         XCTAssertEqual(center.currentLocale, .arabic)
         XCTAssertEqual(store.localeIdentifier, "ar")
-        XCTAssertEqual(observedChange.get()?.previousLocale, .simplifiedChinese)
-        XCTAssertEqual(observedChange.get()?.currentLocale, .arabic)
-        XCTAssertEqual(observedChange.get()?.textChanged, true)
+        XCTAssertEqual(observedChange.get()?.previous.locale, .simplifiedChinese)
+        XCTAssertEqual(observedChange.get()?.current.locale, .arabic)
+        XCTAssertEqual(observedChange.get()?.localeChanged, true)
         XCTAssertEqual(observedChange.get()?.layoutDirectionChanged, true)
+        XCTAssertEqual(observedChange.get()?.previous.revision, 0)
+        XCTAssertEqual(observedChange.get()?.current.revision, 1)
+        XCTAssertEqual(center.currentSnapshot.revision, 1)
 
         notificationCenter.removeObserver(token)
     }
@@ -146,8 +149,8 @@ final class LocalizationControllerTests: XCTestCase {
         XCTAssertTrue(center.followsSystemLocale)
         XCTAssertEqual(center.currentLocale, .arabic)
         XCTAssertEqual(store.localeIdentifier, LocalizationController.followSystemLocaleIdentifier)
-        XCTAssertEqual(observedChange.get()?.previousLocale, .englishUS)
-        XCTAssertEqual(observedChange.get()?.currentLocale, .arabic)
+        XCTAssertEqual(observedChange.get()?.previous.locale, .englishUS)
+        XCTAssertEqual(observedChange.get()?.current.locale, .arabic)
 
         notificationCenter.removeObserver(token)
     }
@@ -167,6 +170,7 @@ final class LocalizationControllerTests: XCTestCase {
         XCTAssertFalse(center.followsSystemLocale)
         XCTAssertEqual(center.currentLocale, .simplifiedChinese)
         XCTAssertEqual(store.localeIdentifier, "zh-Hans")
+        XCTAssertEqual(center.currentSnapshot.revision, 1)
     }
 
     @MainActor

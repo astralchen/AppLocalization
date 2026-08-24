@@ -5,7 +5,8 @@ Open `LanguageSwitchingDemo.xcodeproj` in Xcode and run the `LanguageSwitchingDe
 This sample app demonstrates:
 
 - SwiftUI live localization refresh through `.locale` and `.layoutDirection`.
-- UIKit refresh through `LocalizedContentUpdating` and `UserInterfaceLayoutDirectionUpdating`.
+- Atomic UIKit refresh through `UIKitLocalizationApplying` and explicit `UIViewLayoutDirectionTarget` policies.
+- Explicit weak Window registration, optional caller-filtered scene discovery, revision checks, and attachment-time resynchronization.
 - Presented modal refresh through the presented view controller chain.
 - `UICollectionView` direction invalidation when switching between LTR and RTL.
 - Semantic gesture direction instead of hard-coded physical left/right checks.

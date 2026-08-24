@@ -253,31 +253,21 @@ private struct DemoSheetView: View {
     @ObservedObject var localizationController: LocalizationController
     let resolver: LocalizedStringResolver
 
-    private var closeButtonPlacement: ToolbarItemPlacement {
-        switch DirectionalLayout.physicalEdge(
-            for: .leading,
-            layoutDirection: localizationController.layoutDirection
-        ) {
-        case .left:
-            return .navigationBarLeading
-        case .right:
-            return .navigationBarTrailing
-        }
-    }
-
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 16) {
                 Text(resolver.string("sheet.message", bundle: .main))
                     .font(.body)
+                    .multilineTextAlignment(.leading)
                 Spacer()
             }
             .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
             .navigationTitle(resolver.string("sheet.title", bundle: .main))
             .toolbar {
-                // SwiftUI 根据系统方向解析工具栏位置，因此需将应用的语义前缘
-                // 映射到物理位置。
-                ToolbarItem(placement: closeButtonPlacement) {
+                // Sheet 边界已经显式注入应用方向，因此保持语义前缘即可；
+                // SwiftUI 会在 LTR/RTL 下分别解析到左侧/右侧。
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button(resolver.string("close", bundle: .main)) {
                         dismiss()
                     }
@@ -291,6 +281,15 @@ private struct DemoSheetView: View {
                 .frame(width: 0, height: 0)
             )
         }
+        // Sheet content may be materialized after the last app-wide change
+        // notification. Inject the current values at this presentation
+        // boundary instead of relying on the presenting hierarchy to carry
+        // them into a newly created host.
+        .environment(\.locale, localizationController.locale)
+        .environment(
+            \.layoutDirection,
+            localizationController.layoutDirection.swiftUILayoutDirection
+        )
     }
 }
 
