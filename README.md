@@ -294,17 +294,25 @@ func tableView(
 }
 ```
 
-`UICollectionView.CellRegistration.localized` 在业务 handler 之前自动恢复最新状态；
-handler 只配置内容和外观，系统 `UICollectionViewListCell` 不需要方向恢复子类：
+`UIKitLocalizationContext.makeCellRegistration` 在业务 handler 之前自动恢复最新状态；
+handler 的参数类型会推断 Cell 与 Item，业务代码只配置内容和外观，系统
+`UICollectionViewListCell` 不需要方向恢复子类：
 
 ```swift
-let registration = UICollectionView.CellRegistration<UICollectionViewListCell, Item>
-    .localized(using: localizationContext) { cell, _, item in
-        var configuration = cell.defaultContentConfiguration()
-        configuration.text = item.title
-        cell.contentConfiguration = configuration
-        cell.accessories = [.disclosureIndicator()]
-    }
+let registration = localizationContext.makeCellRegistration(
+    handler: cellRegistrationHandler
+)
+
+func cellRegistrationHandler(
+    cell: UICollectionViewListCell,
+    indexPath: IndexPath,
+    item: Item
+) {
+    var configuration = cell.defaultContentConfiguration()
+    configuration.text = item.title
+    cell.contentConfiguration = configuration
+    cell.accessories = [.disclosureIndicator()]
+}
 
 func collectionView(
     _ collectionView: UICollectionView,
@@ -318,13 +326,13 @@ func collectionView(
 Collection supplementary 使用对称的 registration 包装：
 
 ```swift
-let headerRegistration = UICollectionView.SupplementaryRegistration<HeaderView>
-    .localized(
+let headerRegistration: UICollectionView.SupplementaryRegistration<HeaderView> =
+    localizationContext.makeSupplementaryRegistration(
         elementKind: UICollectionView.elementKindSectionHeader,
-        using: localizationContext
-    ) { header, _, indexPath in
-        header.configure(section: indexPath.section)
-    }
+        handler: { header, _, indexPath in
+            header.configure(section: indexPath.section)
+        }
+    )
 
 func collectionView(
     _ collectionView: UICollectionView,

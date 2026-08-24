@@ -35,11 +35,7 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let cellRegistration = UICollectionView.CellRegistration<
-            UICollectionViewListCell,
-            Row
-        >.localized(
-            using: services.localizationContext,
+        let cellRegistration = services.localizationContext.makeCellRegistration(
             handler: cellRegistrationHandler
         )
         dataSource = DataSource(collectionView: collectionView) {

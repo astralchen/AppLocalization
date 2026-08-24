@@ -423,64 +423,66 @@ public struct UIKitLocalizationContext {
             policy: policy
         )
     }
-}
 
-@MainActor
-public extension UICollectionView.CellRegistration {
     /// 创建一个在业务 handler 之前恢复最新本地化状态的 Cell registration。
-    static func localized(
-        using context: UIKitLocalizationContext,
+    ///
+    /// `Cell` 和 `Item` 通常可以从 handler 的参数类型自动推断，无需在调用处重复
+    /// 声明 registration 泛型。Registration 应在 controller 初始化或 `viewDidLoad`
+    /// 中创建，不要在 diffable data source 的 cell provider 内按次创建。
+    public func makeCellRegistration<Cell: UICollectionViewCell, Item>(
         policy: UIViewLayoutDirectionPolicy = .followApplication,
-        handler: @escaping Handler
-    ) -> Self {
-        Self { cell, indexPath, item in
-            context.restoreBeforeConfiguration(cell, policy: policy)
+        handler: @escaping UICollectionView.CellRegistration<Cell, Item>.Handler
+    ) -> UICollectionView.CellRegistration<Cell, Item> {
+        UICollectionView.CellRegistration<Cell, Item> { cell, indexPath, item in
+            restoreBeforeConfiguration(cell, policy: policy)
             handler(cell, indexPath, item)
         }
     }
 
     /// 创建一个基于 nib、在业务 handler 之前恢复最新本地化状态的 Cell registration。
-    static func localized(
+    public func makeCellRegistration<Cell: UICollectionViewCell, Item>(
         cellNib: UINib,
-        using context: UIKitLocalizationContext,
         policy: UIViewLayoutDirectionPolicy = .followApplication,
-        handler: @escaping Handler
-    ) -> Self {
-        Self(cellNib: cellNib) { cell, indexPath, item in
-            context.restoreBeforeConfiguration(cell, policy: policy)
+        handler: @escaping UICollectionView.CellRegistration<Cell, Item>.Handler
+    ) -> UICollectionView.CellRegistration<Cell, Item> {
+        UICollectionView.CellRegistration<Cell, Item>(cellNib: cellNib) {
+            cell,
+            indexPath,
+            item in
+            restoreBeforeConfiguration(cell, policy: policy)
             handler(cell, indexPath, item)
         }
     }
-}
 
-@MainActor
-public extension UICollectionView.SupplementaryRegistration {
     /// 创建一个在业务 handler 之前恢复最新本地化状态的 supplementary registration。
-    static func localized(
+    public func makeSupplementaryRegistration<Supplementary: UICollectionReusableView>(
         elementKind: String,
-        using context: UIKitLocalizationContext,
         policy: UIViewLayoutDirectionPolicy = .followApplication,
-        handler: @escaping Handler
-    ) -> Self {
-        Self(elementKind: elementKind) { view, elementKind, indexPath in
-            context.restoreBeforeConfiguration(view, policy: policy)
+        handler: @escaping UICollectionView.SupplementaryRegistration<Supplementary>.Handler
+    ) -> UICollectionView.SupplementaryRegistration<Supplementary> {
+        UICollectionView.SupplementaryRegistration<Supplementary>(
+            elementKind: elementKind
+        ) { view, elementKind, indexPath in
+            restoreBeforeConfiguration(view, policy: policy)
             handler(view, elementKind, indexPath)
         }
     }
 
     /// 创建一个基于 nib、在业务 handler 之前恢复最新本地化状态的 registration。
-    static func localized(
+    public func makeSupplementaryRegistration<Supplementary: UICollectionReusableView>(
         supplementaryNib: UINib,
         elementKind: String,
-        using context: UIKitLocalizationContext,
         policy: UIViewLayoutDirectionPolicy = .followApplication,
-        handler: @escaping Handler
-    ) -> Self {
-        Self(supplementaryNib: supplementaryNib, elementKind: elementKind) {
+        handler: @escaping UICollectionView.SupplementaryRegistration<Supplementary>.Handler
+    ) -> UICollectionView.SupplementaryRegistration<Supplementary> {
+        UICollectionView.SupplementaryRegistration<Supplementary>(
+            supplementaryNib: supplementaryNib,
+            elementKind: elementKind
+        ) {
             view,
             elementKind,
             indexPath in
-            context.restoreBeforeConfiguration(view, policy: policy)
+            restoreBeforeConfiguration(view, policy: policy)
             handler(view, elementKind, indexPath)
         }
     }

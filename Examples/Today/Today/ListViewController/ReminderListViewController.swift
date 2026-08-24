@@ -39,11 +39,7 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
         let listLayout = listLayout()
         collectionView.collectionViewLayout = listLayout
 
-        let cellRegistration = UICollectionView.CellRegistration<
-            UICollectionViewListCell,
-            Reminder.ID
-        >.localized(
-            using: services.localizationContext,
+        let cellRegistration = services.localizationContext.makeCellRegistration(
             handler: cellRegistrationHandler
         )
 
@@ -53,11 +49,8 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
                 using: cellRegistration, for: indexPath, item: itemIdentifier)
         }
 
-        let headerRegistration = UICollectionView.SupplementaryRegistration<
-            ProgressHeaderView
-        >.localized(
+        let headerRegistration = services.localizationContext.makeSupplementaryRegistration(
             elementKind: ProgressHeaderView.elementKind,
-            using: services.localizationContext,
             handler: supplementaryRegistrationHandler
         )
         dataSource?.supplementaryViewProvider = { supplementaryView, elementKind, indexPath in

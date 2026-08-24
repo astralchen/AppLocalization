@@ -143,7 +143,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
         XCTAssertEqual(cell.semanticContentAttribute, .forceRightToLeft)
     }
 
-    func testLocalizedCellRegistrationRestoresLatestSnapshotBeforeBusinessHandler() throws {
+    func testContextCellRegistrationRestoresLatestSnapshotBeforeBusinessHandler() throws {
         let snapshotBox = ReusableSnapshotBox(makeSnapshot(.rightToLeft, revision: 1))
         let context = UIKitLocalizationContext { snapshotBox.snapshot }
         var observedDirections: [UISemanticContentAttribute] = []
@@ -152,16 +152,21 @@ final class UIKitReusableLocalizationTests: XCTestCase {
             frame: CGRect(x: 0, y: 0, width: 320, height: 200),
             collectionViewLayout: UICollectionViewFlowLayout()
         )
-        let registration = UICollectionView.CellRegistration<
+        let handler: UICollectionView.CellRegistration<
             ReusableTrackingCollectionCell,
             Int
-        >.localized(using: context) { cell, _, item in
+        >.Handler = { cell, _, item in
             observedDirections.append(cell.semanticContentAttribute)
             observedRevisions.append(cell.receivedUpdates.last?.snapshot.revision ?? 0)
             if item == 1 {
                 snapshotBox.snapshot = self.makeSnapshot(.leftToRight, revision: 2)
             }
         }
+        let registration = context.makeCellRegistration(handler: handler)
+        let _: UICollectionView.CellRegistration<
+            ReusableTrackingCollectionCell,
+            Int
+        > = registration
         let dataSource = UICollectionViewDiffableDataSource<Int, Int>(
             collectionView: collectionView
         ) { collectionView, indexPath, item in
@@ -212,7 +217,7 @@ final class UIKitReusableLocalizationTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(secondCell.receivedUpdates.last).snapshot.revision, 12)
     }
 
-    func testLocalizedSupplementaryRegistrationRestoresBeforeBusinessHandler() throws {
+    func testContextSupplementaryRegistrationRestoresBeforeBusinessHandler() throws {
         let context = UIKitLocalizationContext {
             self.makeSnapshot(.rightToLeft, revision: 21)
         }
@@ -230,15 +235,15 @@ final class UIKitReusableLocalizationTests: XCTestCase {
             _,
             _ in
         }
-        let supplementaryRegistration = UICollectionView.SupplementaryRegistration<
+        let supplementaryRegistration: UICollectionView.SupplementaryRegistration<
             ReusableTrackingSupplementaryView
-        >.localized(
+        > = context.makeSupplementaryRegistration(
             elementKind: UICollectionView.elementKindSectionHeader,
-            using: context
-        ) { view, _, _ in
-            observedDirection = view.semanticContentAttribute
-            observedRevision = view.receivedUpdates.last?.snapshot.revision
-        }
+            handler: { view, _, _ in
+                observedDirection = view.semanticContentAttribute
+                observedRevision = view.receivedUpdates.last?.snapshot.revision
+            }
+        )
         let dataSource = UICollectionViewDiffableDataSource<Int, Int>(
             collectionView: collectionView
         ) { collectionView, indexPath, item in
