@@ -118,7 +118,7 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
                 update,
                 rebuildingLayoutWith: Self.makeListLayout
             )
-            configureNavigationButtons(layoutDirection: update.layoutDirection)
+            configureNavigationButtons()
         }
         guard update.requiresLocalizedContentRefresh else { return }
         title = services.resolver.string(
@@ -142,7 +142,7 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
     }
 
     private func prepareForEditing() {
-        configureNavigationButtons(layoutDirection: services.localizationController.layoutDirection.uiLayoutDirection)
+        configureNavigationButtons()
         updateSnapshotForEditing()
     }
 
@@ -174,7 +174,7 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
     }
 
     private func prepareForViewing() {
-        configureNavigationButtons(layoutDirection: services.localizationController.layoutDirection.uiLayoutDirection)
+        configureNavigationButtons()
         if workingReminder != reminder {
             reminder = workingReminder
         }
@@ -197,24 +197,21 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
         return section
     }
 
-    private func configureNavigationButtons(layoutDirection: UIUserInterfaceLayoutDirection) {
+    private func configureNavigationButtons() {
         if isEditing {
             navigationItem.setBarButtonItem(
                 cancelButton,
-                side: .leading,
-                layoutDirection: layoutDirection
+                side: .leading
             )
             navigationItem.setBarButtonItem(
                 editDoneButton,
-                side: .trailing,
-                layoutDirection: layoutDirection
+                side: .trailing
             )
         } else {
-            navigationItem.setBarButtonItem(nil, side: .leading, layoutDirection: layoutDirection)
+            navigationItem.setBarButtonItem(nil, side: .leading)
             navigationItem.setBarButtonItem(
                 editDoneButton,
-                side: .trailing,
-                layoutDirection: layoutDirection
+                side: .trailing
             )
         }
     }

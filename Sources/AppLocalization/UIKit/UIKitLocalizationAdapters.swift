@@ -835,7 +835,8 @@ public final class UIWindowSceneLocalizationCoordinator {
 
 /// 导航按钮的语义位置。
 ///
-/// 使用前缘和后缘表达意图，再根据布局方向映射到 UIKit 的物理左侧或右侧。
+/// 使用前缘和后缘表达意图；`UINavigationBar` 会根据自身的布局方向，
+/// 自动完成 LTR 与 RTL 环境下的物理位置镜像。
 public enum NavigationItemPlacement: Equatable, Sendable {
     /// 导航栏的语义前缘。
     case leading
@@ -844,55 +845,222 @@ public enum NavigationItemPlacement: Equatable, Sendable {
     case trailing
 }
 
+/// 按声明顺序构建一组导航栏按钮。
+///
+/// 声明顺序会原样传给 UIKit。第一个按钮始终最靠近指定的语义边缘，
+/// UIKit 会在从右向左布局的导航栏中自动镜像整组按钮。同一个按钮实例
+/// 重复出现时，仅保留第一次出现的位置。
+@resultBuilder
+public enum NavigationBarItemBuilder {
+    public static func buildBlock(
+        _ components: [UIBarButtonItem]...
+    ) -> [UIBarButtonItem] {
+        components.flatMap { $0 }
+    }
+
+    public static func buildExpression(
+        _ expression: UIBarButtonItem
+    ) -> [UIBarButtonItem] {
+        [expression]
+    }
+
+    public static func buildExpression(
+        _ expression: UIBarButtonItem?
+    ) -> [UIBarButtonItem] {
+        expression.map { [$0] } ?? []
+    }
+
+    public static func buildExpression(
+        _ expression: [UIBarButtonItem]
+    ) -> [UIBarButtonItem] {
+        expression
+    }
+
+    public static func buildOptional(
+        _ component: [UIBarButtonItem]?
+    ) -> [UIBarButtonItem] {
+        component ?? []
+    }
+
+    public static func buildEither(
+        first component: [UIBarButtonItem]
+    ) -> [UIBarButtonItem] {
+        component
+    }
+
+    public static func buildEither(
+        second component: [UIBarButtonItem]
+    ) -> [UIBarButtonItem] {
+        component
+    }
+
+    public static func buildArray(
+        _ components: [[UIBarButtonItem]]
+    ) -> [UIBarButtonItem] {
+        components.flatMap { $0 }
+    }
+
+    public static func buildLimitedAvailability(
+        _ component: [UIBarButtonItem]
+    ) -> [UIBarButtonItem] {
+        component
+    }
+}
+
 public extension UINavigationItem {
-    /// 在指定的语义位置设置导航栏按钮。
+    /// 将一个导航栏按钮放到指定的语义边缘。
     ///
-    /// 自定义导航栏按钮需要随布局方向镜像时，建议统一使用此方法。
+    /// UIKit 将 `leftBarButtonItem` 视为前缘位置，将 `rightBarButtonItem`
+    /// 视为后缘位置；当导航栏采用从右向左布局时，UIKit 会自动镜像这两个位置。
+    /// 赋值前不要把语义边缘转换成物理边缘，否则按钮会被重复镜像。
     ///
     /// ```swift
     /// navigationItem.setBarButtonItem(
     ///     closeItem,
-    ///     side: .trailing,
-    ///     layoutDirection: view.effectiveUserInterfaceLayoutDirection
+    ///     side: .trailing
     /// )
     /// ```
     ///
     /// - Parameters:
-    ///   - item: 要设置的导航栏按钮。传入 `nil` 可清除对应位置的按钮。
-    ///   - side: 按钮的语义位置。
-    ///   - layoutDirection: 当前 UIKit 布局方向。
+    ///   - item: 要放置的按钮；传入 `nil` 会清空对应的语义边缘。
+    ///   - side: 按钮所属的语义边缘。
+    ///   - animated: 是否使用 UIKit 的导航栏按钮更新动画。
     func setBarButtonItem(
         _ item: UIBarButtonItem?,
         side: NavigationItemPlacement,
-        layoutDirection: UIUserInterfaceLayoutDirection
+        animated: Bool = false
     ) {
-        let physicalEdge = DirectionalLayout.physicalEdge(
-            for: side.semanticDirection,
-            layoutDirection: layoutDirection.appLayoutDirection
+        setBarButtonItems(
+            item.map { [$0] },
+            side: side,
+            animated: animated
         )
+    }
 
-        switch physicalEdge {
-        case .left:
-            if let item, rightBarButtonItem === item {
-                rightBarButtonItem = nil
+    /// 将一组导航栏按钮放到指定的语义边缘。
+    ///
+    /// 在把新集合交给 UIKit 前，会按对象身份从另一侧移除已经存在于新集合中的按钮。
+    /// 传入 `nil` 或空数组都会清空指定边缘。此方法不会修改
+    /// `leftItemsSupplementBackButton`；调用方需要明确决定前缘按钮是替换系统返回按钮，
+    /// 还是与系统返回按钮同时显示。
+    ///
+    /// - Parameters:
+    ///   - items: 按顺序放置的按钮；传入 `nil` 会清空对应边缘。
+    ///   - side: 这组按钮所属的语义边缘。
+    ///   - animated: 是否使用 UIKit 的导航栏按钮更新动画。
+    func setBarButtonItems(
+        _ items: [UIBarButtonItem]?,
+        side: NavigationItemPlacement,
+        animated: Bool = false
+    ) {
+        let normalizedItems = items.normalizedByIdentity
+        switch side {
+        case .leading:
+            removeIdenticalItems(
+                normalizedItems ?? [],
+                from: .trailing,
+                animated: animated
+            )
+            guard !leftBarButtonItems.isIdentical(to: normalizedItems) else {
+                return
             }
-            leftBarButtonItem = item
-        case .right:
-            if let item, leftBarButtonItem === item {
-                leftBarButtonItem = nil
+            setLeftBarButtonItems(normalizedItems, animated: animated)
+        case .trailing:
+            removeIdenticalItems(
+                normalizedItems ?? [],
+                from: .leading,
+                animated: animated
+            )
+            guard !rightBarButtonItems.isIdentical(to: normalizedItems) else {
+                return
             }
-            rightBarButtonItem = item
+            setRightBarButtonItems(normalizedItems, animated: animated)
+        }
+    }
+
+    /// 使用声明式语法构建一组导航栏按钮，并将其放到指定的语义边缘。
+    ///
+    /// ```swift
+    /// navigationItem.setBarButtonItems(side: .trailing) {
+    ///     shareItem
+    ///     if canEdit {
+    ///         editItem
+    ///     }
+    ///     additionalItems
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - side: 这组按钮所属的语义边缘。
+    ///   - animated: 是否使用 UIKit 的导航栏按钮更新动画。
+    ///   - content: 按声明顺序生成导航栏按钮的构建闭包。
+    func setBarButtonItems(
+        side: NavigationItemPlacement,
+        animated: Bool = false,
+        @NavigationBarItemBuilder _ content: () -> [UIBarButtonItem]
+    ) {
+        setBarButtonItems(
+            content(),
+            side: side,
+            animated: animated
+        )
+    }
+
+    private func removeIdenticalItems(
+        _ items: [UIBarButtonItem],
+        from side: NavigationItemPlacement,
+        animated: Bool
+    ) {
+        guard !items.isEmpty else { return }
+
+        switch side {
+        case .leading:
+            let remainingItems = leftBarButtonItems
+                .removingIdenticalItems(items)
+            guard !leftBarButtonItems.isIdentical(to: remainingItems) else {
+                return
+            }
+            setLeftBarButtonItems(remainingItems, animated: animated)
+        case .trailing:
+            let remainingItems = rightBarButtonItems
+                .removingIdenticalItems(items)
+            guard !rightBarButtonItems.isIdentical(to: remainingItems) else {
+                return
+            }
+            setRightBarButtonItems(remainingItems, animated: animated)
         }
     }
 }
 
-private extension NavigationItemPlacement {
-    var semanticDirection: SemanticHorizontalDirection {
-        switch self {
-        case .leading:
-            return .leading
-        case .trailing:
-            return .trailing
+private extension Optional where Wrapped == [UIBarButtonItem] {
+    var normalizedByIdentity: [UIBarButtonItem]? {
+        guard let items = self, !items.isEmpty else { return nil }
+        var seenIdentifiers = Set<ObjectIdentifier>()
+        return items.filter {
+            seenIdentifiers.insert(ObjectIdentifier($0)).inserted
+        }
+    }
+
+    func removingIdenticalItems(
+        _ items: [UIBarButtonItem]
+    ) -> [UIBarButtonItem]? {
+        guard let currentItems = self else { return nil }
+        let identifiers = Set(items.map(ObjectIdentifier.init))
+        let remainingItems = currentItems.filter {
+            !identifiers.contains(ObjectIdentifier($0))
+        }
+        return remainingItems.isEmpty ? nil : remainingItems
+    }
+
+    func isIdentical(to other: [UIBarButtonItem]?) -> Bool {
+        switch (self, other) {
+        case (nil, nil):
+            return true
+        case let (lhs?, rhs?):
+            guard lhs.count == rhs.count else { return false }
+            return zip(lhs, rhs).allSatisfy { $0 === $1 }
+        default:
+            return false
         }
     }
 }

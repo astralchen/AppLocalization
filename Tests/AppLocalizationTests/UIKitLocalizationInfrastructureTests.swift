@@ -211,6 +211,83 @@ final class UIKitLocalizationInfrastructureTests: XCTestCase {
         )
     }
 
+    func testNavigationItemPlacementUsesUIKitSemanticSlots() {
+        let navigationItem = UINavigationItem()
+        let leadingItem = UIBarButtonItem(systemItem: .close)
+        let trailingItem = UIBarButtonItem(systemItem: .action)
+
+        navigationItem.setBarButtonItem(leadingItem, side: .leading)
+        navigationItem.setBarButtonItem(trailingItem, side: .trailing)
+
+        XCTAssertTrue(navigationItem.leftBarButtonItem === leadingItem)
+        XCTAssertTrue(navigationItem.rightBarButtonItem === trailingItem)
+
+        navigationItem.setBarButtonItem(trailingItem, side: .leading)
+
+        XCTAssertTrue(navigationItem.leftBarButtonItem === trailingItem)
+        XCTAssertNil(navigationItem.rightBarButtonItem)
+
+        navigationItem.setBarButtonItem(trailingItem, side: .trailing)
+
+        XCTAssertNil(navigationItem.leftBarButtonItem)
+        XCTAssertTrue(navigationItem.rightBarButtonItem === trailingItem)
+    }
+
+    func testNavigationBarItemBuilderPreservesOrderAndMovesSharedItems() {
+        let navigationItem = UINavigationItem()
+        let firstItem = UIBarButtonItem(systemItem: .add)
+        let conditionalItem = UIBarButtonItem(systemItem: .edit)
+        let arrayItems = [
+            UIBarButtonItem(systemItem: .search),
+            UIBarButtonItem(systemItem: .action)
+        ]
+        let includesConditionalItem = true
+        let omittedItem: UIBarButtonItem? = nil
+        navigationItem.leftItemsSupplementBackButton = true
+
+        navigationItem.setBarButtonItems(side: .trailing) {
+            firstItem
+            if includesConditionalItem {
+                conditionalItem
+            }
+            arrayItems
+            firstItem
+            omittedItem
+        }
+
+        XCTAssertEqual(
+            navigationItem.rightBarButtonItems?.map(ObjectIdentifier.init),
+            ([firstItem, conditionalItem] + arrayItems)
+                .map(ObjectIdentifier.init)
+        )
+
+        navigationItem.setBarButtonItems(side: .leading) {
+            conditionalItem
+            for item in arrayItems {
+                item
+            }
+        }
+
+        XCTAssertEqual(
+            navigationItem.leftBarButtonItems?.map(ObjectIdentifier.init),
+            ([conditionalItem] + arrayItems).map(ObjectIdentifier.init)
+        )
+        XCTAssertEqual(
+            navigationItem.rightBarButtonItems?.map(ObjectIdentifier.init),
+            [firstItem].map(ObjectIdentifier.init)
+        )
+        XCTAssertTrue(navigationItem.leftItemsSupplementBackButton)
+
+        navigationItem.setBarButtonItems(side: .leading) {}
+
+        XCTAssertNil(navigationItem.leftBarButtonItems)
+        XCTAssertEqual(
+            navigationItem.rightBarButtonItems?.map(ObjectIdentifier.init),
+            [firstItem].map(ObjectIdentifier.init)
+        )
+        XCTAssertTrue(navigationItem.leftItemsSupplementBackButton)
+    }
+
     private func makeController() -> (
         controller: LocalizationController,
         notificationCenter: NotificationCenter

@@ -367,11 +367,10 @@ final class DetailViewController: UIViewController, UIKitLocalizationApplying {
 
     func applyLocalization(_ update: UIKitLocalizationUpdate) {
         guard update.requiresLayoutDirectionRefresh else { return }
-        // Keep intent semantic: close belongs on trailing, regardless of physical left/right.
+        // 保持语义意图：关闭按钮始终位于后缘，不依赖物理左侧或右侧。
         navigationItem.setBarButtonItem(
             closeItem,
-            side: .trailing,
-            layoutDirection: update.layoutDirection
+            side: .trailing
         )
 
         // Custom back assets must flip with the app direction.

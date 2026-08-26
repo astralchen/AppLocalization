@@ -127,13 +127,11 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
             )
             navigationItem.setBarButtonItem(
                 settingsButton,
-                side: .leading,
-                layoutDirection: update.layoutDirection
+                side: .leading
             )
             navigationItem.setBarButtonItem(
                 addButton,
-                side: .trailing,
-                layoutDirection: update.layoutDirection
+                side: .trailing
             )
         }
         guard update.requiresLocalizedContentRefresh else { return }

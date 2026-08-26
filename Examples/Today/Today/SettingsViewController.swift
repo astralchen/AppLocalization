@@ -41,8 +41,7 @@ final class SettingsViewController: UITableViewController, UIKitLocalizationAppl
             tableView.applyLocalization(update, preservingVisibleRow: true)
             navigationItem.setBarButtonItem(
                 doneButton,
-                side: .trailing,
-                layoutDirection: update.layoutDirection
+                side: .trailing
             )
         }
         guard update.requiresLocalizedContentRefresh else { return }

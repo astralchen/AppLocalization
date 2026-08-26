@@ -226,8 +226,7 @@ final class DemoModalViewController: UIViewController, UIKitLocalizationApplying
         if update.requiresLayoutDirectionRefresh {
             navigationItem.setBarButtonItem(
                 closeButton,
-                side: .leading,
-                layoutDirection: update.layoutDirection
+                side: .leading
             )
         }
         guard update.requiresLocalizedContentRefresh else { return }
