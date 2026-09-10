@@ -211,6 +211,84 @@ final class UIKitLocalizationInfrastructureTests: XCTestCase {
         )
     }
 
+    @available(iOS 17.0, *)
+    func testCoordinatorSynchronizesNavigationEnvironmentOnArabicRegistration() {
+        let fixture = makeController()
+        _ = setLocale(.arabic, on: fixture.controller, notificationCenter: fixture.notificationCenter)
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: fixture.controller)
+        let root = RecordingViewController()
+        let navigation = UINavigationController(rootViewController: root)
+        let window = UIWindow()
+        // 模拟系统仍使用从左到右布局，但应用已选择阿拉伯语。
+        window.traitOverrides.layoutDirection = .leftToRight
+        window.rootViewController = navigation
+        navigation.loadViewIfNeeded()
+        root.loadViewIfNeeded()
+
+        coordinator.register(window: window)
+
+        XCTAssertEqual(navigation.traitCollection.layoutDirection, .rightToLeft)
+        XCTAssertEqual(navigation.navigationBar.semanticContentAttribute, .forceRightToLeft)
+        XCTAssertEqual(root.navigationDirections.last, .rightToLeft)
+    }
+
+    @available(iOS 17.0, *)
+    func testCoordinatorMirrorsNavigationEnvironmentBeforeUpdatingChildAcrossLanguageChanges() {
+        let fixture = makeController()
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: fixture.controller)
+        let root = RecordingViewController()
+        let navigation = UINavigationController(rootViewController: root)
+        let window = UIWindow()
+        // 反向模拟系统环境，确保首次英文同步也会覆盖系统方向。
+        window.traitOverrides.layoutDirection = .rightToLeft
+        window.rootViewController = navigation
+        navigation.loadViewIfNeeded()
+        root.loadViewIfNeeded()
+        coordinator.register(window: window)
+        XCTAssertEqual(navigation.traitCollection.layoutDirection, .leftToRight)
+        XCTAssertEqual(root.navigationDirections.last, .leftToRight)
+
+        for locale in [AppLocale.arabic, .englishUS, .arabic] {
+            let change = setLocale(locale, on: fixture.controller, notificationCenter: fixture.notificationCenter)
+            coordinator.apply(change, animated: false)
+            let expected: UITraitEnvironmentLayoutDirection = locale == .arabic ? .rightToLeft : .leftToRight
+            XCTAssertEqual(navigation.traitCollection.layoutDirection, expected)
+            XCTAssertEqual(root.navigationDirections.last, expected)
+            XCTAssertEqual(navigation.navigationBar.semanticContentAttribute, change.current.layoutDirection.semanticContentAttribute)
+        }
+    }
+
+    @available(iOS 17.0, *)
+    func testCoordinatorPreparesEveryLoadedPageBeforeChangingNavigationDirection() {
+        let fixture = makeController()
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: fixture.controller)
+        let root = RecordingViewController()
+        let detail = RecordingViewController()
+        let unloaded = RecordingViewController()
+        detail.addChild(unloaded)
+        unloaded.didMove(toParent: detail)
+        let navigation = UINavigationController()
+        navigation.setViewControllers([root, detail], animated: false)
+        let window = UIWindow()
+        window.rootViewController = navigation
+        navigation.loadViewIfNeeded()
+        root.loadViewIfNeeded()
+        detail.loadViewIfNeeded()
+        coordinator.register(window: window)
+
+        let change = setLocale(.arabic, on: fixture.controller, notificationCenter: fixture.notificationCenter)
+        coordinator.apply(change, animated: false)
+
+        for page in [root, detail] {
+            // 即使控制器同时出现在 children 和导航栈中，每轮也只准备一次。
+            XCTAssertEqual(page.preparationCount, 2)
+            XCTAssertEqual(page.preparedNavigationDirections.last, .leftToRight)
+            XCTAssertEqual(page.navigationDirections.last, .rightToLeft)
+        }
+        XCTAssertFalse(unloaded.isViewLoaded)
+        XCTAssertEqual(unloaded.preparationCount, 0)
+    }
+
     func testNavigationItemPlacementUsesUIKitSemanticSlots() {
         let navigationItem = UINavigationItem()
         let leadingItem = UIBarButtonItem(systemItem: .close)
@@ -344,12 +422,26 @@ final class UIKitLocalizationInfrastructureTests: XCTestCase {
 
 @MainActor
 private final class RecordingViewController: UIViewController,
-    UIKitLocalizationApplying {
+    UIKitLocalizationApplying, UIKitLocalizationPreparing {
     private(set) var receivedUpdates: [UIKitLocalizationUpdate] = []
+    private(set) var navigationDirections: [UITraitEnvironmentLayoutDirection] = []
+    private(set) var preparedNavigationDirections: [UITraitEnvironmentLayoutDirection] = []
+    private(set) var preparationCount = 0
+
+    func prepareForLocalization(_ update: UIKitLocalizationUpdate) {
+        preparationCount += 1
+        if let navigationController {
+            preparedNavigationDirections.append(navigationController.traitCollection.layoutDirection)
+        }
+    }
+
 
     func applyLocalization(_ update: UIKitLocalizationUpdate) {
         XCTAssertEqual(view.semanticContentAttribute, update.semanticContentAttribute)
         receivedUpdates.append(update)
+        if let navigationController {
+            navigationDirections.append(navigationController.traitCollection.layoutDirection)
+        }
     }
 }
 

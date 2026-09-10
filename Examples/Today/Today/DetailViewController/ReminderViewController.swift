@@ -113,6 +113,16 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
     }
 
     func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        // 只转发给本页面显式拥有的输入内容视图，不遍历系统控件的内部层级。
+        for cell in collectionView.visibleCells {
+            for content in [cell.contentView] + cell.contentView.subviews {
+                if let field = content as? TextFieldContentView {
+                    field.applyLocalization(update)
+                } else if let notes = content as? TextViewContentView {
+                    notes.applyLocalization(update)
+                }
+            }
+        }
         if update.requiresLayoutDirectionRefresh {
             collectionView.applyLocalization(
                 update,

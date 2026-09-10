@@ -94,6 +94,16 @@ public protocol UIKitLocalizationApplying: AnyObject {
     func applyLocalization(_ update: UIKitLocalizationUpdate)
 }
 
+/// 在窗口及导航容器的方向改变之前，保存页面需要保留的局部界面状态。
+///
+/// 窗口协调器先为整棵控制器树执行准备阶段，再执行本地化更新。
+/// 只通知已加载的控制器，不会为准备工作加载离屏页面；实现方应仅捕获状态，
+/// 将视图修改留给 `UIKitLocalizationApplying.applyLocalization(_:)`。
+@MainActor
+public protocol UIKitLocalizationPreparing: AnyObject {
+    func prepareForLocalization(_ update: UIKitLocalizationUpdate)
+}
+
 /// 一个 UIView 在应用内方向变化时采用的语义策略。
 public enum UIViewLayoutDirectionPolicy: Equatable, Sendable {
     /// 不写入 semantic，由当前 UIKit 层级自然解析。
@@ -182,16 +192,13 @@ public enum UIViewLayoutDirectionUpdater {
         switch view {
         case let button as UIButton:
             button.setNeedsUpdateConfiguration()
-            // `setNeedsUpdateConfiguration()` may be coalesced until a later
-            // update cycle. Runtime language switches need the already
-            // materialized title/image hierarchy to observe the new semantic
-            // before the caller's atomic layout pass.
+            // `setNeedsUpdateConfiguration()` 可能会合并请求，延后到下一个更新周期执行。
+            // 运行时切换语言时，需要让已创建的标题和图像视图在调用方执行
+            // 本轮原子布局更新之前，先应用新的语义方向。
             button.updateConfiguration()
             if let configuration = button.configuration {
-                // UIKit may retain the old direction in the configuration's
-                // already materialized private content views. Re-entering the
-                // public configuration system rebuilds that local boundary;
-                // this deliberately avoids walking or mutating private views.
+                // UIKit 根据配置创建的私有内容视图可能仍保留旧方向。
+                // 通过公开的配置接口重新创建这部分内容，避免遍历或修改私有视图。
                 button.configuration = nil
                 button.configuration = configuration
             }
@@ -356,6 +363,36 @@ public struct UIKitLocalizationContext {
         self.init { [localizationController] in
             localizationController.currentSnapshot
         }
+    }
+
+    /// 为公开的单行输入框创建绑定；调用方持有返回值并在语言更新时刷新。
+    public func makeTextInputBinding(
+        to textField: UITextField,
+        alignment: UIKitTextInputAlignmentPolicy = .followLayoutDirection
+    ) -> UIKitTextInputLocalizationBinding {
+        UIKitTextInputLocalizationBinding(
+            textField: textField, alignment: alignment, snapshotProvider: snapshotProvider
+        )
+    }
+
+    /// 为公开的多行输入框创建绑定，保留现有代理与富文本内容。
+    public func makeTextInputBinding(
+        to textView: UITextView,
+        alignment: UIKitTextInputAlignmentPolicy = .followLayoutDirection
+    ) -> UIKitTextInputLocalizationBinding {
+        UIKitTextInputLocalizationBinding(
+            textView: textView, alignment: alignment, snapshotProvider: snapshotProvider
+        )
+    }
+
+    /// 通过系统搜索栏公开的 searchTextField 接入，不访问私有子视图。
+    public func makeTextInputBinding(
+        to searchBar: UISearchBar,
+        alignment: UIKitTextInputAlignmentPolicy = .followLayoutDirection
+    ) -> UIKitTextInputLocalizationBinding {
+        UIKitTextInputLocalizationBinding(
+            searchBar: searchBar, alignment: alignment, snapshotProvider: snapshotProvider
+        )
     }
 
     public func prepareForConfiguration(
@@ -699,6 +736,8 @@ public final class UIWindowSceneLocalizationCoordinator {
         to registration: WindowRegistration
     ) {
         guard let window = registration.window else { return }
+        var prepared = Set<ObjectIdentifier>()
+        prepare(update, from: window.rootViewController, visited: &prepared)
         if update.requiresLayoutDirectionRefresh {
             window.semanticContentAttribute = update.semanticContentAttribute
         }
@@ -785,19 +824,7 @@ public final class UIWindowSceneLocalizationCoordinator {
                 .applyLocalization(update)
         }
 
-        if let navigationController = viewController as? UINavigationController {
-            for child in navigationController.viewControllers {
-                apply(update, from: child, visited: &visited)
-            }
-        }
-
-        if let tabBarController = viewController as? UITabBarController {
-            for child in tabBarController.viewControllers ?? [] {
-                apply(update, from: child, visited: &visited)
-            }
-        }
-
-        for child in viewController.children {
+        for child in containedControllers(of: viewController) {
             apply(update, from: child, visited: &visited)
         }
 
@@ -812,11 +839,45 @@ public final class UIWindowSceneLocalizationCoordinator {
         }
     }
 
+    private func prepare(
+        _ update: UIKitLocalizationUpdate,
+        from viewController: UIViewController?,
+        visited: inout Set<ObjectIdentifier>
+    ) {
+        guard let viewController,
+              visited.insert(ObjectIdentifier(viewController)).inserted else { return }
+        if viewController.isViewLoaded {
+            (viewController as? UIKitLocalizationPreparing)?.prepareForLocalization(update)
+        }
+        for child in containedControllers(of: viewController) {
+            prepare(update, from: child, visited: &visited)
+        }
+        prepare(update, from: viewController.presentedViewController, visited: &visited)
+    }
+
+    /// 准备与更新阶段共用容器成员列表，各阶段通过 visited 去重。
+    private func containedControllers(of controller: UIViewController) -> [UIViewController] {
+        var children = controller.children
+        if let navigation = controller as? UINavigationController {
+            children += navigation.viewControllers
+        }
+        if let tabs = controller as? UITabBarController {
+            children += tabs.viewControllers ?? []
+        }
+        return children
+    }
+
     private func applyContainerDirection(
         _ update: UIKitLocalizationUpdate,
         to viewController: UIViewController
     ) {
         if let navigationController = viewController as? UINavigationController {
+            // 系统导航栏标题也会读取容器的布局环境方向。
+            // 应用语言与系统语言不同时，需要在刷新子页面前同步该方向。
+            if #available(iOS 17.0, *) {
+                navigationController.traitOverrides.layoutDirection =
+                    update.layoutDirection == .rightToLeft ? .rightToLeft : .leftToRight
+            }
             navigationController.view.semanticContentAttribute = update.semanticContentAttribute
             navigationController.navigationBar.semanticContentAttribute = update.semanticContentAttribute
         }
@@ -1250,12 +1311,11 @@ public extension UITableView {
     }
 }
 
-/// A logical collection item and its visual position inside the adjusted
-/// scrollable viewport.
+/// 记录集合视图中的逻辑条目及其在扣除调整后内容边距的可见区域中的位置。
 ///
-/// The leading distance is semantic rather than a raw physical `contentOffset.x`,
-/// so the same anchor can be restored after an LTR/RTL direction change or onto
-/// a replacement collection view.
+/// 前缘距离按语义方向计算，不直接使用表示物理偏移的 `contentOffset.x`。
+/// 因此，切换从左向右或从右向左的布局方向后，或替换集合视图实例后，
+/// 仍可使用同一个锚点恢复条目的视觉位置。
 public struct UICollectionViewLocalizationAnchor: Equatable {
     public let indexPath: IndexPath
     public let offsetFromViewportTop: CGFloat
@@ -1273,8 +1333,8 @@ public struct UICollectionViewLocalizationAnchor: Equatable {
 }
 
 public extension UICollectionView {
-    /// Captures the first visible logical item and its position relative to the
-    /// adjusted viewport's top and semantic leading edges.
+    /// 捕获第一个可见逻辑条目，并记录其相对于可见区域顶部和语义前缘的距离。
+    /// 可见区域已扣除调整后的内容边距。
     func captureLocalizationAnchor()
         -> UICollectionViewLocalizationAnchor? {
         layoutIfNeeded()
@@ -1331,8 +1391,7 @@ public extension UICollectionView {
         )
     }
 
-    /// Restores a captured logical item to the same visual position after the
-    /// current layout has finished self-sizing its content.
+    /// 当前布局完成内容尺寸的自适应计算后，将已捕获的逻辑条目恢复到原来的视觉位置。
     @discardableResult
     func restoreLocalizationAnchor(
         _ anchor: UICollectionViewLocalizationAnchor

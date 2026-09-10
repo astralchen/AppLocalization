@@ -20,6 +20,10 @@
 
 UIKit 实现不依赖 iOS 16+ 的 trait registration API；方向更新全部隔离在 MainActor。
 
+iOS 17 及以上，Window 协调器还会同步导航控制器的 `traitOverrides.layoutDirection`，使系统导航栏标题跟随应用语言。iOS 15、16 保留语义方向更新路径。
+
+需要保留滚动位置的页面可以实现 `UIKitLocalizationPreparing`。协调器会在修改窗口及导航容器方向之前，先调用所有已加载页面的 `prepareForLocalization(_:)`，用于捕获锚点等局部状态；页面随后在最终数据和布局更新完成后恢复位置。
+
 ## 核心能力
 
 - 应用内语言切换，不依赖重启 App。
@@ -374,6 +378,56 @@ if let anchor {
 锚点保存 `IndexPath` 以及 item 到 adjusted viewport 顶部和语义 leading 的距离，不保存
 旧的物理 `contentOffset`。因此它可跨 LTR/RTL 和不同 CollectionView 实例重新计算位置，
 也不会把位于导航栏或安全区后方的 Cell 错当成顶部可见项。
+
+### 输入框的对齐与编辑状态
+
+`UIKitLocalizationContext.makeTextInputBinding(to:alignment:)` 支持 `UITextField`、
+`UITextView` 和 `UISearchBar`。默认 `.followLayoutDirection` 让输入内容与空光标
+跟随应用界面对齐：中文、英文靠左，阿拉伯语靠右；字符仍遵循系统自然书写顺序。
+它不切换键盘语言，也不把阿拉伯文的末尾光标强行移动到文字右侧。
+
+```swift
+final class EditorViewController: UIViewController, UIKitLocalizationApplying {
+    let textView = UITextView()
+    let context: UIKitLocalizationContext
+    // 由组件持有绑定；绑定弱引用输入框，不替换 UITextViewDelegate。
+    private lazy var inputBinding = context.makeTextInputBinding(to: textView)
+
+    init(context: UIKitLocalizationContext) {
+        self.context = context
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("请使用 init(context:)") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        inputBinding.refresh()
+    }
+
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        inputBinding.refresh()
+    }
+
+    // 业务主动改写文字、选区或 typingAttributes 后，也走同一个入口。
+    func replaceDraft(_ draft: String) {
+        if textView.text != draft, textView.markedTextRange == nil {
+            textView.text = draft
+        }
+        inputBinding.refresh()
+    }
+}
+```
+
+- 绑定通过公开的编辑通知同步开始编辑、内容变化与结束编辑；同轮编辑后的校正会合并，
+  不轮询、不保留旧快照。调用方仍需在语言更新、配置、重新挂载和程序化修改后调用 `refresh()`。
+- 选区代理回调里可以调用 `refresh()`；富文本编辑器重设输入属性后也应调用。
+- 有组合文本（`markedTextRange`）时延后更新，提交或取消后按最新快照恢复。
+  不应由本地化代码调用 `unmarkText()`、更换第一响应者或重建输入框。
+- 对齐更新保留段落其余属性；多行输入不替换整段富文本，保留附件和编辑状态。
+- 搜索栏使用公开的 `searchTextField`；不遍历私有子视图，不修改全局 appearance。
+- 需要局部固定对齐时显式传入 `.fixed(.left)`、`.fixed(.right)` 或 `.fixed(.center)`。
+  只读文本视图无须创建输入绑定。自定义占位标签由组件同步为输入框的 `textAlignment`。
 
 ## App Icon
 

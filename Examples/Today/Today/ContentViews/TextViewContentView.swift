@@ -3,8 +3,9 @@
  */
 
 import UIKit
+import AppLocalization
 
-class TextViewContentView: UIView, UIContentView {
+class TextViewContentView: UIView, UIContentView, UIKitLocalizationApplying {
     struct Configuration: UIContentConfiguration {
         var text: String? = ""
         var onChange: (String) -> Void = { _ in }
@@ -15,6 +16,8 @@ class TextViewContentView: UIView, UIContentView {
     }
 
     let textView = UITextView()
+    private lazy var inputBinding = TodayLocalizationServices.shared.localizationContext
+        .makeTextInputBinding(to: textView)
     var configuration: UIContentConfiguration {
         didSet {
             configure(configuration: configuration)
@@ -31,18 +34,29 @@ class TextViewContentView: UIView, UIContentView {
         textView.backgroundColor = nil
         textView.delegate = self
         textView.font = UIFont.preferredFont(forTextStyle: .body)
-        textView.textAlignment = .natural
+        configure(configuration: configuration)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+        inputBinding.refresh()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil { inputBinding.refresh() }
+    }
+
     func configure(configuration: UIContentConfiguration) {
         guard let configuration = configuration as? Configuration else { return }
-        textView.text = configuration.text
-        textView.semanticContentAttribute =
-            TodayLocalizationServices.shared.localizationController.layoutDirection.semanticContentAttribute
+        // 相同配置不重写编辑内容，避免重配置打断选区和组合输入。
+        if (textView.text ?? "") != (configuration.text ?? ""), textView.markedTextRange == nil {
+            textView.text = configuration.text
+        }
+        inputBinding.refresh()
     }
 }
 
