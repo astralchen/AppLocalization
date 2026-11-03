@@ -1,24 +1,14 @@
 import Foundation
 
-/// 统一的本地化字符串解析器。
-    ///
-/// UIKit 文本、命令式更新的文本，以及需要指定应用内区域设置的 SwiftUI 文本，
-/// 均可使用此类型解析。
+/// 使用应用所选区域设置解析本地化字符串的对象。
 ///
-/// 解析器在每次查询时调用 `localeProvider`。由于该闭包通常访问
-/// `LocalizationController.currentLocale`，解析器隔离在主 actor 上。
-///
-/// 解析器支持以下资源和回退行为：
-///
-/// - 已编译的 `.lproj/Localizable.strings`。
-/// - 源文件形式的 `Localizable.xcstrings`，用于 Swift Package 测试。
-/// - 回退区域设置。
-/// - 缺失键日志或断言。
+/// 每次查找时读取区域设置提供闭包。解析器查找编译后的本地化资源包，
+/// 也支持读取源字符串目录中的简单字符串单元，例如包测试资源中的字符串目录。
 @MainActor
 public final class LocalizedStringResolver {
-    /// 找不到本地化键时调用的处理闭包。
+    /// 找不到键对应的翻译或回退值时调用的闭包。
     ///
-    /// 生产环境可使用该闭包上报日志；调试环境可调用 `assertionFailure`。
+    /// 参数依次为缺失的键、请求的应用区域设置和资源包。可使用此闭包记录或诊断缺失资源。
     public typealias MissingKeyHandler = @MainActor (_ key: String, _ locale: AppLocale, _ bundle: Bundle) -> Void
 
     private let localeProvider: @MainActor () -> AppLocale
@@ -27,12 +17,13 @@ public final class LocalizedStringResolver {
     private var catalogCache: [URL: CachedStringCatalog] = [:]
     private var localizedBundleCache: [LocalizedBundleCacheKey: CachedLocalizedBundle] = [:]
 
-    /// 创建字符串解析器。
+    /// 使用指定区域设置提供闭包和回退策略创建解析器。
     ///
     /// - Parameters:
-    ///   - localeProvider: 返回当前区域设置的闭包。解析器会在每次查询时调用此闭包。
-    ///   - fallbackLocale: 当前区域设置缺少指定键时采用的回退区域设置。
-    ///   - missingKeyHandler: 当前区域设置和回退区域设置均缺少指定键时调用的闭包。
+    ///   - localeProvider: 每次查找时返回当前区域设置的闭包。
+    ///   - fallbackLocale: 当前区域设置之后查找的回退区域设置。默认值为 `.englishUS`。
+    ///   - missingKeyHandler: 所有资源查找均失败且未提供回退值时调用的闭包。
+    ///     默认闭包不执行任何操作。
     public init(
         localeProvider: @escaping @MainActor () -> AppLocale,
         fallbackLocale: AppLocale = .englishUS,
@@ -43,32 +34,21 @@ public final class LocalizedStringResolver {
         self.missingKeyHandler = missingKeyHandler
     }
 
-    /// 使用当前应用区域设置解析本地化字符串。
-///
-    /// UIKit 文本可统一使用此方法。SwiftUI 文本需要跟随应用区域设置而非系统区域
-    /// 设置时，也可在 `body` 中调用此方法。解析框架或 Swift Package 中的资源时，
-    /// 请传入资源所属的 `Bundle`。
+    /// 返回指定键对应的本地化字符串。
     ///
-    /// ```swift
-    /// titleLabel.text = resolver.string(
-    ///     "settings.language.title",
-    ///     bundle: .main
-    /// )
+    /// 依次查找当前区域设置、回退区域设置、`Base` 本地化资源和源字符串目录的源语言。
+    /// 没有匹配资源时使用 `fallbackValue`；该值也为 `nil` 时，调用缺失键处理闭包并返回 `key`。
     ///
-    /// countLabel.text = resolver.string(
-    ///     "cart.count",
-    ///     bundle: .main,
-    ///     arguments: [items.count]
-    /// )
-    /// ```
+    /// 提供格式参数时，使用当前应用区域设置格式化解析结果。解析包或框架中的字符串时，
+    /// 应传入资源所属的资源包。应用区域设置变化后，需要重新解析字符串。
     ///
     /// - Parameters:
-    ///   - key: 本地化资源中的键。
-    ///   - table: 包含该键的字符串表名称。省略时使用 `Localizable`。
-    ///   - bundle: 包含本地化资源的资源包。
-    ///   - arguments: 应用于格式字符串的参数。
-    ///   - fallbackValue: 所有本地化资源均缺少指定键时使用的值。
-    /// - Returns: 解析并格式化后的字符串。没有匹配资源或回退值时返回 `key`。
+    ///   - key: 本地化字符串的键。
+    ///   - table: 字符串表名称；为 `nil` 时使用 `Localizable`。
+    ///   - bundle: 包含本地化资源的资源包。默认值为 `.main`。
+    ///   - arguments: 应用于解析结果的格式参数。
+    ///   - fallbackValue: 没有匹配资源时使用的回退值。
+    /// - Returns: 本地化并按需格式化后的字符串；无法解析时返回 `key`。
     public func string(
         _ key: String,
         table: String? = nil,
@@ -128,10 +108,7 @@ public final class LocalizedStringResolver {
         return String(format: format, locale: currentLocale.locale, arguments: arguments)
     }
 
-    /// 从编译后的 `.lproj` 资源包中查找字符串。
-    ///
-    /// Xcode 会将字符串目录编译为各语言的 `.strings` 文件；正式应用
-    /// 运行时大多数情况会命中这条路径。
+    /// 从指定区域设置的已编译本地化资源包中返回格式字符串。
     private func localizedFormat(
         _ key: String,
         locale: AppLocale,
@@ -200,10 +177,7 @@ public final class LocalizedStringResolver {
         return localizedBundle
     }
 
-    /// 从源文件形式的 `.xcstrings` 中查找字符串。
-    ///
-    /// 此路径主要用于 Swift Package 测试和直接将字符串目录作为资源处理的场景。
-    /// 真机应用构建后，字符串目录通常会由 Xcode 编译为 `.lproj/Localizable.strings`。
+    /// 从未编译的字符串目录中返回简单字符串单元。
     private func stringCatalogFormat(
         _ key: String,
         locale: AppLocale,
@@ -307,23 +281,23 @@ private enum CachedLocalizedBundle {
     case unavailable
 }
 
-/// 字符串目录的顶层结构，仅解码本框架需要的字段。
+/// 解码源字符串目录所需的字段。
 private struct StringCatalog: Decodable {
     let sourceLanguage: String?
     let strings: [String: StringCatalogEntry]
 }
 
-/// 字符串目录中的单个键条目。
+/// 源字符串目录中以键标识的条目。
 private struct StringCatalogEntry: Decodable {
     let localizations: [String: StringCatalogLocalization]?
 }
 
-/// 指定区域设置的本地化内容。
+/// 字符串目录中指定区域设置的字符串内容。
 private struct StringCatalogLocalization: Decodable {
     let stringUnit: StringCatalogStringUnit?
 }
 
-/// 字符串目录中的字符串单元。
+/// 简单的本地化字符串单元。
 private struct StringCatalogStringUnit: Decodable {
     let value: String
 }

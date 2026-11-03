@@ -1,22 +1,30 @@
 import Foundation
 
-/// 应用内本地化状态在某一时刻的不可变快照。
+/// 应用本地化状态的不可变快照。
 public struct LocalizationSnapshot: Equatable, Sendable {
-    /// 当前应用区域设置。
+    /// 当前生效的应用区域设置。
     public let locale: AppLocale
 
-    /// 当前是否跟随系统首选语言。
+    /// 指示应用是否跟随系统语言偏好的布尔值。
     public let followsSystemLocale: Bool
 
-    /// 每次有效选择状态变化时单调递增的版本号。
+    /// 本地化状态的版本号。
+    ///
+    /// 区域设置或选择模式变化时，控制器递增此值。
+    /// 应用异步结果前，应将此值与当前版本号比较。
     public let revision: UInt64
 
-    /// 当前应用界面布局方向。
+    /// 当前生效区域设置的界面布局方向。
     public var layoutDirection: AppUserInterfaceLayoutDirection {
         locale.layoutDirection
     }
 
-    /// 创建本地化状态快照。
+    /// 使用指定本地化状态创建快照。
+    ///
+    /// - Parameters:
+    ///   - locale: 当前生效的应用区域设置。
+    ///   - followsSystemLocale: 指示是否根据系统语言偏好确定区域设置的布尔值。
+    ///   - revision: 此状态对应的版本号。
     public init(
         locale: AppLocale,
         followsSystemLocale: Bool,
@@ -28,23 +36,21 @@ public struct LocalizationSnapshot: Equatable, Sendable {
     }
 }
 
-/// 一次应用内本地化变更。
+/// 两个应用本地化快照之间的变更。
 ///
-/// 此类型分别描述文本变化和布局方向变化。大多数区域设置切换只需要
-/// 更新文本；只有从左向右和从右向左布局相互切换时，才需要额外刷新布局、手势和
-/// 导航方向。
+/// 使用各变更标志区分区域设置、选择模式和布局方向的变化。
 public struct LocalizationChange: Equatable, Sendable {
-    /// 切换前的本地化状态。
+    /// 变更前的本地化状态。
     public let previous: LocalizationSnapshot
 
-    /// 切换后的本地化状态。
+    /// 变更后的本地化状态。
     public let current: LocalizationSnapshot
 
-    /// 创建本地化变更。
+    /// 使用指定快照创建本地化变更。
     ///
     /// - Parameters:
-    ///   - previous: 切换前的本地化状态。
-    ///   - current: 切换后的本地化状态。
+    ///   - previous: 变更前的本地化状态。
+    ///   - current: 变更后的本地化状态。
     public init(
         previous: LocalizationSnapshot,
         current: LocalizationSnapshot
@@ -53,20 +59,19 @@ public struct LocalizationChange: Equatable, Sendable {
         self.current = current
     }
 
-    /// 区域设置是否变化。
+    /// 指示区域设置标识符是否变化的布尔值。
     public var localeChanged: Bool {
         previous.locale.identifier != current.locale.identifier
     }
 
-    /// “跟随系统”与手动选择状态是否变化。
+    /// 指示跟随系统语言的选择模式是否变化的布尔值。
     public var selectionChanged: Bool {
         previous.followsSystemLocale != current.followsSystemLocale
     }
 
-    /// 指示界面布局方向是否发生变化。
+    /// 指示界面布局方向是否变化的布尔值。
     ///
-    /// 仅当此值为 `true` 时，才需要刷新表格可见视图的方向布局、使集合视图布局失效、
-    /// 更新语义内容属性、重新计算手势方向，或考虑重建根视图控制器。
+    /// 使用此值判断是否需要刷新依赖方向的布局、导航项和手势。
     public var layoutDirectionChanged: Bool {
         previous.layoutDirection != current.layoutDirection
     }

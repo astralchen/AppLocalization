@@ -1,36 +1,30 @@
 import Combine
 import Foundation
 
-/// 应用内本地化状态的单一事实源。
+/// 管理应用区域设置选择和本地化状态的对象。
 ///
-/// `LocalizationController` 仅管理应用选择的区域设置，不修改系统语言，也不依赖
-/// `AppleLanguages` 或 `Bundle` 方法交换。SwiftUI 可观察 ``currentLocale``，
-/// UIKit 则通过通知触发显式刷新。
-///
-/// 语言状态会驱动 `@Published`、UIKit 刷新和 SwiftUI 环境更新，因此控制器隔离在
-/// 主 actor 上。
+/// SwiftUI 可观察此对象，UIKit 可通过变更通知更新内容。
+/// 控制器管理应用自身的状态，不修改系统语言，也不替换资源包的查找行为。
 @MainActor
 public final class LocalizationController: ObservableObject {
-    /// 应用内区域设置发生变化时发布的通知。
+    /// 区域设置或选择模式变化后发布的通知。
     ///
-    /// UIKit 多窗口刷新通常监听这个通知，然后将变更交给已注册窗口的
-    /// `UIWindowSceneLocalizationCoordinator.apply(_:)`。
+    /// 通知的对象为控制器。`userInfo` 字典通过 ``localizationChangeUserInfoKey``
+    /// 保存对应的 ``LocalizationChange``。
     nonisolated public static let localizationDidChangeNotification = Notification.Name("LocalizationController.localizationDidChange")
 
-    /// 通知 `userInfo` 中用于保存 `LocalizationChange` 的键。
+    /// 通知的 `userInfo` 字典中用于保存本地化变更的键。
     nonisolated public static let localizationChangeUserInfoKey = "LocalizationController.localizationChange"
 
-    /// 表示“跟随系统”设置状态的持久化标识符。
+    /// 跟随系统语言偏好时使用的持久化标识符。
     ///
-    /// 此值不是实际的语言标识符。读取到此值时，控制器会根据系统首选语言解析应用
-    /// 实际支持的 ``currentLocale``。设置界面可据此显示“跟随系统”，其他界面则始终
-    /// 使用可渲染的区域设置。
+    /// 此值表示选择模式。控制器会先将其解析为受支持的区域设置，再赋给 ``currentLocale``。
     nonisolated public static let followSystemLocaleIdentifier = "system"
 
-    /// 应用明确支持的区域设置列表。
+    /// 应用中可供选择的区域设置。
     public let supportedLocales: [AppLocale]
 
-    /// 无法使用持久化值或缺少翻译时采用的回退区域设置。
+    /// 无法解析已存储标识符或系统语言时使用的受支持区域设置。
     public let fallbackLocale: AppLocale
 
     private let preferenceStore: LocalePreferenceStore
@@ -39,20 +33,17 @@ public final class LocalizationController: ObservableObject {
 
     /// 当前在应用内生效的区域设置。
     ///
-    /// 当 ``followsSystemLocale`` 为 `true` 时，此属性仍保存根据系统语言映射出的
-    /// 受支持区域设置。例如，系统使用 `zh-Hant`，而应用仅支持 `zh-Hans`，
-    /// 则 `currentLocale == .simplifiedChinese`。
+    /// ``followsSystemLocale`` 为 `true` 时，此值为最符合系统语言偏好的受支持区域设置。
     @Published public private(set) var currentLocale: AppLocale
 
-    /// 当前设置是否选择了“跟随系统”。
+    /// 指示是否根据系统语言偏好确定区域设置的布尔值。
     ///
-    /// 这个状态和 `currentLocale` 分开保存，因为“跟随系统解析到简中”和“用户手动
-    /// 选择简中”最终文案一样，但设置页的勾选位置不同。
+    /// 此值用于区分根据系统解析的区域设置与用户明确选择的同一区域设置。
     @Published public private(set) var followsSystemLocale: Bool
 
     private var revision: UInt64 = 0
 
-    /// 当前应用内本地化状态的不可变快照。
+    /// 当前本地化状态的不可变快照。
     public var currentSnapshot: LocalizationSnapshot {
         LocalizationSnapshot(
             locale: currentLocale,
@@ -61,17 +52,19 @@ public final class LocalizationController: ObservableObject {
         )
     }
 
-    /// 使用受支持的区域设置创建本地化控制器。
+    /// 使用受支持的区域设置和偏好存储创建控制器。
+    ///
+    /// 未保存偏好时选择跟随系统模式。已保存的标识符不受支持时，使用回退区域设置，
+    /// 但不启用跟随系统模式。
     ///
     /// - Parameters:
-    ///   - supportedLocales: 应用可选择的区域设置。此数组不能为空。
-    ///   - fallbackLocale: 默认区域设置。不在支持列表中时使用第一项。
-    ///   - preferenceStore: 区域设置的持久化实现。默认使用 `UserDefaults`。
-    ///   - notificationCenter: 通知中心，测试时可注入独立实例。
-    ///   - systemLocaleIdentifiersProvider: 返回系统首选语言标识符的闭包。默认读取
-    ///     `Locale.preferredLanguages`。
-    ///
-    /// - Precondition: `supportedLocales` 至少包含一个元素。
+    ///   - supportedLocales: 可供选择的区域设置列表，不得为空。
+    ///   - fallbackLocale: 回退区域设置。不受支持时使用列表中的第一项。
+    ///   - preferenceStore: 用于读取和持久化选择的存储。
+    ///   - notificationCenter: 用于发布变更通知的通知中心。
+    ///   - systemLocaleIdentifiersProvider: 按偏好顺序返回系统语言标识符的闭包。
+    ///     默认读取 `Locale.preferredLanguages`。
+    /// - Precondition: `supportedLocales` 至少包含一个区域设置。
     public init(
         supportedLocales: [AppLocale],
         fallbackLocale: AppLocale,
@@ -110,18 +103,18 @@ public final class LocalizationController: ObservableObject {
         }
     }
 
-    /// 使用单个系统语言提供闭包创建本地化控制器。
+    /// 使用提供单个系统语言标识符的闭包创建控制器。
+    ///
+    /// 需要匹配完整的系统语言偏好列表时，应使用接受 `systemLocaleIdentifiersProvider`
+    /// 的初始化方法。
     ///
     /// - Parameters:
-    ///   - supportedLocales: 应用可选择的区域设置。此数组不能为空。
-    ///   - fallbackLocale: 默认区域设置。不在支持列表中时使用第一项。
-    ///   - preferenceStore: 区域设置的持久化实现。
+    ///   - supportedLocales: 可供选择的区域设置列表，不得为空。
+    ///   - fallbackLocale: 回退区域设置。不受支持时使用列表中的第一项。
+    ///   - preferenceStore: 用于读取和持久化选择的存储。
     ///   - notificationCenter: 用于发布变更通知的通知中心。
-    ///   - systemLocaleIdentifierProvider: 返回单个系统语言标识符的闭包。
-    ///
-    /// - Important: 新代码应优先使用接受 `systemLocaleIdentifiersProvider` 的初始化方法，
-    ///   以便在首选语言不受支持时继续检查后续系统语言偏好。
-    /// - Precondition: `supportedLocales` 至少包含一个元素。
+    ///   - systemLocaleIdentifierProvider: 返回系统语言标识符的闭包；不可用时返回 `nil`。
+    /// - Precondition: `supportedLocales` 至少包含一个区域设置。
     public convenience init(
         supportedLocales: [AppLocale],
         fallbackLocale: AppLocale,
@@ -140,35 +133,24 @@ public final class LocalizationController: ObservableObject {
         )
     }
 
-    /// 与当前区域设置对应的 Foundation `Locale`。
-    ///
-    /// SwiftUI 根视图会将此值注入 `EnvironmentValues.locale`。
+    /// 与当前应用区域设置对应的 Foundation 区域设置。
     public var locale: Locale {
         currentLocale.locale
     }
 
-    /// 与当前区域设置对应的界面布局方向。
-    ///
-    /// 用于 SwiftUI `layoutDirection`、UIKit `semanticContentAttribute`、
-    /// 手势方向和自定义导航动画。
+    /// 与当前应用区域设置对应的界面布局方向。
     public var layoutDirection: AppUserInterfaceLayoutDirection {
         currentLocale.layoutDirection
     }
 
-    /// 选择并持久化受支持的区域设置，然后发布 `LocalizationChange`。
+    /// 选择并持久化受支持的区域设置。
     ///
-    /// 传入不受支持的标识符，或已经明确选择同一区域设置时，此方法返回 `false`。
-    /// 如果当前为“跟随系统”，即使解析结果与目标区域设置相同，此方法仍返回 `true`，
-    /// 因为选择状态已变为手动选择。
+    /// 选择成功后关闭跟随系统模式，并发布变更通知。如果原先处于跟随系统模式，
+    /// 即使选择的区域设置与当前相同，也会改变选择状态。
     ///
-    /// ```swift
-    /// Button("Arabic") {
-    ///     localizationController.setLocale(identifier: "ar")
-    /// }
-    /// ```
-    ///
-    /// - Parameter identifier: 要选择的 BCP 47 区域设置标识符。
-    /// - Returns: 选择状态发生变化时为 `true`；否则为 `false`。
+    /// - Parameter identifier: 受支持区域设置的 BCP 47 标识符。
+    /// - Returns: 区域设置或选择模式变化时返回 `true`，否则返回 `false`。
+    ///   不受支持的标识符不会改变当前选择。
     @discardableResult
     public func setLocale(identifier: String) -> Bool {
         guard let nextLocale = Self.supportedLocale(matching: identifier, in: supportedLocales) else {
@@ -182,13 +164,12 @@ public final class LocalizationController: ObservableObject {
         )
     }
 
-    /// 选择“跟随系统”并解析成当前系统下最合适的支持语言。
+    /// 选择最符合系统语言偏好的受支持区域设置。
     ///
-    /// 控制器按系统语言偏好顺序逐项查找：先匹配完整标识符，再比较语言、脚本和
-    /// 地区，最后回退到 ``fallbackLocale``。例如，系统使用 `zh-Hant`，而应用仅支持
-    /// `zh-Hans`，则当前区域设置会解析为 `zh-Hans`。
+    /// 按系统偏好顺序匹配，先比较完整标识符，再比较语言、脚本和地区。
+    /// 没有匹配语言时使用 ``fallbackLocale``。选择变化时持久化结果并发布变更通知。
     ///
-    /// - Returns: 选择状态或当前区域设置发生变化时为 `true`；否则为 `false`。
+    /// - Returns: 区域设置或选择模式变化时返回 `true`，否则返回 `false`。
     @discardableResult
     public func setFollowsSystemLocale() -> Bool {
         let nextLocale = resolvedSystemLocale()
@@ -199,12 +180,11 @@ public final class LocalizationController: ObservableObject {
         )
     }
 
-    /// 在应用跟随系统时重新读取系统语言，并按需发布变更。
+    /// 在应用跟随系统语言偏好时刷新生效的区域设置。
     ///
-    /// 可在应用进入前台、收到系统区域设置变更通知或设置界面重新出现时调用。
-    /// 如果用户手动选择了某个语言，此方法不会做任何事。
+    /// 在应用激活或系统区域设置偏好变化时调用。用户明确选择的应用区域设置保持不变。
     ///
-    /// - Returns: 当前区域设置发生变化时为 `true`；否则为 `false`。
+    /// - Returns: 生效的区域设置变化时返回 `true`，否则返回 `false`。
     @discardableResult
     public func refreshSystemLocaleIfNeeded() -> Bool {
         guard followsSystemLocale else { return false }

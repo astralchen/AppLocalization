@@ -2,25 +2,18 @@
 import SwiftUI
 
 public extension AppUserInterfaceLayoutDirection {
-    /// 对应的 SwiftUI `LayoutDirection`。
+    /// 对应的 SwiftUI 布局方向。
     var swiftUILayoutDirection: LayoutDirection {
         self == .rightToLeft ? .rightToLeft : .leftToRight
     }
 }
 
-/// 向 SwiftUI 内容注入应用内本地化环境的容器视图。
+/// 向内容提供应用本地化状态的视图。
 ///
-/// 每个场景的根视图都应使用此类型，使 SwiftUI 在 ``LocalizationController/currentLocale``
-/// 变化时获取最新的 `Locale` 和 `LayoutDirection`。
-///
-/// ```swift
-/// WindowGroup {
-///     RootView()
-///         .appLocalizationEnvironment(localizationController)
-/// }
-/// ```
+/// 包装每个场景的根视图，将控制器作为环境对象注入，
+/// 并使区域设置和布局方向与控制器状态保持同步。
 public struct LocalizationEnvironmentView<Content: View>: View {
-    // 观察控制器，使区域设置变化触发 SwiftUI 重新计算 `body`。
+    // 观察选择变化，使环境值随控制器状态更新。
     @ObservedObject private var localizationController: LocalizationController
     private let resetContentOnLayoutDirectionChange: Bool
     private let content: Content
@@ -38,16 +31,16 @@ public struct LocalizationEnvironmentView<Content: View>: View {
         }
     }
 
-    /// 创建本地化环境容器视图。
-///
-    /// `resetContentOnLayoutDirectionChange` 默认关闭，以保留内容树中的 `@State`、
-    /// 工作表和导航状态。仅当系统容器无法原地响应布局方向变化时才应启用该选项；
-    /// 启用后，方向变化会重建内容子树。
+    /// 创建向内容提供本地化环境值的视图。
+    ///
+    /// 仅在容器无法原地更新方向时启用内容重置。重置会改变内容标识，
+    /// 丢弃子树状态，包括导航和呈现状态。
     ///
     /// - Parameters:
-    ///   - localizationController: 要注入内容树的本地化控制器。
-    ///   - resetContentOnLayoutDirectionChange: 是否在布局方向变化时重建内容子树。
-    ///   - content: 创建容器内容的视图构建闭包。
+    ///   - localizationController: 提供本地化状态的控制器。
+    ///   - resetContentOnLayoutDirectionChange: 指示是否在方向变化时重置内容标识的布尔值。
+    ///     默认值为 `false`。
+    ///   - content: 创建内容的视图构建闭包。
     public init(
         localizationController: LocalizationController,
         resetContentOnLayoutDirectionChange: Bool = false,
@@ -58,34 +51,29 @@ public struct LocalizationEnvironmentView<Content: View>: View {
         self.content = content()
     }
 
-    /// 注入本地化环境值后的内容视图。
+    /// 已在环境中注入控制器、区域设置和布局方向的内容。
     public var body: some View {
         content
             .environmentObject(localizationController)
             .environment(\.locale, localizationController.locale)
             .environment(\.layoutDirection, localizationController.layoutDirection.swiftUILayoutDirection)
-            // 某些旧系统容器无法原地刷新方向时，调用方可显式切换视图标识。
-            // 此回退方案会丢弃子树状态，因此不作为默认刷新路径。
+            // 保持内容标识稳定，除非调用方明确选择在方向变化时丢弃子树状态。
             .id(layoutDirectionIdentity)
     }
 }
 
 public extension View {
-    /// 将 `LocalizationController`、`Locale` 和 SwiftUI `LayoutDirection` 注入视图层级。
+    /// 向视图提供应用的本地化控制器、区域设置和布局方向。
     ///
-    /// SwiftUI 的 `Text(LocalizedStringKey)` 会读取环境中的 `locale`。自定义
-    /// UIKit 桥接类型应在 `updateUIView` 或 `updateUIViewController` 中读取
-    /// `context.environment.locale` 和 `context.environment.layoutDirection`。
-    ///
-    /// ```swift
-    /// RootView()
-    ///     .appLocalizationEnvironment(localizationController)
-    /// ```
+    /// 将此修饰符应用于每个场景的根视图。UIKit 桥接类型应在更新方法中读取
+    /// `context.environment.locale` 和 `context.environment.layoutDirection`，
+    /// 并刷新通过命令式接口设置的内容。
     ///
     /// - Parameters:
-    ///   - localizationController: 要注入视图层级的本地化控制器。
-    ///   - resetContentOnLayoutDirectionChange: 是否在布局方向变化时重建接收者。
-    /// - Returns: 注入本地化环境值的视图。
+    ///   - localizationController: 提供本地化状态的控制器。
+    ///   - resetContentOnLayoutDirectionChange: 指示是否在方向变化时重置内容标识的布尔值。
+    ///     默认值为 `false`。启用后，方向变化会丢弃内容的局部状态。
+    /// - Returns: 注入指定本地化环境的视图。
     func appLocalizationEnvironment(
         _ localizationController: LocalizationController,
         resetContentOnLayoutDirectionChange: Bool = false

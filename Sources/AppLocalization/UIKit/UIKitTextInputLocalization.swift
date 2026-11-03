@@ -1,16 +1,24 @@
 #if canImport(UIKit)
 import UIKit
 
-/// 输入内容的对齐策略；它不改变字符的自然书写顺序。
+/// 本地化输入控件的文本对齐策略。
+///
+/// 对齐方式不会改变文本的自然书写顺序。
 public enum UIKitTextInputAlignmentPolicy: Equatable, Sendable {
+    /// 将文本对齐到应用布局方向的前缘。
     case followLayoutDirection
+
+    /// 使用指定的文本对齐方式，不受应用布局方向影响。
     case fixed(NSTextAlignment)
 }
 
-/// 由输入组件持有的本地化绑定。仅管理公开控件，不替换业务代理。
+/// 使文本输入控件的方向和对齐方式与应用本地化状态同步的对象。
 ///
-/// 语言更新、重新挂载及程序化改写内容、选区或输入属性后调用 `refresh()`。
-/// 编辑通知会自动同步；输入法仍在组合文字时，延后文字属性更新到组合结束。
+/// 通过 ``UIKitLocalizationContext`` 创建绑定，并在输入控件的生命周期内持有它。
+/// 绑定弱引用控件，并保留控件现有的代理。
+///
+/// 编辑通知会自动刷新绑定。区域设置变化、重新挂载或通过代码修改文本、选区、
+/// 输入属性后，应调用 ``refresh()``。存在输入法组合文本时，延后方向和对齐更新。
 @MainActor
 public final class UIKitTextInputLocalizationBinding: NSObject {
     private weak var textField: UITextField?
@@ -52,7 +60,10 @@ public final class UIKitTextInputLocalizationBinding: NSObject {
         NotificationCenter.default.removeObserver(self)
     }
 
-    /// 读取最新快照并幂等同步，不缓存创建绑定时的语言。
+    /// 使用最新本地化快照更新输入控件的方向和对齐方式。
+    ///
+    /// 保留现有文本，仅在需要时修改段落对齐。输入控件存在组合文本时不执行更新；
+    /// 后续编辑通知或显式刷新会应用当前快照。
     public func refresh() {
         guard !isRefreshing else { return }
         guard let input = (textField as UIView?) ?? textView else { return }
@@ -67,7 +78,7 @@ public final class UIKitTextInputLocalizationBinding: NSObject {
         case let .fixed(value):
             resolvedAlignment = value
         }
-        // 组合输入期间连同方向一起延后，避免输入系统重新排版破坏 marked text。
+        // 同时延后方向和对齐更新，保留输入法组合文本。
         if let field = textField {
             guard field.markedTextRange == nil else { return }
             if searchBar?.semanticContentAttribute != semantic {
@@ -85,8 +96,8 @@ public final class UIKitTextInputLocalizationBinding: NSObject {
     @objc private func editingDidChange() {
         guard !isRefreshing else { return }
         refresh()
-        // UIKit 和业务代理可能在通知之后继续更新输入属性，在本轮编辑完成后合并校正。
-        // 异步任务不持有控件或旧快照，也不会自行重复调度。
+        // 在 UIKit 和代理完成更新后合并执行第二次刷新。
+        // 执行排队的刷新时重新读取当前快照。
         guard !refreshScheduled else { return }
         refreshScheduled = true
         DispatchQueue.main.async { [weak self] in
@@ -111,8 +122,7 @@ public final class UIKitTextInputLocalizationBinding: NSObject {
 
     private func refresh(_ field: UITextField, alignment: NSTextAlignment) {
         let typing = field.typingAttributes
-        // textAlignment 会同步默认段落对齐；直接重写 defaultTextAttributes 会把
-        // 已有富文本的局部字体和颜色铺平成默认样式，因此不回写整个属性字典。
+        // 通过设置段落对齐保留默认属性，避免覆盖富文本各范围的字体和颜色。
         if field.textAlignment != alignment { field.textAlignment = alignment }
         if field.isEditing {
             let updated = attributes(typing ?? field.defaultTextAttributes, aligned: alignment)
@@ -124,7 +134,7 @@ public final class UIKitTextInputLocalizationBinding: NSObject {
 
     private func refresh(_ view: UITextView, alignment: NSTextAlignment) {
         let typing = attributes(view.typingAttributes, aligned: alignment)
-        // 只修改段落对齐，不替换 attributedText，保留附件身份、字符、选区和撤销栈。
+        // 原地更新段落属性，保留文本、附件和选区。
         let storage = view.textStorage
         var changes: [(NSRange, NSParagraphStyle)] = []
         storage.enumerateAttribute(.paragraphStyle, in: NSRange(location: 0, length: storage.length)) {

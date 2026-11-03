@@ -1,6 +1,6 @@
 import Foundation
 
-/// 区域设置标识符的内部规范化与回退规则。
+/// 区域设置标识符的规范化与资源查找规则。
 enum AppLocaleIdentifier {
     struct Components {
         let language: String
@@ -52,9 +52,8 @@ enum AppLocaleIdentifier {
         return direction == .rightToLeft ? .rightToLeft : .leftToRight
     }
 
-    // 下列脚本在 Unicode CLDR ScriptMetadata 中标记为从右向左书写。
-    // 显式脚本必须优先于语言的默认脚本。例如，`az-Arab` 从右向左书写，
-    // 而 `ar-Latn` 从左向右书写。
+    // 显式脚本优先于语言的默认书写方向。
+    // 以下从右向左书写的脚本代码依据 Unicode CLDR ScriptMetadata。
     private static let rightToLeftScripts: Set<String> = [
         "adlm", "arab", "armi", "avst", "chrs", "cprt", "elym", "gara",
         "hatr", "hebr", "hung", "khar", "lydi", "mand", "mani", "mend",
@@ -63,13 +62,12 @@ enum AppLocaleIdentifier {
         "sogd", "sogo", "syrc", "thaa", "yezi"
     ]
 
-    /// 按从最具体到最宽泛的顺序生成资源查找标识符。
+    /// 按从具体到宽泛的顺序返回资源标识符。
     ///
-    /// `zh_Hant_HK` 会生成 `zh-Hant-HK`、`zh-Hant` 和 `zh` 等候选项。
-    /// 同时保留规范大小写和全小写形式，以兼容区分大小写的资源包。
+    /// 保留规范大小写和全小写形式，以兼容区分大小写的资源包。
     ///
     /// - Parameter identifier: 要展开的区域设置标识符。
-    /// - Returns: 按资源查找优先级排列的标识符。
+    /// - Returns: 按查找优先级排列的资源标识符。
     static func resourceLookupIdentifiers(for identifier: String) -> [String] {
         let trimmedIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
         let hyphenatedIdentifier = trimmedIdentifier.replacingOccurrences(of: "_", with: "-")
@@ -113,62 +111,47 @@ enum AppLocaleIdentifier {
     }
 }
 
-/// 应用内部使用的界面布局方向。
-///
-/// 此类型不依赖 UIKit 或 SwiftUI，因此可用于 Swift Package、测试及非 UIKit 环境。
-/// 平台类型之间的转换由对应的 SwiftUI 和 UIKit 适配器提供。
+/// 应用界面的水平布局方向。
 public enum AppUserInterfaceLayoutDirection: Equatable, Sendable {
-    /// 从左向右布局。
+    /// 前缘位于左侧的布局方向。
     case leftToRight
 
-    /// 从右向左布局。
+    /// 前缘位于右侧的布局方向。
     case rightToLeft
 }
 
-/// 应用支持的一种本地化区域设置。
+/// 应用支持的语言和地区。
 ///
-/// `AppLocale` 表示应用内选择的语言和地区，不会更改系统语言。该类型包含
-/// BCP 47 标识符、显示名称、Foundation `Locale`，以及由标识符推导的布局方向。
+/// 使用此类型解析显示名称、格式化数值并确定界面布局方向。
+/// 选择应用区域设置不会更改系统语言。
 public struct AppLocale: Equatable, Hashable, Codable, Sendable {
-    /// BCP 47 语言标识符，例如 `en-US`、`zh-Hans`、`ar`。
+    /// BCP 47 区域设置标识符，例如 `en-US`、`zh-Hans` 或 `ar`。
     public let identifier: String
 
-    /// 向用户显示的配置名称。
+    /// 区域设置的回退显示名称。
     ///
-    /// 此值主要用于自定义标识符的回退显示。语言选择器通常应使用
-    /// ``nativeDisplayName`` 或 ``localizedDisplayName(preferredBy:)``。
+    /// 语言选择器应使用 ``nativeDisplayName`` 或 ``localizedDisplayName(preferredBy:)``。
     public let displayName: String
 
-    /// 创建应用内区域设置。
+    /// 使用指定标识符和显示名称创建区域设置。
     ///
     /// - Parameters:
-    ///   - identifier: BCP 47 标识符。
-    ///   - displayName: 可选的显示名称。省略时使用 `identifier`。
+    ///   - identifier: BCP 47 区域设置标识符。
+    ///   - displayName: 回退显示名称。为 `nil` 时使用 `identifier`。
     public init(identifier: String, displayName: String? = nil) {
         self.identifier = identifier
         self.displayName = displayName ?? identifier
     }
 
-    /// 与标识符对应的 Foundation `Locale`。
-    ///
-    /// 使用此值格式化数字、日期和字符串。
+    /// 用于格式化数字、日期和字符串的 Foundation 区域设置。
     public var locale: Locale {
         Locale(identifier: identifier)
     }
 
-    /// 使用该语言自身表示的稳定显示名称。
+    /// 以该区域设置自身语言表示的名称。
     ///
-    /// 语言选择列表的主标题应使用此值，而不是使用当前应用语言翻译后的名称。
-    /// 因此，当用户在英文、中文、阿拉伯文之间切换时，各语言项仍保持
-    /// `English (United States)`、`简体中文`、`العربية` 这类“语言自己的名称”，
-    /// 不会随当前应用语言变化。
-    ///
-    /// 当 Foundation 无法解析自定义标识符时，此属性返回 ``displayName``。
-    ///
-    /// ```swift
-    /// let title = AppLocale.simplifiedChinese.nativeDisplayName
-    /// // title == "简体中文"
-    /// ```
+    /// 将此值用作语言选择器的主标题，并使用候选语言自身的布局方向显示，
+    /// 不受当前应用方向影响。Foundation 无法解析名称时，返回 ``displayName``。
     public var nativeDisplayName: String {
         guard
             let resolvedName = locale.localizedString(forIdentifier: identifier),
@@ -181,32 +164,20 @@ public struct AppLocale: Equatable, Hashable, Codable, Sendable {
         return resolvedName
     }
 
-    /// 基础语言标识符。
+    /// 区域设置标识符中的语言子标签。
     ///
-    /// 例如 `en-US` 会得到 `en`，`zh-Hans` 会得到 `zh`。该值用于语言族匹配；
-    /// 排版方向仍需保留显式脚本和地区信息。
+    /// 例如，`en-US` 返回 `en`。此值适用于语言族匹配；界面方向应使用 ``layoutDirection``。
     public var baseLanguageIdentifier: String {
         AppLocaleIdentifier.baseLanguage(of: identifier)
     }
 
-    /// 返回适合指定显示语言的语言名称。
+    /// 返回以首选显示语言表示的区域设置名称。
     ///
-    /// 默认使用 `preferredLocale` 的语言显示接收者，以便用户理解候选语言。
+    /// 两个区域设置属于同一语言族时，使用接收者自身的语言，以保留脚本和地区差异。
+    /// 否则依次尝试首选语言、接收者自身的语言和 ``displayName``。
     ///
-    /// 但如果当前语言和候选语言属于同一语言族，只是脚本或地区不同，
-    /// 则改用候选语言自身显示。例如，应用仅支持 `zh-Hans` 时，繁体中文用户看到
-    /// “简体中文”比“簡體中文”更能准确表达实际可选语言。
-    /// 当 Foundation 无法解析自定义标识符时，此方法返回 ``displayName``。
-    ///
-    /// ```swift
-    /// let title = AppLocale.simplifiedChinese.localizedDisplayName(
-    ///     preferredBy: AppLocale(identifier: "zh-Hant")
-    /// )
-    /// // title == "简体中文"
-    /// ```
-    ///
-    /// - Parameter preferredLocale: 用于显示名称的首选区域设置。
-    /// - Returns: 本地化后的语言名称；无法解析时返回 ``displayName``。
+    /// - Parameter preferredLocale: 显示名称时优先使用的区域设置。
+    /// - Returns: 解析后的区域设置名称，或回退显示名称。
     public func localizedDisplayName(preferredBy preferredLocale: AppLocale) -> String {
         let displayLocale = preferredLocale.baseLanguageIdentifier == baseLanguageIdentifier
             ? locale
@@ -217,22 +188,21 @@ public struct AppLocale: Equatable, Hashable, Codable, Sendable {
             ?? displayName
     }
 
-    /// 根据语言、显式脚本和地区推导的界面布局方向。
+    /// 由区域设置标识符推导的界面布局方向。
     ///
-    /// 此值仅表示界面控件、列表和导航等是否应镜像。地图、播放进度、
-    /// 图表、游戏世界等空间语义内容不一定应该跟随这个方向镜像。
+    /// 显式脚本优先于语言的默认方向。空间内容和播放内容可能需要独立的方向策略。
     public var layoutDirection: AppUserInterfaceLayoutDirection {
         AppLocaleIdentifier.layoutDirection(of: identifier)
     }
 }
 
 public extension AppLocale {
-    /// 预置的美国英语区域设置。
+    /// 美国英语区域设置。
     static let englishUS = AppLocale(identifier: "en-US", displayName: "English")
 
-    /// 预置的简体中文区域设置。
+    /// 简体中文区域设置。
     static let simplifiedChinese = AppLocale(identifier: "zh-Hans", displayName: "简体中文")
 
-    /// 预置的阿拉伯文区域设置，用于覆盖从右向左布局场景。
+    /// 阿拉伯语区域设置。
     static let arabic = AppLocale(identifier: "ar", displayName: "العربية")
 }
