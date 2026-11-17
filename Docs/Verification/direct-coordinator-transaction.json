@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-17",
+  "status": "passed",
+  "implementation": "Delete LocalizationTransactionParticipant and WeakLocalizationParticipant. LocalizationController directly invokes UIWindowSceneLocalizationCoordinator phases. Foundation NSPointerArray.weakObjects preserves ordered weak registrations; identity comparison deduplicates and per-transaction allObjects freezes delivery.",
+  "tradeoff": "Core state controller now directly references the concrete UIKit coordinator inside the iOS-only package. No new public API, type-erased callback layer or generic registration wrapper.",
+  "preserved": [
+    "Prepare all coordinators before persistence/publication",
+    "Apply all directions before any page content",
+    "Finish all layouts before completion notification",
+    "Reentrant last request wins after current transaction",
+    "Weak ownership and object-identity deduplication",
+    "Registration order and append order after re-registration",
+    "Membership frozen for each transaction",
+    "Initial/activation synchronization queue",
+    "Native input and navigation behavior"
+  ],
+  "regression_results": {
+    "tests": {
+      "passedTests": 69,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "summary": "direct-coordinator-tests-summary.json",
+      "xcresult": "/tmp/applocalization-direct-coordinator-tests.xcresult",
+      "log": "/tmp/applocalization-direct-coordinator-tests.log"
+    },
+    "ui": {
+      "passedTests": 5,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "summary": "direct-coordinator-ui-summary.json",
+      "xcresult": "/tmp/applocalization-direct-coordinator-ui.xcresult",
+      "log": "/tmp/applocalization-direct-coordinator-ui.log"
+    },
+    "today": {
+      "passedTests": 3,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "summary": "direct-coordinator-today-summary.json",
+      "xcresult": "/tmp/applocalization-direct-coordinator-today.xcresult",
+      "log": "/tmp/applocalization-direct-coordinator-today.log"
+    }
+  },
+  "transaction_tests": "Protocol mock removed. Real coordinators, windows, pages, preference store and Combine/notification observations verify persistence/publication ordering, all-window preparation and direction, completion ordering, reentry, membership changes, weak collection holes/order, and lifetime during delivery.",
+  "builds": {
+    "package": {
+      "status": "passed",
+      "log": "/tmp/applocalization-direct-coordinator-package-build.log"
+    },
+    "demo": {
+      "status": "passed",
+      "log": "/tmp/applocalization-direct-coordinator-demo-build.log"
+    },
+    "today": {
+      "status": "passed",
+      "log": "/tmp/applocalization-direct-coordinator-today-build.log"
+    }
+  },
+  "console_notes": "All xcresult runtimeWarnings arrays are empty. Package console retains two ContentConfiguration replacement diagnostics in pre-existing testNativeListKeepsCustomContentInstancesDuringWindowDirectionChanges setup, also present in /tmp/applocalization-custom-navigation-final-tests.log. Legacy API deprecation warnings and Today keyboard/system diagnostics remain in full logs. No claim of an empty console.",
+  "not_run": [
+    "iOS 15/16 runtime",
+    "Exact iOS 17 runtime",
+    "Physical devices",
+    "Exact Swift 6.3 compiler",
+    "Full EventKit persistence and permission workflow",
+    "Real IME candidate keyboard interaction"
+  ],
+  "environment": "iPhone 18 Pro / iOS 27.2 Simulator; Swift 6.4.2 compiler with tools minimum 6.3 and Swift 6 mode",
+  "source_sha256": {
+    "Sources/AppLocalization/Strings/LocalizedStringResolver.swift": "bb65b844eec02c403f21dfd980881f8e14a12ce569e090a20b208b69ac497bf2",
+    "Sources/AppLocalization/Core/LocalizationChange.swift": "50ca0c21fb721e9c08794a9ad3826011e53e71c0fb07f2477d02c26328fb454e",
+    "Sources/AppLocalization/Core/LocalePreferenceStore.swift": "554bd256c2d8df939505f72133e039d15acb79e321249b719199e60e00b8d069",
+    "Sources/AppLocalization/Core/AppLocale.swift": "2381344d8f764cf2c4256fc4ebf4590876183a93f0ab75749e1e3b98cae3fe1b",
+    "Sources/AppLocalization/Core/LocalizationController.swift": "cdb815d413574e8f45b4b40557c6c72c96e63718c75b4706729f68ccc378ea3f",
+    "Sources/AppLocalization/Core/LocaleMatcher.swift": "c3b56e419a6056245c9a1a65fdcef8fa6e765e0149c64676f9978d4449d16151",
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "79418c6761a34788ba9e56fc4c75fc61621fcc4397769330372c0ace18283aba",
+    "Sources/AppLocalization/UIKit/UIKitLocalizationUpdate.swift": "baf95f4581a0eca1f5541b92a8fa1579a665cff011c5d73b9b4a76ed2c27097d",
+    "Sources/AppLocalization/UIKit/UIKitLayoutDirectionConversions.swift": "1885988da23782bedb197353fee2277ff716ae135e73f1a3563ad31c2379ac46",
+    "Sources/AppLocalization/Directional/DirectionalLayout.swift": "6955471ef918e6a6958696004d33f45726bb076539de1e5c9858433daa7cd251",
+    "Sources/AppLocalization/SwiftUI/SwiftUILocalizationEnvironment.swift": "d791bf2c5e5f93df79f1d0c6e6c1e31d52c671119ef09a8245a35d77cf191c78",
+    "Tests/AppLocalizationTests/LocalizationTransactionTests.swift": "7bcb8253e3c49afdc56e96e98b40f59657b008674dccfea884a03bd3eb0ce3df"
+  },
+  "deleted_source": "Sources/AppLocalization/Core/LocalizationTransactionParticipant.swift"
+}

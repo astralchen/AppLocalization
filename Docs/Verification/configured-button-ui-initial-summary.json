@@ -1,0 +1,46 @@
+{
+  "devicesAndConfigurations": [
+    {
+      "device": {
+        "architecture": "arm64",
+        "deviceId": "7C69D9E6-2CD5-476D-8ED8-4D00503B9AAE",
+        "deviceName": "iPhone 18 Pro",
+        "modelName": "iPhone 18 Pro",
+        "osBuildNumber": "24B8117",
+        "osVersion": "27.2",
+        "platform": "iOS Simulator"
+      },
+      "expectedFailures": 0,
+      "failedTests": 1,
+      "passedTests": 2,
+      "skippedTests": 0,
+      "testPlanConfiguration": {
+        "configurationId": "1",
+        "configurationName": "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription": "LocalizationValidation · Built with macOS 27.2.1",
+  "expectedFailures": 0,
+  "failedTests": 1,
+  "finishTime": 1794879934.274,
+  "passedTests": 2,
+  "result": "Failed",
+  "runtimeWarnings": [],
+  "skippedTests": 0,
+  "startTime": 1794879804.429,
+  "statistics": [],
+  "testFailures": [
+    {
+      "failureText": "XCTAssertTrue failed",
+      "targetName": "LanguageSwitchingDemoUITests",
+      "testIdentifier": 1,
+      "testIdentifierString": "LocalizationUITests/testConfiguredModalButtonSurvivesLiveLanguageSwitches()",
+      "testIdentifierURL": "test://com.apple.xcode/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests/testConfiguredModalButtonSurvivesLiveLanguageSwitches",
+      "testName": "testConfiguredModalButtonSurvivesLiveLanguageSwitches()"
+    }
+  ],
+  "title": "Test - LocalizationValidation",
+  "topInsights": [],
+  "totalTestCount": 3
+}

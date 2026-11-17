@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-17",
+  "status": "fixed",
+  "resolves": "native-navigation-customview-diagnostic.md",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator; Apple Swift 6.4.2; Swift tools minimum 6.3",
+  "reference": "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LocalizedControllers.swift",
+  "reference_scope": "Retain native Scene/semantic navigation approach; customView invalidation identified and verified locally, not copied from a customView implementation in reference",
+  "implementation": "Existing coordinator direction phase invalidates intrinsicContentSize only on customViews of public left/right UIBarButtonItems in UINavigationBar.items. Existing finish phase lays out window.",
+  "preserved": [
+    "UIBarButtonItem and customView identity",
+    "Button state and actions",
+    "fixed LTR and playback semantics",
+    "Native navigation stack, pop recognizer and delegate",
+    "No invalidation for same-direction language changes or unrelated content views"
+  ],
+  "package_tests": {
+    "passed": 67,
+    "failed": 0,
+    "expected_failures": 0,
+    "skipped": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-custom-navigation-final-tests.xcresult",
+    "log": "/tmp/applocalization-custom-navigation-final-tests.log",
+    "summary": "custom-navigation-package-summary.json"
+  },
+  "ui_tests": {
+    "passed": 5,
+    "failed": 0,
+    "expected_failures": 0,
+    "skipped": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-custom-navigation-ui.xcresult",
+    "log": "/tmp/applocalization-custom-navigation-ui.log",
+    "summary": "custom-navigation-ui-summary.json",
+    "coverage": "Real customView close button initially presented in RTL and LTR; live round trips; actual close tap; prior glyph/title OCR, continuous input, native edge pop, sheet and configured-button coverage retained"
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-custom-navigation-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-custom-navigation-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-custom-navigation-today-build.log"
+    }
+  },
+  "experiments": [
+    {
+      "xcresult": "/tmp/applocalization-custom-navigation-native-probes.xcresult",
+      "result": "baseline fails; custom-view/item reattachment and semantic+intrinsic invalidation pass"
+    },
+    {
+      "xcresult": "/tmp/applocalization-custom-navigation-minimal-probes.xcresult",
+      "result": "semantic-only fails; intrinsic-only passes"
+    },
+    {
+      "xcresult": "/tmp/applocalization-custom-navigation-fix-tests.xcresult",
+      "result": "central native fix passes strict geometry, identity, state, semantic exceptions and action checks"
+    }
+  ],
+  "source_sha256": {
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "4475d222377d21a344c089a982e0624b18bca11ec270f2c4d41f34f10a87cca9",
+    "Tests/AppLocalizationTests/UIKitCustomNavigationItemTests.swift": "692373210fb4a43590530590c9cba9a61b11a024cfb01f5f0b7bce2e3fea2a0c",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "82c088d5b53d1d3c70ae3c81387b24829de90325e13a4d9dab55fc6c9b1b29ae",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "c676b79597562bdded564282405bedc94eb340221ce58b69e7ea841202dd31b6"
+  },
+  "screenshots": [
+    "custom-navigation-rtl.png",
+    "custom-navigation-ltr.png"
+  ],
+  "not_run": [
+    "iOS 15/16 and exact iOS 17 runtime",
+    "Physical devices",
+    "Exact Swift 6.3 compiler",
+    "Today EventKit UI flow"
+  ]
+}

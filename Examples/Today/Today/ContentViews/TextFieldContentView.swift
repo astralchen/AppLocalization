@@ -3,21 +3,22 @@
  */
 
 import UIKit
-import AppLocalization
 
-class TextFieldContentView: UIView, UIContentView, UIKitLocalizationApplying {
+class TextFieldContentView: UIView, UIContentView {
     struct Configuration: UIContentConfiguration {
         var text: String? = ""
+        var layoutDirection: UIUserInterfaceLayoutDirection = .leftToRight
         var onChange: (String) -> Void = { _ in }
 
         func makeContentView() -> UIView & UIContentView {
             return TextFieldContentView(self)
         }
+
+        // 此配置不随 cell 的选中或高亮状态改变。
+        func updated(for state: any UIConfigurationState) -> Self { self }
     }
 
     let textField = UITextField()
-    private lazy var inputBinding = TodayLocalizationServices.shared.localizationContext
-        .makeTextInputBinding(to: textField)
     var configuration: UIContentConfiguration {
         didSet {
             configure(configuration: configuration)
@@ -41,32 +42,20 @@ class TextFieldContentView: UIView, UIContentView, UIKitLocalizationApplying {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
-        inputBinding.refresh()
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        if window != nil { inputBinding.refresh() }
-    }
-
     func configure(configuration: UIContentConfiguration) {
         guard let configuration = configuration as? Configuration else { return }
+        // 标题始终对齐应用前缘，包括没有文字时的光标；书写顺序仍由 UIKit 处理。
+        let isRightToLeft = configuration.layoutDirection == .rightToLeft
+        textField.semanticContentAttribute = isRightToLeft ? .forceRightToLeft : .forceLeftToRight
+        textField.textAlignment = isRightToLeft ? .right : .left
         // 相同配置不重写编辑内容，避免重配置打断选区和组合输入。
         if (textField.text ?? "") != (configuration.text ?? ""), textField.markedTextRange == nil {
             textField.text = configuration.text
         }
-        inputBinding.refresh()
     }
 
     @objc private func didChange(_ sender: UITextField) {
         guard let configuration = configuration as? TextFieldContentView.Configuration else { return }
         configuration.onChange(textField.text ?? "")
-    }
-}
-
-extension UICollectionViewListCell {
-    func textFieldConfiguration() -> TextFieldContentView.Configuration {
-        TextFieldContentView.Configuration()
     }
 }

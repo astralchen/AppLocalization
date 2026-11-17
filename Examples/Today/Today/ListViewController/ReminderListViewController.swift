@@ -39,9 +39,10 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
         let listLayout = listLayout()
         collectionView.collectionViewLayout = listLayout
 
-        let cellRegistration = services.localizationContext.makeCellRegistration(
-            handler: cellRegistrationHandler
-        )
+        let cellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, Reminder.ID> {
+            [weak self] (cell: UICollectionViewListCell, path: IndexPath, id: Reminder.ID) in
+            self?.cellRegistrationHandler(cell: cell, indexPath: path, id: id)
+        }
 
         dataSource = DataSource(collectionView: collectionView) {
             (collectionView: UICollectionView, indexPath: IndexPath, itemIdentifier: Reminder.ID) in
@@ -49,12 +50,14 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
                 using: cellRegistration, for: indexPath, item: itemIdentifier)
         }
 
-        let headerRegistration = services.localizationContext.makeSupplementaryRegistration(
+        let headerRegistration = UICollectionView.SupplementaryRegistration<ProgressHeaderView>(
             elementKind: ProgressHeaderView.elementKind,
-            handler: supplementaryRegistrationHandler
+            handler: { [weak self] (view: ProgressHeaderView, kind: String, path: IndexPath) in
+                self?.supplementaryRegistrationHandler(progressView: view, elementKind: kind, indexPath: path)
+            }
         )
-        dataSource?.supplementaryViewProvider = { supplementaryView, elementKind, indexPath in
-            return self.collectionView.dequeueConfiguredReusableSupplementary(
+        dataSource?.supplementaryViewProvider = { collectionView, elementKind, indexPath in
+            return collectionView.dequeueConfiguredReusableSupplementary(
                 using: headerRegistration, for: indexPath)
         }
 
@@ -69,11 +72,9 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
             self, action: #selector(didChangeListStyle(_:)), for: .valueChanged)
         navigationItem.titleView = listStyleSegmentedControl
         navigationItem.style = .navigator
-        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
-
-        updateSnapshot()
-
-        collectionView.dataSource = dataSource
+        navigationItem.leftBarButtonItem = settingsButton
+        navigationItem.rightBarButtonItem = addButton
+        applyLocalization(LocalizationUpdate(snapshot: services.localizationController.currentSnapshot))
 
         prepareReminderStore()
     }
@@ -95,19 +96,21 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
         willDisplay cell: UICollectionViewCell,
         forItemAt indexPath: IndexPath
     ) {
-        services.localizationContext.restoreOnAttachment(cell)
+        guard let cell = cell as? UICollectionViewListCell,
+              let id = dataSource?.itemIdentifier(for: indexPath) else { return }
+        cellRegistrationHandler(cell: cell, indexPath: indexPath, id: id)
     }
 
     override func collectionView(
         _ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView,
         forElementKind elementKind: String, at indexPath: IndexPath
     ) {
-        services.localizationContext.restoreOnAttachment(view)
         guard elementKind == ProgressHeaderView.elementKind,
               let progressView = view as? ProgressHeaderView
         else {
             return
         }
+        progressView.reloadLocalizedContent()
         progressView.progress = progress
     }
 
@@ -119,21 +122,7 @@ class ReminderListViewController: UICollectionViewController, UIKitLocalizationA
         collectionView.backgroundView = backgroundView
     }
 
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
-        if update.requiresLayoutDirectionRefresh {
-            collectionView.applyLocalization(
-                update,
-                rebuildingLayoutWith: listLayout
-            )
-            navigationItem.setBarButtonItem(
-                settingsButton,
-                side: .leading
-            )
-            navigationItem.setBarButtonItem(
-                addButton,
-                side: .trailing
-            )
-        }
+    func applyLocalization(_ update: LocalizationUpdate) {
         guard update.requiresLocalizedContentRefresh else { return }
         #if DEBUG
         if usesLocalizedSampleData {

@@ -4,10 +4,10 @@ import XCTest
 final class AppLocaleDisplayNameTests: XCTestCase {
     func testNativeDisplayNameUsesCandidateLocaleAndDoesNotDependOnPreferredLocale() {
         XCTAssertTrue(
-            AppLocale.englishUS.nativeDisplayName.contains("English")
+            AppLocale(identifier: "en-US").nativeDisplayName.contains("English")
         )
-        XCTAssertEqual(AppLocale.simplifiedChinese.nativeDisplayName, "简体中文")
-        XCTAssertEqual(AppLocale.arabic.nativeDisplayName, "العربية")
+        XCTAssertEqual(AppLocale(identifier: "zh-Hans").nativeDisplayName, "简体中文")
+        XCTAssertEqual(AppLocale(identifier: "ar").nativeDisplayName, "العربية")
     }
 
     func testNativeDisplayNameFallsBackToConfiguredDisplayNameWhenFoundationCannotResolveIdentifier() {
@@ -18,7 +18,7 @@ final class AppLocaleDisplayNameTests: XCTestCase {
 
     func testUsesPreferredLocaleForLanguageDisplayName() {
         XCTAssertEqual(
-            AppLocale.englishUS.localizedDisplayName(preferredBy: .simplifiedChinese),
+            AppLocale(identifier: "en-US").localizedDisplayName(preferredBy: AppLocale(identifier: "zh-Hans")),
             "英语（美国）"
         )
     }
@@ -27,7 +27,7 @@ final class AppLocaleDisplayNameTests: XCTestCase {
         let traditionalChineseUser = AppLocale(identifier: "zh-Hant", displayName: "繁體中文")
 
         XCTAssertEqual(
-            AppLocale.simplifiedChinese.localizedDisplayName(preferredBy: traditionalChineseUser),
+            AppLocale(identifier: "zh-Hans").localizedDisplayName(preferredBy: traditionalChineseUser),
             "简体中文"
         )
     }
@@ -36,7 +36,7 @@ final class AppLocaleDisplayNameTests: XCTestCase {
         let customLocale = AppLocale(identifier: "x-app-custom", displayName: "Custom Language")
 
         XCTAssertEqual(
-            customLocale.localizedDisplayName(preferredBy: .englishUS),
+            customLocale.localizedDisplayName(preferredBy: AppLocale(identifier: "en-US")),
             "Custom Language"
         )
     }

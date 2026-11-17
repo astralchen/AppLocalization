@@ -1,0 +1,74 @@
+SwiftUI 编辑状态警告修复，2026-11-16
+
+诊断时的绑定调用栈（节选）：
+draft equal=true
+16  SwiftUI                             0x00000001c9b69cf4 closure #1 () -> () in SwiftUI.PlatformTextFieldCoordinator.didEndEditing() -> () + 216
+21  UIKitCore                           0x00000001c4b855d4 -[UITextField _notifyDidEndEditing] + 128
+22  UIKitCore                           0x00000001c4b857dc -[UITextField _resignFirstResponder] + 156
+27  UIKitCore                           0x00000001c3e2069c -[UICollectionView reloadData] + 572
+29  UIKitCore                           0x00000001c3e238cc -[UICollectionView setSemanticContentAttribute:] + 392
+35  SwiftUICore                         0x00000001c709320c closure #3 () -> () in closure #1 () -> () in SwiftUI.PlatformViewChild.updateValue() -> () + 176
+36  SwiftUICore                         0x00000001c7091efc closure #1 () -> () in SwiftUI.PlatformViewChild.updateValue() -> () + 1896
+40  SwiftUICore                         0x00000001c7532940 SwiftUI.GraphHost.flushTransactions() -> () + 776
+52  UIKitCore                           0x00000001c4daa89c -[UIView(Hierarchy) layoutBelowIfNeeded] + 312
+53  LanguageSwitchingDemo.debug.dylib   0x00000001010588a4 AppLocalization.UIWindowSceneLocalizationCoordinator.(finish in _825B97A97576FC4D811E1B0C1518FD3E)(_: AppLocalization.UIWindowSceneLocalizationCoordinator.(Delivery in _825B97A97576FC4D811E1B0C1518FD3E), update: AppLocalization.UIKitLocalizationUpdate) -> () + 304
+56  LanguageSwitchingDemo.debug.dylib   0x00000001010269c8 AppLocalization.LocalizationController.(drain in _10F08963B195467876DC141105DBF411)() -> Swift.Bool + 2868
+
+
+warning_as_failure_baseline — failed
+/tmp/applocalization-warning-regression-red.log
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' started.
+<unknown>:0: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures] : Modifying state during view update, this will cause undefined behavior.
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' failed (18.129 seconds).
+	 Executed 1 test, with 1 failure (0 unexpected) in 18.129 (18.137) seconds
+	 Executed 1 test, with 1 failure (0 unexpected) in 18.129 (18.141) seconds
+	 Executed 1 test, with 1 failure (0 unexpected) in 18.129 (18.146) seconds
+** TEST FAILED **
+
+duplicate_value_guard_attempt — failed; reverted
+/tmp/applocalization-warning-regression-green.log
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' started.
+<unknown>:0: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures] : Modifying state during view update, this will cause undefined behavior.
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' failed (16.687 seconds).
+	 Executed 1 test, with 1 failure (0 unexpected) in 16.687 (16.717) seconds
+	 Executed 1 test, with 1 failure (0 unexpected) in 16.687 (16.717) seconds
+	 Executed 1 test, with 1 failure (0 unexpected) in 16.687 (16.719) seconds
+** TEST FAILED **
+
+stable_editor_original_ui_flow — passed
+/tmp/applocalization-warning-editor-boundary.log
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' started.
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' passed (31.375 seconds).
+	 Executed 1 test, with 0 failures (0 unexpected) in 31.375 (31.386) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 31.375 (31.392) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 31.375 (31.403) seconds
+** TEST SUCCEEDED **
+
+expanded_ui_app_switcher_interruption — failed during hit testing; App Switcher captured
+/tmp/applocalization-warning-fix-final.log
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' started.
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:65: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures] : Failed to determine hittability of "language.option.en-US" Button: Activation point invalid and no suggested hit points based on element frame
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' failed (35.266 seconds).
+	 Executed 1 test, with 1 failure (0 unexpected) in 35.266 (35.272) seconds
+	 Executed 1 test, with 1 failure (0 unexpected) in 35.266 (35.273) seconds
+	 Executed 1 test, with 1 failure (0 unexpected) in 35.266 (35.275) seconds
+** TEST FAILED **
+
+expanded_ui_unchanged_rerun — passed
+/tmp/applocalization-warning-fix-verified.log
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' started.
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' passed (33.606 seconds).
+	 Executed 1 test, with 0 failures (0 unexpected) in 33.606 (33.621) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 33.606 (33.630) seconds
+	 Executed 1 test, with 0 failures (0 unexpected) in 33.606 (33.647) seconds
+** TEST SUCCEEDED **
+
+最终 xcresult：testFailureSummaries 0，testWarningSummaries 0。
+
+LanguageSwitchingDemo
+/tmp/applocalization-warning-demo-build.log
+** BUILD SUCCEEDED **
+
+Today
+/tmp/applocalization-warning-today-build.log
+** BUILD SUCCEEDED **

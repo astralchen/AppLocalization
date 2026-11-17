@@ -35,13 +35,26 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let cellRegistration = services.localizationContext.makeCellRegistration(
-            handler: cellRegistrationHandler
-        )
+        let configure: UICollectionView.CellRegistration<UICollectionViewListCell, Row>.Handler = {
+            [weak self] (cell: UICollectionViewListCell, path: IndexPath, row: Row) in
+            self?.cellRegistrationHandler(cell: cell, indexPath: path, row: row)
+        }
+        // 不同内容类型使用独立的原生复用池，避免查看／编辑切换时替换不兼容的内容视图。
+        let displayRegistration = UICollectionView.CellRegistration(handler: configure)
+        let titleRegistration = UICollectionView.CellRegistration(handler: configure)
+        let dateRegistration = UICollectionView.CellRegistration(handler: configure)
+        let notesRegistration = UICollectionView.CellRegistration(handler: configure)
         dataSource = DataSource(collectionView: collectionView) {
             (collectionView: UICollectionView, indexPath: IndexPath, itemIdentifier: Row) in
+            let registration: UICollectionView.CellRegistration<UICollectionViewListCell, Row>
+            switch itemIdentifier {
+            case .editableTitle: registration = titleRegistration
+            case .editableDate: registration = dateRegistration
+            case .editableNotes: registration = notesRegistration
+            default: registration = displayRegistration
+            }
             return collectionView.dequeueConfiguredReusableCell(
-                using: cellRegistration, for: indexPath, item: itemIdentifier)
+                using: registration, for: indexPath, item: itemIdentifier)
         }
 
         navigationItem.style = .navigator
@@ -50,26 +63,21 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
         editDoneButton.target = self
         editDoneButton.action = #selector(didToggleEditing)
 
-        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
-        if isEditing {
-            updateSnapshotForEditing()
-        } else {
-            updateSnapshotForViewing()
-        }
+        configureNavigationButtons()
+        applyLocalization(LocalizationUpdate(snapshot: services.localizationController.currentSnapshot))
     }
 
     override func setEditing(_ editing: Bool, animated: Bool) {
         super.setEditing(editing, animated: animated)
-        if editing {
-            prepareForEditing()
-        } else {
+        configureNavigationButtons()
+        if !editing {
             if isAddingNewReminder {
                 onChange(workingReminder)
-            } else {
-                prepareForViewing()
+            } else if workingReminder != reminder {
+                reminder = workingReminder
             }
         }
-        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
+        applyLocalization(LocalizationUpdate(snapshot: services.localizationController.currentSnapshot))
     }
 
     override func collectionView(
@@ -77,22 +85,24 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
         willDisplay cell: UICollectionViewCell,
         forItemAt indexPath: IndexPath
     ) {
-        services.localizationContext.restoreOnAttachment(cell)
+        guard let cell = cell as? UICollectionViewListCell,
+              let row = dataSource?.itemIdentifier(for: indexPath) else { return }
+        cellRegistrationHandler(cell: cell, indexPath: indexPath, row: row)
     }
 
     func cellRegistrationHandler(cell: UICollectionViewListCell, indexPath: IndexPath, row: Row) {
-        let section = section(for: indexPath)
+        guard let section = dataSource?.sectionIdentifier(for: indexPath.section) else { return }
         switch (section, row) {
-        case (_, .header(let title)):
-            cell.contentConfiguration = headerConfiguration(for: cell, with: title)
+        case (_, .header(let section)):
+            cell.contentConfiguration = headerConfiguration(for: cell, with: section.name(resolver: services.resolver))
         case (.view, _):
             cell.contentConfiguration = defaultConfiguration(for: cell, at: row)
-        case (.title, .editableText(let title)):
-            cell.contentConfiguration = titleConfiguration(for: cell, with: title)
-        case (.date, .editableDate(let date)):
-            cell.contentConfiguration = dateConfiguration(for: cell, with: date)
-        case (.notes, .editableText(let notes)):
-            cell.contentConfiguration = notesConfiguration(for: cell, with: notes)
+        case (.title, .editableTitle):
+            cell.contentConfiguration = titleConfiguration(with: workingReminder.title)
+        case (.date, .editableDate):
+            cell.contentConfiguration = dateConfiguration(with: workingReminder.dueDate)
+        case (.notes, .editableNotes):
+            cell.contentConfiguration = notesConfiguration(with: workingReminder.notes)
         default:
             fatalError("Unexpected combination of section and row.")
         }
@@ -112,24 +122,7 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
         setEditing(!isEditing, animated: true)
     }
 
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
-        // 只转发给本页面显式拥有的输入内容视图，不遍历系统控件的内部层级。
-        for cell in collectionView.visibleCells {
-            for content in [cell.contentView] + cell.contentView.subviews {
-                if let field = content as? TextFieldContentView {
-                    field.applyLocalization(update)
-                } else if let notes = content as? TextViewContentView {
-                    notes.applyLocalization(update)
-                }
-            }
-        }
-        if update.requiresLayoutDirectionRefresh {
-            collectionView.applyLocalization(
-                update,
-                rebuildingLayoutWith: Self.makeListLayout
-            )
-            configureNavigationButtons()
-        }
+    func applyLocalization(_ update: LocalizationUpdate) {
         guard update.requiresLocalizedContentRefresh else { return }
         title = services.resolver.string(
             isAddingNewReminder ? "reminder.add.title" : "reminder.detail.title",
@@ -142,88 +135,30 @@ class ReminderViewController: UICollectionViewController, UIKitLocalizationApply
             bundle: .main
         )
 
-        if dataSource != nil {
-            if isEditing {
-                updateSnapshotForEditing()
-            } else {
-                updateSnapshotForViewing()
-            }
-        }
+        updateSnapshot()
     }
 
-    private func prepareForEditing() {
-        configureNavigationButtons()
-        updateSnapshotForEditing()
-    }
-
-    private func updateSnapshotForEditing() {
+    private func updateSnapshot() {
+        guard let dataSource else { return }
         var snapshot = Snapshot()
-        snapshot.appendSections([.title, .date, .notes])
-        snapshot.appendItems(
-            [
-                .header(Section.title.name(resolver: services.resolver)),
-                .editableText(workingReminder.title)
-            ],
-            toSection: .title
-        )
-        snapshot.appendItems(
-            [
-                .header(Section.date.name(resolver: services.resolver)),
-                .editableDate(workingReminder.dueDate)
-            ],
-            toSection: .date
-        )
-        snapshot.appendItems(
-            [
-                .header(Section.notes.name(resolver: services.resolver)),
-                .editableText(workingReminder.notes)
-            ],
-            toSection: .notes
-        )
-        dataSource?.apply(snapshot)
-    }
-
-    private func prepareForViewing() {
-        configureNavigationButtons()
-        if workingReminder != reminder {
-            reminder = workingReminder
+        if isEditing {
+            snapshot.appendSections([.title, .date, .notes])
+            snapshot.appendItems([.header(.title), .editableTitle], toSection: .title)
+            snapshot.appendItems([.header(.date), .editableDate], toSection: .date)
+            snapshot.appendItems([.header(.notes), .editableNotes], toSection: .notes)
+        } else {
+            snapshot.appendSections([.view])
+            snapshot.appendItems([.header(.view), .title, .date, .time, .notes], toSection: .view)
         }
-        updateSnapshotForViewing()
-    }
-
-    private func updateSnapshotForViewing() {
-        var snapshot = Snapshot()
-        snapshot.appendSections([.view])
-        snapshot.appendItems(
-            [Row.header(""), Row.title, Row.date, Row.time, Row.notes], toSection: .view)
-        dataSource?.apply(snapshot)
-    }
-
-    private func section(for indexPath: IndexPath) -> Section {
-        let sectionNumber = isEditing ? indexPath.section + 1 : indexPath.section
-        guard let section = Section(rawValue: sectionNumber) else {
-            fatalError("Unable to find matching section")
-        }
-        return section
+        // 每次刷新只提交一个快照；稳定编辑行 ID 让 UIKit 保留输入视图和编辑状态。
+        let existing = Set(dataSource.snapshot().itemIdentifiers)
+        snapshot.reconfigureItems(snapshot.itemIdentifiers.filter { existing.contains($0) })
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 
     private func configureNavigationButtons() {
-        if isEditing {
-            navigationItem.setBarButtonItem(
-                cancelButton,
-                side: .leading
-            )
-            navigationItem.setBarButtonItem(
-                editDoneButton,
-                side: .trailing
-            )
-        } else {
-            navigationItem.setBarButtonItem(nil, side: .leading)
-            navigationItem.setBarButtonItem(
-                editDoneButton,
-                side: .trailing
-            )
-        }
+        navigationItem.leftBarButtonItem = isEditing ? cancelButton : nil
+        navigationItem.rightBarButtonItem = editDoneButton
     }
 
     private static func makeListLayout() -> UICollectionViewCompositionalLayout {

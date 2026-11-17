@@ -1,13 +1,7 @@
-import Foundation
+import UIKit
 
 /// 区域设置标识符的规范化与资源查找规则。
 enum AppLocaleIdentifier {
-    struct Components {
-        let language: String
-        let script: String?
-        let region: String?
-    }
-
     static func normalized(_ identifier: String) -> String {
         identifier
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -15,52 +9,22 @@ enum AppLocaleIdentifier {
             .lowercased()
     }
 
-    static func components(of identifier: String) -> Components? {
-        let subtags = normalized(identifier)
-            .split(separator: "-")
-            .map(String.init)
-
-        guard let language = subtags.first, !language.isEmpty else {
-            return nil
-        }
-
-        let remainingSubtags = subtags.dropFirst()
-        let script = remainingSubtags.first {
-            $0.count == 4 && $0.allSatisfy(\.isLetter)
-        }
-        let region = remainingSubtags.first {
-            ($0.count == 2 && $0.allSatisfy(\.isLetter))
-                || ($0.count == 3 && $0.allSatisfy(\.isNumber))
-        }
-
-        return Components(language: language, script: script, region: region)
-    }
-
     static func baseLanguage(of identifier: String) -> String {
-        components(of: identifier)?.language ?? normalized(identifier)
+        normalized(identifier).split(separator: "-").first.map(String.init) ?? ""
     }
 
-    static func layoutDirection(of identifier: String) -> AppUserInterfaceLayoutDirection {
-        if let script = components(of: identifier)?.script {
-            return rightToLeftScripts.contains(script) ? .rightToLeft : .leftToRight
-        }
-
+    static func layoutDirection(of identifier: String) -> UIUserInterfaceLayoutDirection {
         let languageIdentifier = identifier
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "_", with: "-")
-        let direction = NSLocale.characterDirection(forLanguage: languageIdentifier)
-        return direction == .rightToLeft ? .rightToLeft : .leftToRight
+        let isRightToLeft: Bool
+        if #available(iOS 16.0, *) {
+            isRightToLeft = Locale.Language(identifier: languageIdentifier).characterDirection == .rightToLeft
+        } else {
+            isRightToLeft = Locale.characterDirection(forLanguage: languageIdentifier) == .rightToLeft
+        }
+        return isRightToLeft ? .rightToLeft : .leftToRight
     }
-
-    // 显式脚本优先于语言的默认书写方向。
-    // 以下从右向左书写的脚本代码依据 Unicode CLDR ScriptMetadata。
-    private static let rightToLeftScripts: Set<String> = [
-        "adlm", "arab", "armi", "avst", "chrs", "cprt", "elym", "gara",
-        "hatr", "hebr", "hung", "khar", "lydi", "mand", "mani", "mend",
-        "merc", "mero", "narb", "nbat", "nkoo", "orkh", "ougr", "palm",
-        "phli", "phlp", "phnx", "prti", "rohg", "samr", "sarb", "sidt",
-        "sogd", "sogo", "syrc", "thaa", "yezi"
-    ]
 
     /// 按从具体到宽泛的顺序返回资源标识符。
     ///
@@ -109,15 +73,6 @@ enum AppLocaleIdentifier {
         }
         identifiers.append(identifier)
     }
-}
-
-/// 应用界面的水平布局方向。
-public enum AppUserInterfaceLayoutDirection: Equatable, Sendable {
-    /// 前缘位于左侧的布局方向。
-    case leftToRight
-
-    /// 前缘位于右侧的布局方向。
-    case rightToLeft
 }
 
 /// 应用支持的语言和地区。
@@ -190,19 +145,9 @@ public struct AppLocale: Equatable, Hashable, Codable, Sendable {
 
     /// 由区域设置标识符推导的界面布局方向。
     ///
-    /// 显式脚本优先于语言的默认方向。空间内容和播放内容可能需要独立的方向策略。
-    public var layoutDirection: AppUserInterfaceLayoutDirection {
+    /// 由当前系统的 Foundation 语言数据决定，不维护额外脚本表。
+    /// 空间内容和播放内容可能需要独立的方向策略。
+    public var layoutDirection: UIUserInterfaceLayoutDirection {
         AppLocaleIdentifier.layoutDirection(of: identifier)
     }
-}
-
-public extension AppLocale {
-    /// 美国英语区域设置。
-    static let englishUS = AppLocale(identifier: "en-US", displayName: "English")
-
-    /// 简体中文区域设置。
-    static let simplifiedChinese = AppLocale(identifier: "zh-Hans", displayName: "简体中文")
-
-    /// 阿拉伯语区域设置。
-    static let arabic = AppLocale(identifier: "ar", displayName: "العربية")
 }

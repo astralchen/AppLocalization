@@ -24,9 +24,9 @@ extension ReminderListViewController {
         snapshot.appendSections([0])
         snapshot.appendItems(filteredReminders.map { $0.id })
         if !ids.isEmpty {
-            snapshot.reloadItems(ids)
+            snapshot.reconfigureItems(ids)
         }
-        dataSource?.apply(snapshot)
+        dataSource?.apply(snapshot, animatingDifferences: false)
         headerView?.progress = progress
     }
 
@@ -127,8 +127,12 @@ extension ReminderListViewController {
 
     func reminderStoreChanged() {
         Task {
-            reminders = try await reminderStore.readAll()
-            updateSnapshot()
+            do {
+                reminders = try await reminderStore.readAll()
+                updateSnapshot()
+            } catch {
+                showError(error)
+            }
         }
     }
 

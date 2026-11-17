@@ -13,6 +13,9 @@ class DatePickerContentView: UIView, UIContentView {
         func makeContentView() -> UIView & UIContentView {
             return DatePickerContentView(self)
         }
+
+        // 此配置不随 cell 的选中或高亮状态改变。
+        func updated(for state: any UIConfigurationState) -> Self { self }
     }
 
     let datePicker = UIDatePicker()
@@ -39,17 +42,11 @@ class DatePickerContentView: UIView, UIContentView {
         datePicker.date = configuration.date
         datePicker.locale = configuration.locale
         datePicker.semanticContentAttribute =
-            TodayLocalizationServices.shared.localizationController.layoutDirection.semanticContentAttribute
+            TodayLocalizationServices.shared.localizationController.layoutDirection == .rightToLeft ? .forceRightToLeft : .forceLeftToRight
     }
 
     @objc private func didPick(_ sender: UIDatePicker) {
         guard let configuration = configuration as? DatePickerContentView.Configuration else { return }
         configuration.onChange(sender.date)
-    }
-}
-
-extension UICollectionViewListCell {
-    func datePickerConfiguration() -> DatePickerContentView.Configuration {
-        DatePickerContentView.Configuration()
     }
 }

@@ -1,0 +1,43 @@
+    func testNativeNavigationItemsMirrorWithoutReassignment() async {
+        let fixture = makeController()
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: fixture.controller)
+        let root = UIViewController()
+        let leading = UIButton(type: .system)
+        leading.setTitle("Close", for: .normal)
+        let trailing = UIButton(type: .system)
+        trailing.setTitle("Done", for: .normal)
+        let leadingItem = UIBarButtonItem(customView: leading)
+        let trailingItem = UIBarButtonItem(customView: trailing)
+        // 原生左右槽位由导航栏解析语义，只安装一次，不在语言切换时重新赋值。
+        root.navigationItem.leftBarButtonItem = leadingItem
+        root.navigationItem.rightBarButtonItem = trailingItem
+        let navigation = UINavigationController(rootViewController: root)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = navigation
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        coordinator.register(window: window)
+        for identifier in ["ar", "en-US", "ar", "en-US"] {
+            fixture.controller.setLocale(identifier: identifier)
+            root.navigationItem.setLeftBarButton(leadingItem, animated: false)
+            root.navigationItem.setRightBarButton(trailingItem, animated: false)
+            // 原生导航栏在下一轮主队列传播布局；完成该轮后再检查屏幕位置。
+            await withCheckedContinuation { continuation in
+                DispatchQueue.main.async { continuation.resume() }
+            }
+            window.layoutIfNeeded()
+            navigation.navigationBar.layoutIfNeeded()
+            XCTAssertTrue(root.navigationItem.leftBarButtonItem === leadingItem)
+            XCTAssertTrue(root.navigationItem.rightBarButtonItem === trailingItem)
+            XCTAssertTrue(leading.window === window)
+            XCTAssertTrue(trailing.window === window)
+            print("Native navigation", identifier, "scene", window.windowScene != nil, "bar traits", navigation.navigationBar.traitCollection.layoutDirection.rawValue, "bar direction", navigation.navigationBar.effectiveUserInterfaceLayoutDirection.rawValue, "button traits", leading.traitCollection.layoutDirection.rawValue)
+            let leadingX = leading.convert(leading.bounds, to: window).midX
+            let trailingX = trailing.convert(trailing.bounds, to: window).midX
+            if identifier == "ar" {
+                XCTAssertGreaterThan(leadingX, trailingX)
+            } else {
+                XCTAssertLessThan(leadingX, trailingX)
+            }
+        }
+    }

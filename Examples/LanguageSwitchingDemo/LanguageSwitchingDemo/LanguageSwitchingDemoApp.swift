@@ -1,40 +1,47 @@
-import SwiftUI
-import AppLocalization
+import UIKit
 
 @main
-struct LanguageSwitchingDemoApp: App {
-    @StateObject private var services = DemoServices()
+@MainActor
+final class LanguageSwitchingDemoApp: UIResponder, UIApplicationDelegate {
+    let services = DemoServices()
 
-    var body: some Scene {
-        WindowGroup {
-            DemoRootView(
-                localizationController: services.localizationController,
-                resolver: services.resolver
-            )
-            // `NavigationView` 和 `List` 原地切换布局方向后可能保留 UIKit 镜像变换。
-            // 仅在布局方向变化时重建内容；同方向的语言切换保留现有视图状态。
-            .appLocalizationEnvironment(
-                services.localizationController,
-                resetContentOnLayoutDirectionChange: true
-            )
-            .background(
-                WindowLocalizationRegistrationView(
-                    coordinator: services.localizationCoordinator
-                )
-                .frame(width: 0, height: 0)
-            )
-            .onReceive(
-                NotificationCenter.default.publisher(
-                    for: LocalizationController.localizationDidChangeNotification,
-                    object: services.localizationController
-                )
-            ) { notification in
-                guard let change = notification.userInfo?[LocalizationController.localizationChangeUserInfoKey] as? LocalizationChange else {
-                    return
-                }
-                // SwiftUI 环境负责根内容重算；协调器负责已经物化的 UIKit 边界。
-                services.localizationCoordinator.apply(change)
-            }
-        }
+    func application(
+        _ application: UIApplication,
+        configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: "Default", sessionRole: connectingSceneSession.role)
+        configuration.delegateClass = DemoSceneDelegate.self
+        return configuration
+    }
+}
+
+@MainActor
+final class DemoSceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+    private var services: DemoServices?
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
+        guard let scene = scene as? UIWindowScene,
+              let app = UIApplication.shared.delegate as? LanguageSwitchingDemoApp else { return }
+        let services = app.services
+        self.services = services
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = DemoNavigationController(services: services)
+        self.window = window
+        // 窗口由 Scene 创建和注册，无需在 SwiftUI 中放置隐藏视图查找窗口。
+        window.rootViewController?.loadViewIfNeeded()
+        services.localizationCoordinator.register(window: window)
+        window.makeKeyAndVisible()
+    }
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        guard let window else { return }
+        services?.localizationCoordinator.synchronize(window: window)
+    }
+
+    func sceneDidDisconnect(_ scene: UIScene) {
+        guard let window else { return }
+        services?.localizationCoordinator.unregister(window: window)
     }
 }

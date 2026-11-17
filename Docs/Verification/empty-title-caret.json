@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-17",
+  "status": "passed",
+  "reference": "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LayoutDirection.swift:applyTextField",
+  "implementation": "Today title configuration carries native UIUserInterfaceLayoutDirection and sets UITextField semanticContentAttribute and textAlignment. No new core abstraction or input binding.",
+  "baseline": {
+    "xcresult": "/tmp/applocalization-empty-caret-baseline-ready.xcresult",
+    "log": "/tmp/applocalization-empty-caret-baseline-ready.log",
+    "summary": "empty-title-caret-baseline-summary.json",
+    "failures": 2,
+    "evidence": "Initial ar and subsequent ar both had caret midX=1 for field width=338."
+  },
+  "fixture_setup_failure": {
+    "xcresult": "/tmp/applocalization-empty-caret-baseline.xcresult",
+    "log": "/tmp/applocalization-empty-caret-baseline.log",
+    "reason": "Cell not yet materialized before sheet presentation completion. Test now waits for native presentation completion."
+  },
+  "fixed": {
+    "xcresult": "/tmp/applocalization-empty-caret-fixed.xcresult",
+    "log": "/tmp/applocalization-empty-caret-fixed.log",
+    "summary": "empty-title-caret-summary.json",
+    "passedTests": 4,
+    "failedTests": 0,
+    "expectedFailures": 0,
+    "skippedTests": 0
+  },
+  "coverage": [
+    "Empty title caret geometry in presented ReminderViewController: ar -> en-US -> ar -> zh-Hans",
+    "Stable cell and input instance, first responder, continued insertText without refocusing",
+    "Existing draft, selection, marked-text preservation and save/cancel tests"
+  ],
+  "builds": {
+    "Today": "/tmp/applocalization-empty-caret-today-build.log",
+    "LanguageSwitchingDemo": "/tmp/applocalization-empty-caret-demo-build.log"
+  },
+  "validation_boundary": "iPhone 18 Pro iOS 27.2 simulator. Hosted tests with real UIWindowScene and presentation. No manual touch or screenshot acceptance.",
+  "not_run": [
+    "Other iOS runtimes",
+    "Physical device",
+    "Exact Swift 6.3 compiler",
+    "Real IME candidate interaction",
+    "Full EventKit flow",
+    "Package tests and main demo navigation UI tests not rerun in this Today-only change"
+  ],
+  "log_notes": "No xcresult runtime warnings. Native keyboard and IOSurface console messages retained.",
+  "source_sha256": {
+    "Examples/Today/Today/ContentViews/TextFieldContentView.swift": "babfb10b39da345963f86baef263223cb3c80460664857e84df5beba2532739a",
+    "Examples/Today/Today/DetailViewController/ReminderViewController+CellConfiguration.swift": "1a8c50177ee65d3b2d945d9dc097174006bdd8ce7b4adc1f4db3cfc7064eaccd",
+    "Examples/Today/TodayTests/ReminderEditingTests.swift": "4291667fbaab2fe4d901949e18038c6aa8eac6c5f25ea447fa482879be518747"
+  }
+}

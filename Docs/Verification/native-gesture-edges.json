@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-17",
+  "status": "passed",
+  "implementation": "Delete SemanticHorizontalDirection and PhysicalHorizontalEdge. Return native NSDirectionalRectEdge for semantic pan and UIRectEdge for physical/back edges. Delete duplicate backSwipeEdge in favor of backSwipeRectEdge. No compatibility aliases.",
+  "option_set_contract": "semanticHorizontalDirection returns exactly leading or trailing. physicalEdge accepts exactly leading or trailing and returns UIRectEdge?; empty, vertical, multiple, or unknown edge bits return nil.",
+  "preserved": [
+    "RTL reverses physical/semantic mapping",
+    "Back swipe follows semantic trailing from the leading physical edge",
+    "Threshold, zero displacement and non-finite guards",
+    "Unthresholded overload zero-displacement compatibility",
+    "Navigation transition offset signs and absolute width",
+    "Native navigation gesture and delegate identities",
+    "Existing language transaction, SwiftUI environment and input state"
+  ],
+  "regression_results": {
+    "tests": {
+      "passedTests": 75,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-native-edges-tests.xcresult",
+      "log": "/tmp/applocalization-native-edges-tests.log",
+      "summary": "native-edges-tests-summary.json"
+    },
+    "ui": {
+      "passedTests": 6,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-native-edges-ui.xcresult",
+      "log": "/tmp/applocalization-native-edges-ui.log",
+      "summary": "native-edges-ui-summary.json"
+    }
+  },
+  "new_coverage": [
+    "Reject invalid native edge sets in LTR and RTL",
+    "All four physical pan/direction combinations map correctly",
+    "Native UIScreenEdgePanGestureRecognizer.edges assignment",
+    "True UI left/right drags in one app across en-US/ar/en-US; verifies leading/trailing labels",
+    "Existing real native back gestures, wrong-edge refusal, continuous input, buttons, glyphs and sheet coverage retained"
+  ],
+  "builds": {
+    "package": {
+      "status": "passed",
+      "log": "/tmp/applocalization-native-edges-package-build.log"
+    },
+    "demo": {
+      "status": "passed",
+      "log": "/tmp/applocalization-native-edges-demo-build.log"
+    },
+    "today": {
+      "status": "passed",
+      "log": "/tmp/applocalization-native-edges-today-build.log"
+    }
+  },
+  "console_notes": "xcresult runtimeWarnings arrays are empty. Existing package custom-content fixture initialization diagnostics and legacy API compile warnings remain in logs; not a zero-console-warning claim.",
+  "not_run": [
+    "Today editing tests not repeated: Today source and its called direction APIs unchanged in this step; Today build passed",
+    "iOS 15/16 runtime",
+    "Exact iOS 17 runtime",
+    "Physical devices",
+    "Exact Swift 6.3 compiler"
+  ],
+  "environment": "iPhone 18 Pro / iOS 27.2 Simulator; Swift 6.4.2 compiler with minimum tools 6.3 and Swift 6 mode",
+  "source_sha256": {
+    "Sources/AppLocalization/Strings/LocalizedStringResolver.swift": "bb65b844eec02c403f21dfd980881f8e14a12ce569e090a20b208b69ac497bf2",
+    "Sources/AppLocalization/Core/LocalePreferenceStore.swift": "554bd256c2d8df939505f72133e039d15acb79e321249b719199e60e00b8d069",
+    "Sources/AppLocalization/Core/LocalizationUpdate.swift": "c20ab93a8dba116567a411171388fd0ba865e996701465db83309ae885db6109",
+    "Sources/AppLocalization/Core/AppLocale.swift": "2253216d2c5a2c712530e65c68047b0d80aab1ea8812f6f9903efd0795eba6e2",
+    "Sources/AppLocalization/Core/LocalizationController.swift": "e82918e8e5aac43cb1f2a08dd20186a6c69839175a8464052dba49c50f23ce35",
+    "Sources/AppLocalization/Core/LocaleMatcher.swift": "c3b56e419a6056245c9a1a65fdcef8fa6e765e0149c64676f9978d4449d16151",
+    "Sources/AppLocalization/UIKit/UIKitLocalizationApplying.swift": "a565cecf63171e4e83d251680899fc282c9f9d58d803fe8a45618f3c06991d2f",
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "15a716f00d41ddb44b9fd7b726a8a69bf0f7beb5b85e4ab6560a7b07827422c5",
+    "Sources/AppLocalization/Directional/DirectionalLayout.swift": "ee17f1c0bba75394300dddae209d82e88aef11cbd581d5729f8955f5d5330384",
+    "Sources/AppLocalization/SwiftUI/SwiftUILocalizationEnvironment.swift": "ee13ba71bb73d855cb6d905e61fdcd5510594840fa99a4f96b4782199b14919b",
+    "Tests/AppLocalizationTests/DirectionalLayoutTests.swift": "ffe8afb3c96ed8c296ef424e09a7203d76b681340c41d0e6d92cc9bca12e86c9",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/GestureDirectionDemoView.swift": "5bcb37edd53eff4791ed1e88532089d51a8bfce56392f08437d7308c68558977",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/PushPopGestureDemoView.swift": "c46f7a9463df08684497b03cfecda2c479f945d422b488bd71f0ad8caace3673",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "70734c3bdb54150b20ab10f46ee76ffd1aad4ddc01d24c7d3e2e99ab2d064ecd"
+  }
+}

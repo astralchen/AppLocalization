@@ -13,26 +13,20 @@ private enum LocalizationBundleFixtureError: Error {
 final class LocalizedStringResolverTests: XCTestCase {
     @MainActor
     func testUsesCompiledStringCatalogResources() {
-        // CLI SwiftPM keeps the catalog source in a macOS test bundle, while
-        // Xcode's iOS build compiles it into localized `.strings` resources.
-        // Verify the artifact appropriate to each resource pipeline; the
-        // resolver tests below verify the runtime values on both platforms.
-#if os(macOS)
-        XCTAssertNotNil(Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings"))
-#else
-        XCTAssertTrue(Bundle.module.localizations.contains("en"))
-        XCTAssertTrue(Bundle.module.localizations.contains("zh-Hans"))
-#endif
+        // 检查资源管线的实际产物，后续用例再验证查找与回退结果。
+        let source = Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings")
+        let compiled = Bundle.module.url(forResource: "Localizable", withExtension: "strings", subdirectory: nil, localization: "en")
+        XCTAssertTrue(source != nil || compiled != nil, "资源管线必须提供源码目录或编译后的翻译表")
     }
 
     @MainActor
     func testResolvesCurrentLocaleStringFromRequestedBundle() {
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans"], developmentLocalization: "en-US"),
             preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: "zh-Hans")
         )
-        let resolver = LocalizedStringResolver(localeProvider: { center.currentLocale })
+        let resolver = LocalizedStringResolver(localeProvider: { center.currentLocale },
+            fallbackLocale: AppLocale(identifier: center.fallbackLocalization))
 
         XCTAssertEqual(
             resolver.string("settings.language.title", bundle: .module),
@@ -43,13 +37,12 @@ final class LocalizedStringResolverTests: XCTestCase {
     @MainActor
     func testFallsBackToFallbackLocaleWhenCurrentLocaleMissesKey() {
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans"], developmentLocalization: "en-US"),
             preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: "zh-Hans")
         )
         let resolver = LocalizedStringResolver(
             localeProvider: { center.currentLocale },
-            fallbackLocale: .englishUS
+            fallbackLocale: AppLocale(identifier: "en-US")
         )
 
         XCTAssertEqual(
@@ -61,14 +54,13 @@ final class LocalizedStringResolverTests: XCTestCase {
     @MainActor
     func testFormatsUsingCurrentLocaleAndReportsMissingKeys() {
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans"], developmentLocalization: "en-US"),
             preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: "en-US")
         )
         var missingKeys: [String] = []
         let resolver = LocalizedStringResolver(
             localeProvider: { center.currentLocale },
-            fallbackLocale: .englishUS,
+            fallbackLocale: AppLocale(identifier: "en-US"),
             missingKeyHandler: { key, _, _ in missingKeys.append(key) }
         )
 
@@ -87,7 +79,7 @@ final class LocalizedStringResolverTests: XCTestCase {
     func testNormalizesAndProgressivelyFallsBackStringCatalogLocaleIdentifiers() {
         let resolver = LocalizedStringResolver(
             localeProvider: { AppLocale(identifier: "ZH_hans_CN") },
-            fallbackLocale: .englishUS
+            fallbackLocale: AppLocale(identifier: "en-US")
         )
 
         XCTAssertEqual(
@@ -134,8 +126,8 @@ final class LocalizedStringResolverTests: XCTestCase {
 
         var missingKeys: [String] = []
         let resolver = LocalizedStringResolver(
-            localeProvider: { .englishUS },
-            fallbackLocale: .englishUS,
+            localeProvider: { AppLocale(identifier: "en-US") },
+            fallbackLocale: AppLocale(identifier: "en-US"),
             missingKeyHandler: { key, _, _ in missingKeys.append(key) }
         )
 

@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-16",
+  "toolchain": "Apple Swift 6.4.2; manifest minimum 6.3; language mode 6",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "simulator_id": "7C69D9E6-2CD5-476D-8ED8-4D00503B9AAE",
+  "baseline_manifest": "verification.json",
+  "changed_source_sha256": {
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/PushPopGestureDemoView.swift": "f5e6a5c147559397f1d47c0f5a3c78847d5e447ecfbc6ad2c04a8b502eb036f1",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj/project.pbxproj": "59139f2a052174fa941b574dd862ce20b9c86d3d07d4f68f443d5bcb31ce7adc",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "4bcb4cc5ad308c11f244c98c09949d7065895467f2e6e4b30d5f38f5e6ba69e0"
+  },
+  "remaining_baseline_source_hashes_match": true,
+  "workspace_note": "The Xcode project file was edited separately during this task (UI test group); preserved and included in final UI test and build.",
+  "final_ui_tests": {
+    "passed": 1,
+    "failed": 0,
+    "test_warning_count": 0
+  },
+  "checks": {
+    "warning_as_failure_baseline": {
+      "result": "failed",
+      "xcresult": "/tmp/applocalization-warning-regression-red.xcresult",
+      "log": "/tmp/applocalization-warning-regression-red.log"
+    },
+    "duplicate_value_guard_attempt": {
+      "result": "failed; reverted",
+      "xcresult": "/tmp/applocalization-warning-regression-green.xcresult",
+      "log": "/tmp/applocalization-warning-regression-green.log"
+    },
+    "stable_editor_original_ui_flow": {
+      "result": "passed",
+      "xcresult": "/tmp/applocalization-warning-editor-boundary.xcresult",
+      "log": "/tmp/applocalization-warning-editor-boundary.log"
+    },
+    "expanded_ui_app_switcher_interruption": {
+      "result": "failed during hit testing; App Switcher captured",
+      "xcresult": "/tmp/applocalization-warning-fix-final.xcresult",
+      "log": "/tmp/applocalization-warning-fix-final.log"
+    },
+    "expanded_ui_unchanged_rerun": {
+      "result": "passed",
+      "xcresult": "/tmp/applocalization-warning-fix-verified.xcresult",
+      "log": "/tmp/applocalization-warning-fix-verified.log"
+    }
+  },
+  "builds": {
+    "LanguageSwitchingDemo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-warning-demo-build.log"
+    },
+    "Today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-warning-today-build.log"
+    }
+  },
+  "package_tests": "not rerun; package source unchanged from 89-test passing baseline",
+  "unverified": [
+    "Swift 6.3 exact compiler",
+    "iOS 15/16 runtime",
+    "physical devices",
+    "independent iPad UIScene sessions",
+    "Today EventKit end-to-end interactions",
+    "system Settings language restart restoration"
+  ]
+}

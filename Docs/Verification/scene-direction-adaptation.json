@@ -1,0 +1,106 @@
+{
+  "date": "2026-11-17",
+  "toolchain": "Apple Swift 6.4.2; minimum 6.3; Swift 6 language mode",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "user_decision": "iOS 17+ adopts Scene scope; all windows in a Scene share direction. Content delivery remains explicitly registered-window only.",
+  "references": [
+    "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LayoutDirection.swift",
+    "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LocalizedControllers.swift"
+  ],
+  "ios_17_plus": "Set Scene trait override, fall back to window when no Scene; clear registered window direction override on Scene attachment; synchronize via updateTraitsIfNeeded; normal controllers inherit; keep navigation semantics.",
+  "ios_15_16": "Window and loaded view semantics; existing parent setOverrideTraitCollection and presentation overrideTraitCollection; merge other traits; no additional host or forced view loading.",
+  "legacy_validation_boundary": "Legacy helper invoked using public deprecated APIs on iOS 27.2, and generic iOS builds with deployment target 15. This does not exercise availability dispatch or actual runtime behavior on iOS 15/16.",
+  "swiftui_demo_boundary": "Existing NavigationPopGestureConfigurator participates in content delivery and synchronizes native semantic and trait overrides on its own SwiftUI navigation hosts. Framework normal UIKit controllers do not acquire per-page overrides.",
+  "source_sha256": {
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "650eae98b7a3beffc5dfbaa0e06ec567d5b9b918130e8491873f0ce812269da4",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/NavigationPopGestureConfigurator.swift": "69e6dfdd2b4d9a4ae2001cb3710dcc644b00b71e4e5c1b1d0c5b3dc5552b4847",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "36109636cda1c4a64fe1d85d4bed5926b4569019fa03f9fb486f5035b8e566ed",
+    "Tests/AppLocalizationTests/UIKitWindowTransactionTests.swift": "98cfcb67c8f497cce03ccc9948346116d2acfd814ba39fbc9be2144dac92b48e",
+    "Tests/AppLocalizationTests/UIKitLocalizationInfrastructureTests.swift": "d29b2299cd446a24cb7f6eb5917145d8d4011f269e95361de6213deb9ba9623b",
+    "Tests/AppLocalizationTests/UIKitTabContainerLocalizationTests.swift": "eca7a9a5cce1a562ab101f35369bf1d1f88fe8a9bec02b7a3b565496e2e3951d",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "7283ac9338ac51e4d5ec0c9f254459dcac26c4ac4ccaaed0f3578b111f9e956c"
+  },
+  "package_tests": {
+    "passed": 65,
+    "failed": 0,
+    "expected_failures": 0,
+    "skipped": 0,
+    "xcresult": "/tmp/applocalization-scene-direction-final-tests.xcresult",
+    "log": "/tmp/applocalization-scene-direction-final-tests.log",
+    "summary": "scene-direction-package-summary.json"
+  },
+  "ui_tests": {
+    "editor": {
+      "passed": 1,
+      "failed": 0,
+      "runtime_warnings": 0,
+      "xcresult": "/tmp/applocalization-scene-swiftui-bridge-ui.xcresult",
+      "log": "/tmp/applocalization-scene-swiftui-bridge-ui.log",
+      "summary": "scene-direction-editor-ui-summary.json"
+    },
+    "root_and_presented": {
+      "passed": 2,
+      "failed": 0,
+      "runtime_warnings": 0,
+      "xcresult": "/tmp/applocalization-scene-final-boundaries-ui.xcresult",
+      "log": "/tmp/applocalization-scene-final-boundaries-ui.log",
+      "summary": "scene-direction-boundaries-ui-summary.json"
+    }
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-scene-direction-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-scene-direction-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-scene-direction-today-build.log"
+    }
+  },
+  "preserved_failed_iterations": [
+    {
+      "log": "/tmp/applocalization-versioned-direction-tests.log",
+      "xcresult": "/tmp/applocalization-versioned-direction-tests.xcresult"
+    },
+    {
+      "log": "/tmp/applocalization-versioned-direction-sync-tests.log",
+      "xcresult": "/tmp/applocalization-versioned-direction-sync-tests.xcresult"
+    },
+    {
+      "log": "/tmp/applocalization-versioned-direction-mounted-tests.log",
+      "xcresult": "/tmp/applocalization-versioned-direction-mounted-tests.xcresult"
+    },
+    {
+      "log": "/tmp/applocalization-versioned-direction-coverage-tests.log",
+      "xcresult": "/tmp/applocalization-versioned-direction-coverage-tests.xcresult"
+    },
+    {
+      "log": "/tmp/applocalization-versioned-direction-final-tests.log",
+      "xcresult": "/tmp/applocalization-versioned-direction-final-tests.xcresult"
+    },
+    {
+      "log": "/tmp/applocalization-scene-direction-ui.log",
+      "xcresult": "/tmp/applocalization-scene-direction-ui.xcresult"
+    },
+    {
+      "log": "/tmp/applocalization-scene-direction-final-ui.log",
+      "xcresult": "/tmp/applocalization-scene-direction-final-ui.xcresult"
+    }
+  ],
+  "failure_resolution": "Tests now verify mounted native hierarchies and Scene scope rather than detached view attributes or old window overrides; actual later presentation validated in App UI rather than package-test presentation; SwiftUI editor OCR regression fixed only in demo bridge without removing pixel assertions.",
+  "screenshots": [
+    "scene-direction-rtl.png",
+    "scene-direction-ltr.png"
+  ],
+  "not_run": [
+    "iOS 15/16 runtime (not installed)",
+    "Exact iOS 17 runtime",
+    "Physical devices",
+    "Exact Swift 6.3 compiler",
+    "Today complete EventKit flow"
+  ]
+}

@@ -1,4 +1,3 @@
-#if canImport(UIKit)
 import UIKit
 import XCTest
 @testable import AppLocalization
@@ -7,10 +6,9 @@ import XCTest
 final class UIKitTabContainerLocalizationTests: XCTestCase {
     @available(iOS 17.0, *)
     func testRegistrationAndRoundTripsSynchronizeTabTraitsBeforeChildren() {
-        for initialLocale in [AppLocale.simplifiedChinese, .arabic] {
+        for initialLocale in [AppLocale(identifier: "zh-Hans"), AppLocale(identifier: "ar")] {
             let localization = LocalizationController(
-                supportedLocales: [.simplifiedChinese, .arabic],
-                fallbackLocale: .simplifiedChinese,
+                resourceBundle: localizationTestBundle(["zh-Hans", "ar"], developmentLocalization: "zh-Hans"),
                 preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: initialLocale.identifier)
             )
             let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: localization)
@@ -18,27 +16,30 @@ final class UIKitTabContainerLocalizationTests: XCTestCase {
             let tabs = UITabBarController()
             tabs.viewControllers = [page, UIViewController()]
             let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 768, height: 1024))
-            window.traitOverrides.layoutDirection = initialLocale == .arabic ? .leftToRight : .rightToLeft
             window.rootViewController = tabs
             tabs.loadViewIfNeeded()
             page.loadViewIfNeeded()
+            window.makeKeyAndVisible()
+            let opposite: UITraitEnvironmentLayoutDirection = initialLocale == AppLocale(identifier: "ar") ? .leftToRight : .rightToLeft
+            if let scene = window.windowScene { scene.traitOverrides.layoutDirection = opposite }
+            else { window.traitOverrides.layoutDirection = opposite }
+            defer { window.isHidden = true }
             coordinator.register(window: window)
             defer { coordinator.unregister(window: window) }
 
             func verify(_ locale: AppLocale) {
-                let expected: UITraitEnvironmentLayoutDirection = locale == .arabic ? .rightToLeft : .leftToRight
+                let expected: UITraitEnvironmentLayoutDirection = locale == AppLocale(identifier: "ar") ? .rightToLeft : .leftToRight
                 XCTAssertEqual(tabs.traitCollection.layoutDirection, expected)
                 XCTAssertEqual(page.observedContainerDirection, expected)
-                XCTAssertEqual(tabs.view.semanticContentAttribute, locale.layoutDirection.semanticContentAttribute)
-                XCTAssertEqual(tabs.tabBar.semanticContentAttribute, locale.layoutDirection.semanticContentAttribute)
+                XCTAssertEqual(tabs.view.effectiveUserInterfaceLayoutDirection, locale.layoutDirection)
+                XCTAssertEqual(tabs.tabBar.effectiveUserInterfaceLayoutDirection, locale.layoutDirection)
                 XCTAssertTrue(window.rootViewController === tabs)
                 XCTAssertTrue(tabs.selectedViewController === page)
             }
             verify(initialLocale)
-            for locale in [AppLocale.arabic, .simplifiedChinese, .arabic, .simplifiedChinese] {
-                let previous = localization.currentSnapshot
+            for locale in [AppLocale(identifier: "ar"), AppLocale(identifier: "zh-Hans"), AppLocale(identifier: "ar"), AppLocale(identifier: "zh-Hans")] {
                 localization.setLocale(identifier: locale.identifier)
-                coordinator.apply(LocalizationChange(previous: previous, current: localization.currentSnapshot), animated: false)
+
                 verify(locale)
                 coordinator.synchronize(window: window)
                 verify(locale)
@@ -50,8 +51,7 @@ final class UIKitTabContainerLocalizationTests: XCTestCase {
 @MainActor
 private final class TabDirectionRecordingPage: UIViewController, UIKitLocalizationApplying {
     var observedContainerDirection: UITraitEnvironmentLayoutDirection?
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+    func applyLocalization(_ update: LocalizationUpdate) {
         observedContainerDirection = tabBarController?.traitCollection.layoutDirection
     }
 }
-#endif

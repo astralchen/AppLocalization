@@ -1,321 +1,142 @@
 # AppLocalization
 
-`AppLocalization` 是一套用于 iOS 应用内语言切换的示例框架和演示工程。目标是在不重启 App 的前提下，让 SwiftUI、UIKit、混合栈、多窗口、present/modal、`UITableView`、`UICollectionView`、导航栏和手势方向都能随语言与 RTL/LTR 变化正确刷新。
+面向 iOS 的 Swift 本地化框架。应用内切换语言时同步文本、布局方向和语义手势，支持 UIKit、SwiftUI、混合界面及多个应用窗口。
 
-这个仓库同时包含：
+- Swift 工具链 **6.3+**，Swift 6 语言模式。
+- 框架与 LanguageSwitchingDemo 最低 **iOS 15**；Today 保留其现有 iOS 18 目标。
+- 单一 Swift Package，无第三方依赖，无 macOS 适配和 canImport(UIKit) 包裹。
+- 普通更新保留窗口、页面、导航栈和编辑实例；根替换或系统界面重建由应用负责。
 
-- 可复用 Swift Package：`Sources/AppLocalization`
-- 单元测试：`Tests/AppLocalizationTests`
-- iOS 示例工程：`Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj`
-- 示例 String Catalog：`Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/Localizable.xcstrings`
-- 应用名本地化 String Catalog：`Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/InfoPlist.xcstrings`
-- App Icon 源文件：`Design/AppIcon`
-- App Icon 资源：`Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/Assets.xcassets`
+页面更新、窗口同步与 SwiftUI 环境各保留一个入口；语言控制器在内部直接调度窗口协调器，不提供通用事务参与者接口。本轮公共 API 有不兼容调整，见 [迁移说明](Docs/Migration.md)。职责划分和采用参考项目的边界见 [架构说明](Docs/Architecture.md)，实际运行结果见 [验证记录](Docs/Validation.md)。
 
-## 平台要求
+方向属性直接使用 UIKit 的 `UIUserInterfaceLayoutDirection`，无需应用枚举与 UIKit 之间转换。语言方向遵循 Foundation：iOS 16+ 使用 `Locale.Language(identifier:).characterDirection`，iOS 15 使用 `Locale.characterDirection(forLanguage:)`；不维护脚本表，不额外保证显式脚本优先。SwiftUI 根仍通过 `appLocalizationEnvironment` 注入语言和方向。
 
-- iOS 15.0 或更高版本
-- macOS 12.0 或更高版本（Core/字符串能力）
-- Swift 6 strict concurrency
+## 架构
 
-UIKit 实现不依赖 iOS 16+ 的 trait registration API；方向更新全部隔离在 MainActor。
+| 组成 | 责任 |
+| --- | --- |
+| LocalizationController | 单一快照发布、选择持久化、系统匹配和同步事务 |
+| LocalizationSnapshot / LocalizationUpdate | 生效状态、选择模式、revision 和差异 |
+| LocalizedStringResolver | 指定资源包的字符串查找、格式化和缺失回退 |
+| DirectionalLayout | 语义前后缘、返回边缘、图标及转场方向 |
+| UIWindowSceneLocalizationCoordinator | 自动参与事务，向注册窗口刷新内容；iOS 17+ 在 Scene 传播方向 |
+| UIKitLocalizationApplying | 页面文案、菜单和业务配置的单一刷新入口 |
+| appLocalizationEnvironment | 向 SwiftUI 注入控制器、locale 和 layoutDirection |
 
-iOS 17 及以上，Window 协调器还会同步导航控制器的 `traitOverrides.layoutDirection`，使系统导航栏标题跟随应用语言。iOS 15、16 保留语义方向更新路径。
+内部顺序为：**固定本轮窗口与页面 → 发布单一新快照 → 全部窗口方向 → 页面内容 → 布局 → 完成通知**。重入语言请求在本轮结束后合并执行。调用方不需要转发本地化通知给窗口协调器。`@Published` 在 willSet 发布，订阅者应使用传入快照；该时刻不代表 UIKit 已完成刷新，完成后的布局应在完成通知中读取。
 
-需要保留滚动位置的页面可以实现 `UIKitLocalizationPreparing`。协调器会在修改窗口及导航容器方向之前，先调用所有已加载页面的 `prepareForLocalization(_:)`，用于捕获锚点等局部状态；页面随后在最终数据和布局更新完成后恢复位置。
-
-## 核心能力
-
-- 应用内语言切换，不依赖重启 App。
-- 使用最新的 `Localizable.xcstrings` 作为文案资源。
-- 支持“跟随系统”和显式选择 App 语言。
-- 支持当前系统语言与 App 支持语言不完全一致时的合理匹配，例如繁体中文系统优先解析到简体中文。
-- SwiftUI 通过 `.locale` 与 `.layoutDirection` 即时刷新。
-- UIKit 通过 `UIKitLocalizationApplying` 接收包含 revision 的原子 update，按“方向 → 文案/configuration → 布局缓存”顺序刷新。
-- 多 scene / 多 window 刷新，不依赖单个 `keyWindow`。
-- 支持 presented view controller 链路刷新。
-- 覆盖 RTL/LTR 下的导航按钮位置、返回图标、pop 手势方向、push/pop 动画方向。
-- 覆盖 `UITableView` 可见内容方向刷新与可见 row 保持，以及 `UICollectionView` 横向布局、可见 item 保持、RTL 滚动方向和 layout invalidation。
-- 区分普通界面镜像和空间语义内容，避免地图、图表、播放进度等被错误镜像。
-- 通过 `InfoPlist.xcstrings` 演示应用名国际化。
-
-## 目录结构
-
-```text
-Sources/AppLocalization/
-  Core/          语言状态、Locale 模型、持久化和变更事件
-  Strings/       本地化字符串解析器
-  Directional/   semantic 方向、手势和导航方向工具
-  SwiftUI/       SwiftUI environment 注入
-  UIKit/         原子刷新协议、显式方向策略、注册 Window 协调器和列表适配
-
-Examples/LanguageSwitchingDemo/
-  LanguageSwitchingDemo.xcodeproj
-  LanguageSwitchingDemo/
-    Localizable.xcstrings
-    InfoPlist.xcstrings
-    Assets.xcassets
-    DemoRootView.swift
-    UIKitLocalizationDemoViewController.swift
-    PushPopGestureDemoView.swift
-    GestureDirectionDemoView.swift
-
-Tests/AppLocalizationTests/
-```
-
-## 快速开始
-
-运行测试：
-
-```sh
-swift test
-```
-
-构建示例工程：
-
-```sh
-xcodebuild \
-  -project Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj \
-  -scheme LanguageSwitchingDemo \
-  -destination 'generic/platform=iOS' \
-  CODE_SIGNING_ALLOWED=NO \
-  build
-```
-
-在 Xcode 中打开示例：
-
-```sh
-open Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj
-```
-
-## 基本集成方式
-
-将仓库根目录添加为本地 Swift Package，并在 App target 中链接 `AppLocalization` library product。使用框架 API 的 Swift 文件需要导入模块：
+## 创建服务
 
 ```swift
 import AppLocalization
+import UIKit
+
+@MainActor
+final class AppLocaleServices {
+    let localizationController: LocalizationController
+    let resolver: LocalizedStringResolver
+    let localizationCoordinator: UIWindowSceneLocalizationCoordinator
+
+    init() {
+        let controller = LocalizationController(
+            resourceBundle: .main,
+            preferenceStore: UserDefaultsLocalePreferenceStore(key: "app.locale.identifier")
+        )
+        localizationController = controller
+        resolver = LocalizedStringResolver(
+            localeProvider: { controller.currentLocale },
+            fallbackLocale: AppLocale(identifier: controller.fallbackLocalization)
+        )
+        localizationCoordinator = UIWindowSceneLocalizationCoordinator(localizationController: controller)
+    }
+}
 ```
 
-创建全局语言服务：
+服务由应用持有，不需要使用框架单例，也不重复配置支持语言与 fallback：
+
+- `resourceBundle.localizations` 提供全部可选语言，排除 `Base` 并按大小写／分隔符等价规则去重。`supportedLocalizations` 是只读结果，顺序来自资源包。
+- `resourceBundle.preferredLocalizations` 用于“跟随系统”，它不是完整语言列表。测试或其他明确的 App 偏好来源可通过 `systemLocaleIdentifiersProvider` 注入。
+- `fallbackLocalization` 优先匹配 `developmentLocalization`；无法匹配时依次使用包偏好中的可用语言和首个可用语言。只有 `Base` 时使用声明的开发语言；完全没有语言声明会触发前置条件失败。
+- 解析器显式使用控制器解析出的 fallback，不预设英语。开发语言与翻译在 String Catalog／Bundle 中维护；核心库没有 englishUS、simplifiedChinese、arabic 常量。
+
+已有偏好 key 和 `system` 值继续读取。旧地区标识符会匹配到现有资源，例如 `en-US` → `en`；完全不支持的旧选择仍回退，保持显式选择模式。再次选择当前语言时会修正旧持久化值，单纯存储修正不递增 revision、不发布界面更新。当前格式化策略仍跟随所选内容语言，不修改系统 Region。
 
 ```swift
-import AppLocalization
-
-let localizationController = LocalizationController(
-    supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
-    fallbackLocale: .englishUS,
-    preferenceStore: UserDefaultsLocalePreferenceStore(
-        key: "app.locale.identifier"
-    )
-)
-
-let resolver = LocalizedStringResolver(
-    localeProvider: { localizationController.currentLocale },
-    fallbackLocale: .englishUS
-)
+services.localizationController.setLocale(identifier: "ar")
+services.localizationController.setFollowsSystemLocale()
+let title = services.resolver.string("settings.title", bundle: .main)
 ```
 
-SwiftUI 根视图注入环境：
+资源使用 `Localizable.xcstrings`，Xcode 编译后的 `.lproj/*.strings` 同样支持。解析器也能读取源码目录中的简单 stringUnit；这不等价于完整的复数或变体解释器。不要长期缓存解析后的 String。
+
+## UIKit 窗口与页面
+
+每个 Scene 连接时注册应用拥有的窗口，断开时注销，激活时同步：
 
 ```swift
-RootView(
-    localizationController: localizationController,
-    resolver: resolver
-)
-.appLocalizationEnvironment(localizationController)
+services.localizationCoordinator.register(window: window)
+services.localizationCoordinator.unregister(window: window)
+services.localizationCoordinator.synchronize(window: window)
 ```
 
-UIKit 页面实现一次性原子刷新协议。方向目标必须先于文案和 configuration：
+方向适配按系统版本区分：
+
+| 系统 | 原生适配方式 |
+| --- | --- |
+| iOS 17+ | 优先设置注册窗口所属 `UIWindowScene.traitOverrides.layoutDirection`；无 Scene 时设置 `window.traitOverrides.layoutDirection`。普通页面、Tab 和子视图继承 traits，不逐页写 override。内容投递前调用 `updateTraitsIfNeeded()` 完成同步传播。 |
+| iOS 15/16 | 设置窗口及已加载页面的 `semanticContentAttribute`；已有父容器通过 `setOverrideTraitCollection(_:forChild:)` 更新子控制器，呈现根通过 `presentationController.overrideTraitCollection` 更新。合并已有 traits，保留其他设置。 |
+| 所有支持版本 | 导航控制器的 view、navigationBar 和 toolbar 显式同步语义方向，保留原生转场、返回手势及代理。 |
+
+iOS 17+ 的方向作用域是整个 Scene：同 Scene 的未注册窗口也会继承方向，但不会收到框架的内容刷新。注销窗口只停止内容投递，不撤销共享 Scene 的方向。一个 Scene 应使用同一语言状态；需要不同方向的独立窗口应放在不同 Scene，或者由业务明确设置局部例外。框架不枚举其他窗口，也不覆盖业务子控制器的显式 trait 例外。
+
+已注册窗口加入 Scene 后会清除窗口级的 layoutDirection override，避免无 Scene 阶段留下的值遮蔽共享方向；业务子控制器的显式方向例外仍保留。混合导航示例由 SceneDelegate 创建窗口，DemoNavigationController 直接持有原生导航栈和 UIHostingController；在创建页面及本地化事务中同步自己拥有的 SwiftUI 宿主语义属性和 iOS 17+ trait override，防止编辑页列表出现字形镜像。页面不再安装隐藏的导航或窗口探测视图。这项示例兼容处理不扩展到框架的普通页面。
+
+旧版本不额外插入宿主控制器，根视图通过窗口及自身语义边界适配，子控制器使用已有容器传播 traits。未挂载视图不能假设已继承环境方向；其内容配置读取 update.snapshot，挂载后由 UIKit 继承实际环境。
+
+页面实现 `UIKitLocalizationApplying`。首次创建视图后使用最新快照渲染；以后由协调器更新已加载页面与 presented 链。
 
 ```swift
 final class SettingsViewController: UIViewController, UIKitLocalizationApplying {
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
-        if update.requiresLayoutDirectionRefresh {
-            UIViewLayoutDirectionUpdater.apply(
-                update,
-                to: [
-                    UIViewLayoutDirectionTarget(
-                        confirmButton,
-                        policy: .followApplication
-                    )
-                ]
-            )
-        }
+    let services: AppLocaleServices
+    private let confirmButton = UIButton(type: .system)
+
+    init(services: AppLocaleServices) {
+        self.services = services
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) { fatalError("Use init(services:)") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.addSubview(confirmButton)
+        applyLocalization(LocalizationUpdate(snapshot: services.localizationController.currentSnapshot))
+    }
+
+    func applyLocalization(_ update: LocalizationUpdate) {
+        // 普通控件继承窗口／容器方向，无需逐个设置。
         guard update.requiresLocalizedContentRefresh else { return }
-        title = resolver.string("settings.title", bundle: .main)
-        titleLabel.text = resolver.string("settings.language", bundle: .main)
-        confirmButton.setTitle(resolver.string("common.confirm", bundle: .main), for: .normal)
+        title = services.resolver.string("settings.title")
+        confirmButton.setTitle(services.resolver.string("common.confirm"), for: .normal)
     }
 }
 ```
 
-显式注册应用拥有的 Window；注册时会立即应用最新 snapshot，Scene 再激活时再次同步：
+不要求继承框架基类。页面仅实现 `applyLocalization(_:)`；普通列表和输入视图使用原生 UIKit 行为，无需额外的本地化协调器或绑定对象。导航、Split、Page 等业务状态仍由应用自己的容器管理。
+
+## 列表与复用
+
+UITableView 和 UICollectionView 继承窗口／容器方向。页面保留自己的布局、代理、数据源和业务配置，不持有列表本地化协调器，不提供 ID ↔ IndexPath 映射或本地化 completion。
+
+布局由应用直接提供。使用原生 UICollectionViewFlowLayout、Compositional Layout 或业务自定义布局；需要镜像条目排列时，由业务布局自行覆盖 flipsHorizontallyInOppositeLayoutDirection。页面负责刷新可见文案或提交 diffable snapshot，框架不主动 reloadData、不重建列表布局。
+
+滚动和选择采用 UIKit 原生行为。框架不再捕获／恢复业务 ID 锚点、相对偏移或正交中心页，也不承诺数据重排、行高变化后的精确阅读位置。业务数据源仍应使用稳定 ID，避免因翻译文案或草稿变化替换正在编辑的条目。
+
+直接使用 UIKit 原生 dequeue、`UICollectionView.CellRegistration` 和 `SupplementaryRegistration`，不需要额外的配置准备调用。UIKit 同步它管理的 cell 外壳；普通 cell 不必手动固定方向。业务配置每次读取最新语言，`willDisplay` 重用同一配置入口，覆盖预取后才显示或离屏重新显示的内容：
 
 ```swift
-let coordinator = UIWindowSceneLocalizationCoordinator(
-    localizationController: localizationController
-)
-coordinator.register(window: window)
-coordinator.synchronize(window: window)
-
-// notification 中取出 LocalizationChange 后：
-coordinator.apply(change)
-```
-
-默认注册模式只弱持有显式注册的应用 Window，包括 hidden Window；不会自行枚举键盘、
-text-effects 等系统 Window。调用方确认 connected scenes 中的目标 Window 可以安全
-更新时，也可以主动选择一次性发现模式：
-
-```swift
-coordinator.reloadAllScenes(
-    for: change,
-    including: { window in
-        // 由应用判断这个 Window 是否归自己管理。
-        applicationOwns(window)
-    }
-)
-```
-
-`reloadAllScenes` 扫描到的 Window 只参与本次分发，不会自动进入弱注册表。无法原地
-更新时可按窗口返回 `.reattachExistingRoot` 或 `.recreateRoot`；未显式注册的 Window
-没有 root factory，不能使用 `.recreateRoot`。
-
-### Snapshot、revision 与异步更新
-
-`LocalizationController.currentSnapshot` 同时携带 `locale`、`followsSystemLocale`、
-`layoutDirection` 和单调递增的 `revision`。从“跟随系统”切为手动选择时，即使最终
-Locale 相同，也会产生新 revision。diffable snapshot、Task、转场 completion 和异步
-组件工厂在落地结果前必须比较 revision，或重新读取 `currentSnapshot`，禁止旧结果
-覆盖后一次语言方向。
-
-### UIView 方向策略
-
-- `.inherited`：不写 semantic；用于普通 UIView/UILabel 和 leading/trailing 约束。
-- `.followApplication`：显式跟随 App snapshot；适合已物化 configured button 等边界。
-- `.followContainer`：挂载后读取直接父容器 effective direction；适合可拆卸、重用或跨容器移动的 View。
-- `.fixed(...)`：保留 `.playback`、`.spatial` 或固定 LTR/RTL，不参与全局切换。
-
-框架只更新组件显式声明的公开目标，不遍历 UIKit 私有 subtree，也不在运行时调用
-`UIView.appearance().semanticContentAttribute`。View 离层期间无需立即刷新；重新加入
-层级、离屏测量或重新配置前，由 owner 的 `UIKitLocalizationContext` 重新读取最新
-snapshot 并应用目标。
-
-## 语言选择显示规则
-
-示例工程里的语言选择列表采用两行显示：
-
-- 主标题：语言自身名称，稳定不随当前 App 语言变化，例如 `English (United States)`、`简体中文`、`العربية`。
-- 副标题：按当前 App 语言本地化显示，会随语言切换刷新。
-- “跟随系统”：主标题随当前 App 语言本地化，副标题显示系统偏好解析后的实际 App 语言。
-
-这样可以避免用户在多语言之间频繁切换时，普通语言项名称跳动或在 RTL 环境下出现中文/英文视觉反排。
-
-## RTL/LTR 设计要点
-
-不要把物理方向直接当成业务语义：
-
-```swift
-let semanticDirection = DirectionalLayout.semanticHorizontalDirection(
-    translationX: translation.x,
-    layoutDirection: localizationController.layoutDirection
-)
-```
-
-导航与返回也使用 semantic 映射：
-
-```swift
-let edge = DirectionalLayout.backSwipeRectEdge(
-    layoutDirection: localizationController.layoutDirection
-)
-
-let imageName = DirectionalLayout.backChevronSystemName(
-    layoutDirection: localizationController.layoutDirection
-)
-```
-
-`UITableView` 在方向变化时更新 semantic 和布局，同时保持最上方可见 row 及其相对位置：
-
-```swift
-tableView.applyLocalization(
-    update,
-    preservingVisibleRow: true
-)
-```
-
-该方法不会调用 `reloadData()`。使用 `UITableViewDiffableDataSource` 时，内容刷新仍由
-snapshot 管理。例如，可以重新配置当前 item，并在 snapshot 完成后应用方向：
-
-```swift
-let expectedRevision = localizationController.currentSnapshot.revision
-var snapshot = dataSource.snapshot()
-snapshot.reconfigureItems(snapshot.itemIdentifiers)
-dataSource.apply(snapshot, animatingDifferences: false) {
-    guard expectedRevision == localizationController.currentSnapshot.revision else { return }
-    tableView.applyLocalization(
-        .initial(snapshot: localizationController.currentSnapshot),
-        preservingVisibleRow: true
-    )
-}
-```
-
-如果 snapshot 使用动画或会改变行顺序/高度，应在 completion 中再次调用方向 API，
-避免方向布局与 snapshot 更新交叠。
-
-普通 cell 无需实现额外协议：使用 `.unspecified` semantic、leading/trailing 约束或在
-布局时读取 `effectiveUserInterfaceLayoutDirection` 即会跟随 table 刷新。只有显式强制
-内部方向或缓存方向状态的自定义 cell，才需要实现 `UIKitLocalizationApplying`。
-
-### Reusable View 生命周期
-
-列表 owner 创建一个只保存 provider、不缓存具体 snapshot 的 Context：
-
-```swift
-let localizationContext = UIKitLocalizationContext(
-    localizationController: localizationController
-)
-```
-
-Context 在每次 configuration 与 attachment 时重新读取 `currentSnapshot`，因此不会把
-创建 Context 时的旧 revision 应用到复用池或离层重挂的实例。
-
-UITableView 使用类型安全的 dequeue 包装，返回 Cell 前先恢复方向，再由业务赋值文案和
-configuration：
-
-```swift
-let cell: LanguageOptionCell = tableView.dequeueLocalizedReusableCell(
-    withIdentifier: LanguageOptionCell.reuseIdentifier,
-    for: indexPath,
-    using: localizationContext
-)
-cell.contentConfiguration = makeConfiguration(for: indexPath)
-
-func tableView(
-    _ tableView: UITableView,
-    willDisplay cell: UITableViewCell,
-    forRowAt indexPath: IndexPath
-) {
-    localizationContext.restoreOnAttachment(cell)
-}
-```
-
-`UIKitLocalizationContext.makeCellRegistration` 在业务 handler 之前自动恢复最新状态；
-handler 的参数类型会推断 Cell 与 Item，业务代码只配置内容和外观，系统
-`UICollectionViewListCell` 不需要方向恢复子类：
-
-```swift
-let registration = localizationContext.makeCellRegistration(
-    handler: cellRegistrationHandler
-)
-
-func cellRegistrationHandler(
-    cell: UICollectionViewListCell,
-    indexPath: IndexPath,
-    item: Item
-) {
-    var configuration = cell.defaultContentConfiguration()
-    configuration.text = item.title
-    cell.contentConfiguration = configuration
-    cell.accessories = [.disclosureIndicator()]
+let registration = UICollectionView.CellRegistration<UICollectionViewListCell, Item.ID> {
+    [weak self] cell, indexPath, id in
+    self?.configure(cell, itemID: id)
 }
 
 func collectionView(
@@ -323,111 +144,80 @@ func collectionView(
     willDisplay cell: UICollectionViewCell,
     forItemAt indexPath: IndexPath
 ) {
-    localizationContext.restoreOnAttachment(cell)
+    guard let cell = cell as? UICollectionViewListCell,
+          let id = dataSource.itemIdentifier(for: indexPath) else { return }
+    configure(cell, itemID: id)
 }
 ```
 
-Collection supplementary 使用对称的 registration 包装：
+`configure` 负责业务文案、图片和配置，不调用框架的复用准备方法。Table 的 cell/header 和 Collection 的 supplementary 使用同样方式。方向敏感的自定义子组件在自身配置方法中更新其明确拥有的节点；不得把脱离层级时的方向缓存为长期状态。
+
+## 输入、方向和手势
+
+普通 `UITextField`、`UITextView` 和 `UISearchBar` 不需要本地化绑定对象、刷新钩子或内容视图协议。保持语义方向继承，使用原生 `.natural` 对齐，由 UIKit 和文本内容决定书写顺序及自然对齐。应用布局方向与输入文本的书写方向是不同概念，不强制把所有输入文字对齐到应用前缘。
+
+语言切换不改写输入文本、段落属性或 typingAttributes，不替换输入代理，也不主动恢复焦点。自定义内容配置应保留输入实例；相同值不重复写回，存在 markedTextRange 时避免改写编辑内容。固定电话方向等特殊需求直接使用 UIKit 的 semanticContentAttribute 和 textAlignment。Today 示例的标题输入框也直接使用这两个原生属性，让空光标和草稿对齐当前应用前缘；配置读取最新方向，不增加输入绑定或通用更新层。
+
+布局方向、段落对齐和文字书写顺序分别处理。特殊内容直接使用 UIKit 属性，不创建方向目标或更新器：
 
 ```swift
-let headerRegistration: UICollectionView.SupplementaryRegistration<HeaderView> =
-    localizationContext.makeSupplementaryRegistration(
-        elementKind: UICollectionView.elementKindSectionHeader,
-        handler: { header, _, indexPath in
-            header.configure(section: indexPath.section)
-        }
-    )
+phoneField.semanticContentAttribute = .forceLeftToRight
+mapView.semanticContentAttribute = .spatial
+playbackControls.semanticContentAttribute = .playback
+```
 
-func collectionView(
-    _ collectionView: UICollectionView,
-    willDisplaySupplementaryView view: UICollectionReusableView,
-    forElementKind elementKind: String,
-    at indexPath: IndexPath
-) {
-    localizationContext.restoreOnAttachment(view)
+普通视图保持默认的 `.unspecified`，通过 UIKit 继承方向；需要移除自己之前设置的强制方向时，也直接恢复为 `.unspecified`。只有业务明确要求某个独立组件强制跟随应用时，才在其更新方法中设置 `view.semanticContentAttribute = update.semanticContentAttribute`。
+
+框架不清空重建按钮／列表配置、不重设附件，也不对每个子视图统一触发约束或固有尺寸失效。业务内容变化使用原生配置 API；自定义布局确需失效时，由拥有该布局的组件调用相应 UIKit 方法。
+
+配置式按钮热切换方向时，UIKit 可能保留旧图文布局。示例参照 UIKitLanguageDemo，在具体按钮配置处先比较语义方向，仅方向变化时清空 configuration，再设置方向并赋回业务配置；按钮实例、状态和 action 保持不变。同方向文案刷新不清空配置：
+
+```swift
+let semantic = update.semanticContentAttribute
+if button.semanticContentAttribute != semantic {
+    button.configuration = nil
+}
+button.semanticContentAttribute = semantic
+var configuration = UIButton.Configuration.tinted()
+configuration.title = resolver.string("close")
+configuration.image = UIImage(systemName: "xmark.circle")
+configuration.imagePlacement = .leading
+configuration.imagePadding = 8
+button.configuration = configuration
+button.setNeedsLayout()
+```
+
+这是具体配置式按钮的局部处理，不是框架批量刷新机制。示例路径：主页 UIKit 区域 → 显示 UIKit Modal → 在弹窗中切换语言，观察底部关闭按钮。严格位置断言与实际 UI 证据见[验证记录](Docs/Validation.md)。
+
+自定义手势使用 `DirectionalLayout.semanticHorizontalDirection`、`backSwipeRectEdge` 和 `backChevronSystemName`，语义结果直接为 `NSDirectionalRectEdge`，返回边缘直接为 `UIRectEdge`；系统导航容器保留原生手势及代理。导航项直接使用原生 `leftBarButtonItem(s)` 与 `rightBarButtonItem(s)`：导航栏根据语义方向解析为前缘与后缘，业务无需在 RTL 下交换数组。静态按钮在创建页面时安装，语言变化更新标题；编辑状态改变时再更新按钮组合。
+
+`UIBarButtonItem.customView` 也使用原生创建方式。窗口协调器在首次同步或方向变化时，仅对公开左右导航项的 `customView` 调用 `invalidateIntrinsicContentSize()`，使 UIKit 更新实际位置。保持 item、customView、action 和自定义语义属性不变，页面无需额外刷新调用。同方向的语言变化不触发这项失效。
+
+## SwiftUI
+
+```swift
+WindowGroup {
+    RootView(localizationController: controller, resolver: resolver)
+        .appLocalizationEnvironment(controller)
 }
 ```
 
-Table header/footer 可使用 `dequeueLocalizedReusableHeaderFooterView`。Configuration 与
-attachment 恢复都会重新进入公开 content configuration 系统；
-`UICollectionViewListCell` accessories 也会通过公开属性重新应用。框架不会遍历 UIKit
-私有子树。固定 LTR、`.playback`、`.spatial`、手写 frame、横向滚动或方向缓存仍由业务
-组件实现 `UIKitLocalizationApplying` 并声明自己拥有的额外 targets。
+根环境观察同一快照，仅注入环境值，不主动改变视图身份。Sheet 继承相同语言环境。确需恢复局部系统组件时，由应用在局部边界明确使用 `.id(...)`，不通过框架重置整棵子树。
 
-`UICollectionView` 在方向变化时需要更新 semantic、invalidate layout，并尽量保持逻辑上的可见 item，而不是直接复用旧 `contentOffset`：
+混合应用注册自己的 Window；Scene 激活时调用协调器 `synchronize()`。`UIViewRepresentable`／`UIViewControllerRepresentable` 的 update 方法仍读取 `context.environment.locale` 与 `layoutDirection`，新创建的 UIKit 组件使用最新快照。主示例由 SceneDelegate 直接注册、激活同步及注销窗口，不在 SwiftUI render 中触发整棵控制器树刷新。
 
-```swift
-collectionView.applyLocalization(
-    update,
-    preservingVisibleItem: true
-)
+语言选择器主标题使用候选语言的 `nativeDisplayName` 和候选语言方向；副标题按当前应用语言显示。行对齐采用应用的语义前缘。“跟随系统”是设置状态，不能当作一个真实 locale。
+
+## 构建与测试
+
+```sh
+xcodebuild -scheme AppLocalization -destination 'generic/platform=iOS' build
+xcodebuild -scheme AppLocalization -destination 'platform=iOS Simulator,id=<已安装模拟器 ID>' -parallel-testing-enabled NO test
+xcodebuild -project Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj -scheme LanguageSwitchingDemo -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+xcodebuild -project Examples/Today/Today.xcodeproj -scheme Today -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
 ```
 
-如果 UIKit 的内部方向缓存要求业务 owner 局部替换整个 `UICollectionView`，可在旧实例
-离层前捕获逻辑可视锚点，并在新实例完成 diffable snapshot、self-sizing、safe area 与
-`adjustedContentInset` 布局后恢复：
-
-```swift
-let anchor = oldCollectionView.captureLocalizationAnchor()
-// Replace the collection view and apply its latest snapshot.
-if let anchor {
-    newCollectionView.restoreLocalizationAnchor(anchor)
-}
-```
-
-锚点保存 `IndexPath` 以及 item 到 adjusted viewport 顶部和语义 leading 的距离，不保存
-旧的物理 `contentOffset`。因此它可跨 LTR/RTL 和不同 CollectionView 实例重新计算位置，
-也不会把位于导航栏或安全区后方的 Cell 错当成顶部可见项。
-
-### 输入框的对齐与编辑状态
-
-`UIKitLocalizationContext.makeTextInputBinding(to:alignment:)` 支持 `UITextField`、
-`UITextView` 和 `UISearchBar`。默认 `.followLayoutDirection` 让输入内容与空光标
-跟随应用界面对齐：中文、英文靠左，阿拉伯语靠右；字符仍遵循系统自然书写顺序。
-它不切换键盘语言，也不把阿拉伯文的末尾光标强行移动到文字右侧。
-
-```swift
-final class EditorViewController: UIViewController, UIKitLocalizationApplying {
-    let textView = UITextView()
-    let context: UIKitLocalizationContext
-    // 由组件持有绑定；绑定弱引用输入框，不替换 UITextViewDelegate。
-    private lazy var inputBinding = context.makeTextInputBinding(to: textView)
-
-    init(context: UIKitLocalizationContext) {
-        self.context = context
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError("请使用 init(context:)") }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        inputBinding.refresh()
-    }
-
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
-        inputBinding.refresh()
-    }
-
-    // 业务主动改写文字、选区或 typingAttributes 后，也走同一个入口。
-    func replaceDraft(_ draft: String) {
-        if textView.text != draft, textView.markedTextRange == nil {
-            textView.text = draft
-        }
-        inputBinding.refresh()
-    }
-}
-```
-
-- 绑定通过公开的编辑通知同步开始编辑、内容变化与结束编辑；同轮编辑后的校正会合并，
-  不轮询、不保留旧快照。调用方仍需在语言更新、配置、重新挂载和程序化修改后调用 `refresh()`。
-- 选区代理回调里可以调用 `refresh()`；富文本编辑器重设输入属性后也应调用。
-- 有组合文本（`markedTextRange`）时延后更新，提交或取消后按最新快照恢复。
-  不应由本地化代码调用 `unmarkText()`、更换第一响应者或重建输入框。
-- 对齐更新保留段落其余属性；多行输入不替换整段富文本，保留附件和编辑状态。
-- 搜索栏使用公开的 `searchTextField`；不遍历私有子视图，不修改全局 appearance。
-- 需要局部固定对齐时显式传入 `.fixed(.left)`、`.fixed(.right)` 或 `.fixed(.center)`。
-  只读文本视图无须创建输入绑定。自定义占位标签由组件同步为输入框的 `textAlignment`。
+主示例的 `LocalizationValidation` 共享 Scheme 包含真实点击、草稿保留和双向边缘返回 UI 测试。框架现在直接依赖 iOS 的 UIKit，macOS 宿主 `swift test` 不再是支持的测试入口。
 
 ## App Icon
 
@@ -464,41 +254,3 @@ final class EditorViewController: UIViewController, UIKitLocalizationApplying {
 - 已创建的 `UIAlertController`、`UIMenu`、`UIAction`、context menu
 
 对这些内容建议采用 dismiss + recreate、下次打开生效，或明确标注为系统语言控制。
-
-## 验证清单
-
-推荐在改动语言切换逻辑后运行：
-
-```sh
-swift test
-xcodebuild \
-  -project Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj \
-  -scheme LanguageSwitchingDemo \
-  -destination 'generic/platform=iOS' \
-  CODE_SIGNING_ALLOWED=NO \
-  build
-```
-
-重点回归场景：
-
-- 中文、英文、阿语之间多次随机切换，页面布局不混乱。
-- SwiftUI 文案即时刷新。
-- UIKit label、button、navigation item、tab item 即时刷新。
-- presented 页面和 modal 链路能刷新或被正确重建。
-- `UITableView` 切换方向后 cell、header、footer 和当前可见 row 正确。
-- `UICollectionView` RTL 下滚动方向、顺序、当前 item 正确。
-- hidden Window、离层后重新加入、reuse pool 返回和异步新物化内容读取最终 revision。
-- `.playback`、`.spatial` 和固定 LTR 控件不被全局方向覆盖。
-- LTR/RTL 下导航按钮位置、返回图标、pop 手势方向正确。
-- “跟随系统”能解析到最合适的支持语言。
-- 应用名本地化资源能在构建产物中生成 `InfoPlist.strings`。
-- App Icon asset catalog 能被 Xcode 编译，并包含 light/dark/tinted 三种外观。
-
-## 设计原则
-
-- App 语言是应用状态，不是系统语言。
-- 不把 `AppleLanguages` 或 `Bundle.main` swizzling 作为主方案。
-- 文案与方向由同一个 snapshot 原子触发，内部严格先方向、后文案/configuration。
-- SwiftUI 依赖环境驱动刷新，UIKit 依赖 `UIKitLocalizationApplying` 显式重设内容。
-- 多窗口默认只更新应用显式注册的 Window；批量发现必须由调用方显式选择并筛选范围。
-- 普通界面可以镜像，空间语义内容需要单独判断。

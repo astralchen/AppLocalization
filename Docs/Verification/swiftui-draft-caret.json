@@ -1,0 +1,62 @@
+{
+  "date": "2026-11-17",
+  "status": "passed",
+  "implementation": "Use SwiftUI leading alignment with iOS 26+ layoutBased strategy on the concrete draft TextField. Keep stable identity outside List and existing environment/navigation behavior. No UIKit bridge or generic wrapper.",
+  "baseline": {
+    "xcresult": "/tmp/applocalization-swiftui-caret-baseline.xcresult",
+    "log": "/tmp/applocalization-swiftui-caret-baseline.log",
+    "summary": "swiftui-caret-baseline-summary.json",
+    "relative_caret_x": 0.002465483234714004
+  },
+  "unsuccessful_experiments": [
+    {
+      "xcresult": "/tmp/applocalization-swiftui-caret-leading.xcresult",
+      "result": "Explicit leading alone retained left caret."
+    },
+    {
+      "xcresult": "/tmp/applocalization-swiftui-caret-explicit.xcresult",
+      "result": "Conditional trailing for RTL also retained left caret."
+    }
+  ],
+  "focused_pass": {
+    "xcresult": "/tmp/applocalization-swiftui-caret-layout.xcresult",
+    "log": "/tmp/applocalization-swiftui-caret-layout.log"
+  },
+  "full_ui": {
+    "xcresult": "/tmp/applocalization-swiftui-caret-ui.xcresult",
+    "log": "/tmp/applocalization-swiftui-caret-ui.log",
+    "summary": "swiftui-caret-ui-summary.json",
+    "passedTests": 7,
+    "failedTests": 0,
+    "expectedFailures": 0,
+    "skippedTests": 0,
+    "runtimeWarnings": []
+  },
+  "builds": {
+    "main": "/tmp/applocalization-swiftui-caret-demo-build.log",
+    "Today": "/tmp/applocalization-swiftui-caret-today-build.log"
+  },
+  "screenshots": [
+    "swiftui-caret-before.png",
+    "swiftui-caret-rtl.png",
+    "swiftui-caret-ltr.png"
+  ],
+  "coverage": [
+    "Screenshot blue caret position: ar -> en-US -> ar -> zh-Hans -> ar",
+    "Continued typing without refocusing",
+    "Existing full main UI suite including draft and both native back gestures"
+  ],
+  "not_run": [
+    "iOS 15-25 fallback runtime",
+    "Exact iOS 26",
+    "Physical device",
+    "Exact Swift 6.3 compiler",
+    "Package and Today editing tests not repeated for this main-demo-only change"
+  ],
+  "source_sha256": {
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/PushPopGestureDemoView.swift": "43ac81afe7ec4d1da823a35058d13fec0144da936a68bc610e91e66f89feedb8",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "974c881b910bcdded0753e3cf955fa7b0addbe786b847198818e455de5d362b6"
+  },
+  "post_validation_change": "Whitespace-only modifier indentation in PushPopGestureDemoView.",
+  "reference": "https://developer.apple.com/documentation/swiftui/view/multilinetextalignment(strategy:)"
+}

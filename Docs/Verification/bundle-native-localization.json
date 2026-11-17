@@ -1,0 +1,98 @@
+{
+  "date": "2026-11-17",
+  "status": "passed",
+  "configuration": "No supported/fallback initializer arguments. Bundle.localizations supplies options; Bundle.preferredLocalizations resolves system selection; Bundle.developmentLocalization determines preferred fallback. Read-only supportedLocalizations and fallbackLocalization expose derived results.",
+  "direction": "Use user-provided Foundation strategy: Locale.Language.characterDirection on iOS 16+, Locale.characterDirection(forLanguage:) on iOS 15. No RTL script table or explicit-script override contract.",
+  "removed": [
+    "Core englishUS, simplifiedChinese, arabic constants",
+    "Default English fallback in resolver",
+    "Stored Request.persistedIdentifier",
+    "Unused script/region component parsing"
+  ],
+  "preserved": [
+    "MainActor transaction serialization and last-request-wins",
+    "All prepare -> persistence -> publication -> all directions -> all content -> all finish -> notification",
+    "Weak coordinator membership and transaction snapshot",
+    "SwiftUI environment and stable input identities",
+    "Native navigation objects, delegates and back gestures"
+  ],
+  "behavior_changes": [
+    "Example resource identifier en replaces en-US; old stored regional preferences resolve to available bundle language",
+    "Only preference repair does not publish snapshot or increase revision; same-system refresh can normalize absent preference to system",
+    "Options order follows Bundle; presentation can choose its own order",
+    "Foundation result is authoritative for explicit scripts"
+  ],
+  "regression_results": {
+    "package": {
+      "passedTests": 83,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-bundle-native-tests.xcresult",
+      "log": "/tmp/applocalization-bundle-native-tests.log",
+      "summary": "bundle-native-tests-summary.json"
+    },
+    "ui": {
+      "passedTests": 7,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-bundle-native-ui.xcresult",
+      "log": "/tmp/applocalization-bundle-native-ui.log",
+      "summary": "bundle-native-ui-summary.json"
+    },
+    "today": {
+      "passedTests": 4,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-bundle-native-today-teardown.xcresult",
+      "log": "/tmp/applocalization-bundle-native-today-teardown.log",
+      "summary": "bundle-native-today-teardown-summary.json"
+    }
+  },
+  "build_logs": {
+    "package": "/tmp/applocalization-bundle-native-package-build.log",
+    "demo": "/tmp/applocalization-bundle-native-demo-build.log",
+    "today": "/tmp/applocalization-bundle-native-today-build.log"
+  },
+  "initial_today_result": {
+    "xcresult": "/tmp/applocalization-bundle-native-today.xcresult",
+    "log": "/tmp/applocalization-bundle-native-today.log",
+    "passedTests": 4,
+    "diagnostic": "Unbalanced appearance transitions after test completion; fixture now waits for native dismiss completion before hiding window. Final run did not emit this diagnostic."
+  },
+  "screenshots": [
+    "bundle-native-rtl.png",
+    "bundle-native-ltr.png"
+  ],
+  "not_run": [
+    "iOS 15/16 and exact iOS 17 runtimes",
+    "Other older runtimes and physical device",
+    "Exact Swift 6.3 compiler",
+    "Real IME candidate interaction",
+    "Full EventKit permissions and persistence"
+  ],
+  "log_boundary": "Final xcresult runtimeWarnings are empty. Existing content-configuration fixture diagnostics, AppIntents metadata notice and simulator system logs retained. No Modifying state during view update in UI test log.",
+  "post_package_validation_change": "Comment and whitespace-only formatting in core files; Today fixture cleanup tested separately after edit.",
+  "source_sha256": {
+    "Sources/AppLocalization/Core/AppLocale.swift": "79730d0e8a868418204dba5df588258f333e9d6a13a308f9b56c98e55a3c9a25",
+    "Sources/AppLocalization/Core/LocalizationController.swift": "94d67d845cc7af7c1aea3690e43a7e9e3936a2dd8739e41196b16298a764f334",
+    "Sources/AppLocalization/Core/LocaleMatcher.swift": "493537a0771ab7f32d4aceca66cae2451633b32645dad950070fff361bfc27f9",
+    "Sources/AppLocalization/Strings/LocalizedStringResolver.swift": "884089ce7c68ba082216d5e2250f2905cc3c7b39113ec6d7cfd0fd9591264fc0",
+    "Tests/AppLocalizationTests/LocalizationControllerTests.swift": "cf051d5bead7a31191ba67c014a16f9298cef57ecdd38b4bfcec1083679359be",
+    "Tests/AppLocalizationTests/LocalizationTransactionTests.swift": "bf59da4ac7d6aed30f0da882c2769af72f82c6dec973153bf0511c6e746387d2",
+    "Tests/AppLocalizationTests/DirectionalLayoutTests.swift": "648818095f7750e25866433c78ce2081c2ae8e5abcacbc6f71845d42d56df966",
+    "Tests/AppLocalizationTests/LocalizationTestBundle.swift": "f0c6be8f1da34b01a803b7d4f7d401325c5ea21ef7870e5355c55c1ac00866ac",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoServices.swift": "c7f2a3be4bda16ef2da09c7c6dd8ad0e14808b6e0aaf9b2ee50277fb39a3c4c7",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoRootView.swift": "bd40d617b46e0d0cf5551a379d43144657aa0e55c67b7a29877d2e4cc00c0ead",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "2e11b99be5af80621bedb106eb9394f291aa2e733262fef31223f88e30183da7",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "5309806abc4d919bc4a13429e75e6630cbd1024896b97952f8936de85de86c10",
+    "Examples/Today/Today/TodayLocalizationServices.swift": "2a0496eefc8858c14fc9379d2e5db09bff9e75747235294ad332bffce7cdad19",
+    "Examples/Today/Today/SettingsViewController.swift": "8d93587afc45c7ab7ac56021c5ba9b07063e810bd3e836c7872ce2bf8581c27b",
+    "Examples/Today/TodayTests/ReminderEditingTests.swift": "9d4d9592875798ee977a828a28a1c3d7d5ce10b344857020b14db93da9f45d8a"
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-17",
+  "scope": "Demo-owned native UINavigationController and Scene lifecycle; no package source or public API changes in this step",
+  "reference": "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LocalizedControllers.swift",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift tools 6.3; Swift 6 language mode",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator; deployment target iOS 15",
+  "removed": [
+    "NavigationPopGestureConfigurator",
+    "WindowLocalizationRegistrationView",
+    "WindowRegistrationView",
+    "Hidden NavigationLink and per-page navigation probes"
+  ],
+  "native_ownership": "AppDelegate shares services; SceneDelegate creates/registers/unregisters windows; DemoNavigationController owns native push/present/dismiss and stable UIHostingControllers; system gestures and delegates remain untouched; SwiftUI supplies navigationTitle",
+  "direction": "Existing iOS 17+ Scene and iOS 15/16 coordinator paths unchanged; demo synchronizes its own hosting boundaries before push and during updates",
+  "detail_title": "Native largeTitleDisplayMode.never fixes pre-existing blank large title on editing detail; root and sheet keep large titles",
+  "ui_tests": {
+    "full_suite_before_detail_title_mode_change": {
+      "passed": 4,
+      "failed": 0,
+      "expected_failures": 0,
+      "skipped": 0,
+      "runtime_warnings": 0,
+      "xcresult": "/tmp/applocalization-native-navigation-final-ui.xcresult",
+      "log": "/tmp/applocalization-native-navigation-final-ui.log",
+      "summary": "native-navigation-ui-summary.json"
+    },
+    "final_detail_with_title_ocr": {
+      "passed": 1,
+      "failed": 0,
+      "expected_failures": 0,
+      "skipped": 0,
+      "runtime_warnings": 0,
+      "xcresult": "/tmp/applocalization-native-navigation-compact-title-ui.xcresult",
+      "log": "/tmp/applocalization-native-navigation-compact-title-ui.log",
+      "summary": "native-navigation-editor-summary.json"
+    }
+  },
+  "build": {
+    "result": "passed",
+    "log": "/tmp/applocalization-native-navigation-final-build.log"
+  },
+  "failed_iterations": [
+    {
+      "xcresult": "/tmp/applocalization-native-navigation-ui.xcresult",
+      "log": "/tmp/applocalization-native-navigation-ui.log",
+      "reason": "3 UI launch failures with empty generated Scene configurations; explicit Info.plist Scene configuration fixed launch without data clearing"
+    },
+    {
+      "xcresult": "/tmp/applocalization-native-navigation-title-ocr-ui.xcresult",
+      "log": "/tmp/applocalization-native-navigation-title-ocr-ui.log",
+      "reason": "Title AX exists but OCR confirms missing pixels; prior pre-refactor screenshot also blank; native compact title fixed it"
+    }
+  ],
+  "intermediate_results": [
+    "/tmp/applocalization-native-navigation-scene-ui.xcresult",
+    "/tmp/applocalization-native-navigation-title-ui.xcresult"
+  ],
+  "prior_title_evidence": "/tmp/applocalization-prior-navigation-attachments/B9F33FE0-1DAB-43A8-90B4-9FEB924DF7D5.png",
+  "source_sha256": {
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj/project.pbxproj": "c3679ec256ef624978975dad86d6d92f3fd207c66df3fdbf6c4e0b7093cc03ea",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoNavigationController.swift": "35d7574caec84a80b30001da65070aa73f52e3473a2f9d470eb893e35a238867",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoRootView.swift": "dbc0bd69946497393364786b74b1de5d82272e2323c6e27cf47477525bc28013",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoServices.swift": "1aac812ab596505ad886a3161932ff86463b4c97ab593c452df9a97d67272674",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/GestureDirectionDemoView.swift": "fc4e66fdb9c7b87c488f66b4f6123dd8de28d19e6acc4955691445633202d15e",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/Info.plist": "79d1f25b1204527c2848cdcd6ab1428c5a299ea23dcf803a152c653c54c2c1fe",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/LanguageSwitchingDemoApp.swift": "10fe1f168b74407db9210d47f23e4144af94275e1c2ef19b24e6494380ce8130",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/PushPopGestureDemoView.swift": "3bf8cdb1e8e39546d3297f13166e67085d68ff03fdf1efbb3a7ff05a72367139",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitDemoRepresentable.swift": "ab7b1e6da194a5ef9fd1454c264f17800337b32fa7e44add92880f75527c1dd7",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "add2680cba15f8ec203cc5088a0145c1e1796496b114a06bf79cc6a832ac9e63",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "c684d28f2dfb978a69530178b6f4f14c1139d4e1865647e03a6abd505453eb87"
+  },
+  "screenshots": [
+    "native-navigation-detail-rtl.png",
+    "native-navigation-detail-ltr.png",
+    "native-navigation-root-rtl.png",
+    "native-navigation-sheet-rtl.png"
+  ],
+  "not_run": [
+    "Package tests (no package changes in this step)",
+    "iOS 15/16 or exact iOS 17 runtime",
+    "Physical devices",
+    "Exact Swift 6.3 compiler",
+    "Multiple Scene UI interactions"
+  ]
+}

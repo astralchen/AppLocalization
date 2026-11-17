@@ -1,0 +1,29 @@
+/tmp/applocalization-auto-adapters-tests.log
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:92: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges] : XCTAssertEqual failed: ("2") is not equal to ("1")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:93: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges] : XCTAssertTrue failed
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:105: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges] : XCTAssertEqual failed: ("4") is not equal to ("1")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:106: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges] : XCTAssertTrue failed
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:107: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges] : XCTAssertGreaterThan failed: ("2") is not greater than ("2")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:119: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges] : XCTAssertEqual failed: ("5") is not equal to ("2")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:120: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges] : XCTAssertTrue failed
+** TEST FAILED **
+
+/tmp/applocalization-auto-adapters-tests-2.log
+	 Executed 84 tests, with 0 failures (0 unexpected) in 3.303 (3.355) seconds
+	 Executed 84 tests, with 0 failures (0 unexpected) in 3.303 (3.358) seconds
+** TEST SUCCEEDED **
+
+/tmp/applocalization-auto-adapters-ui.log
+	 Executed 2 tests, with 0 failures (0 unexpected) in 49.207 (49.217) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 49.207 (49.229) seconds
+	 Executed 2 tests, with 0 failures (0 unexpected) in 49.207 (49.232) seconds
+** TEST SUCCEEDED **
+
+/tmp/applocalization-auto-adapters-package-build.log
+** BUILD SUCCEEDED **
+
+/tmp/applocalization-auto-adapters-demo-build.log
+** BUILD SUCCEEDED **
+
+/tmp/applocalization-auto-adapters-today-build.log
+** BUILD SUCCEEDED **

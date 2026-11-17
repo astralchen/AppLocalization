@@ -1,0 +1,142 @@
+{
+  "date": "2026-11-17",
+  "status": "passed",
+  "implementation": "Use UIUserInterfaceLayoutDirection directly in AppLocale, LocalizationSnapshot, LocalizationController, LocalizationUpdate and DirectionalLayout. Remove custom enum and conversion file. Keep only mappings required at actual SwiftUI, Scene trait and semantic-content boundaries.",
+  "removed": [
+    "AppUserInterfaceLayoutDirection",
+    "UIKitLayoutDirectionConversions.swift",
+    "uiLayoutDirection",
+    "appLayoutDirection conversion property",
+    "swiftUILayoutDirection"
+  ],
+  "retained": [
+    "Explicit-script-first locale direction resolution and NSLocale fallback",
+    "SwiftUI environment injection and content identity",
+    "Candidate locale own writing direction",
+    "Scene UITraitEnvironmentLayoutDirection mapping and legacy iOS direction branches",
+    "LocalizationUpdate semanticContentAttribute derived from native direction",
+    "Semantic gesture, back-edge and chevron helpers now in DirectionalLayout",
+    "Native navigation recognizer and delegate",
+    "Configured-button and navigation customView fixes"
+  ],
+  "migration": "Native type replaces custom enum without a typealias. Remove .uiLayoutDirection and .appLayoutDirection conversion calls. SwiftUI roots still use appLocalizationEnvironment; direct custom SwiftUI boundaries map the native direction to SwiftUI.LayoutDirection. UIKit semantic policy comes from update.semanticContentAttribute or explicit native values at the business boundary.",
+  "regression_results": {
+    "tests": {
+      "passedTests": 73,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-native-direction-type-tests.xcresult",
+      "log": "/tmp/applocalization-native-direction-type-tests.log",
+      "summary": "native-direction-type-tests-summary.json"
+    },
+    "ui": {
+      "passedTests": 5,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-native-direction-type-ui.xcresult",
+      "log": "/tmp/applocalization-native-direction-type-ui.log",
+      "summary": "native-direction-type-ui-summary.json"
+    },
+    "today": {
+      "passedTests": 3,
+      "failedTests": 0,
+      "expectedFailures": 0,
+      "skippedTests": 0,
+      "runtimeWarnings": [],
+      "xcresult": "/tmp/applocalization-native-direction-type-today.xcresult",
+      "log": "/tmp/applocalization-native-direction-type-today.log",
+      "summary": "native-direction-type-today-summary.json"
+    }
+  },
+  "new_coverage": [
+    "Native UIUserInterfaceLayoutDirection flows directly from locale/update and effectiveUserInterfaceLayoutDirection into gesture/chevron helpers",
+    "Real UIHostingController starts in Arabic then switches en-US/zh-Hans/ar/en-US; representable sees correct locale and SwiftUI direction while preserving the UIView instance"
+  ],
+  "builds": {
+    "package": {
+      "status": "passed",
+      "log": "/tmp/applocalization-native-direction-type-package-build.log"
+    },
+    "demo": {
+      "status": "passed",
+      "log": "/tmp/applocalization-native-direction-type-demo-build.log"
+    },
+    "today": {
+      "status": "passed",
+      "log": "/tmp/applocalization-native-direction-type-today-build.log"
+    }
+  },
+  "console_notes": "xcresult runtimeWarnings arrays are empty. Existing package custom-content fixture replacement diagnostics, legacy API compile warnings and Today system keyboard diagnostics remain in logs; not a zero-console-warning claim.",
+  "not_run": [
+    "iOS 15/16 runtime",
+    "Exact iOS 17 runtime",
+    "Physical devices",
+    "Exact Swift 6.3 compiler",
+    "Full EventKit persistence/permission UI",
+    "Real IME candidate keyboard interaction"
+  ],
+  "environment": "iPhone 18 Pro / iOS 27.2 Simulator; Swift 6.4.2 compiler with minimum tools 6.3 and Swift 6 language mode",
+  "source_sha256": {
+    "Sources/AppLocalization/Strings/LocalizedStringResolver.swift": "bb65b844eec02c403f21dfd980881f8e14a12ce569e090a20b208b69ac497bf2",
+    "Sources/AppLocalization/Core/LocalePreferenceStore.swift": "554bd256c2d8df939505f72133e039d15acb79e321249b719199e60e00b8d069",
+    "Sources/AppLocalization/Core/LocalizationUpdate.swift": "c20ab93a8dba116567a411171388fd0ba865e996701465db83309ae885db6109",
+    "Sources/AppLocalization/Core/AppLocale.swift": "2253216d2c5a2c712530e65c68047b0d80aab1ea8812f6f9903efd0795eba6e2",
+    "Sources/AppLocalization/Core/LocalizationController.swift": "e82918e8e5aac43cb1f2a08dd20186a6c69839175a8464052dba49c50f23ce35",
+    "Sources/AppLocalization/Core/LocaleMatcher.swift": "c3b56e419a6056245c9a1a65fdcef8fa6e765e0149c64676f9978d4449d16151",
+    "Sources/AppLocalization/UIKit/UIKitLocalizationApplying.swift": "a565cecf63171e4e83d251680899fc282c9f9d58d803fe8a45618f3c06991d2f",
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "15a716f00d41ddb44b9fd7b726a8a69bf0f7beb5b85e4ab6560a7b07827422c5",
+    "Sources/AppLocalization/Directional/DirectionalLayout.swift": "32f9ad19d632d35d07939f8435d922c77349fc49c428a37a8481010d4564deca",
+    "Sources/AppLocalization/SwiftUI/SwiftUILocalizationEnvironment.swift": "ee13ba71bb73d855cb6d905e61fdcd5510594840fa99a4f96b4782199b14919b",
+    "Tests/AppLocalizationTests/LocalizedStringResolverTests.swift": "8016d0d624ad88e730708c5c0fb2df85e16dd5d1c82563972753ea854339e909",
+    "Tests/AppLocalizationTests/AppLocaleDisplayNameTests.swift": "4af653cbe94184302ed8e497d64e5e5039c9a718d0c5441e09fbcc2229f0c436",
+    "Tests/AppLocalizationTests/SwiftUILocalizationEnvironmentTests.swift": "681b082c92c3ce2157a3e53ab84d8951f9834e77d63c3d13073a7ef448fc11c3",
+    "Tests/AppLocalizationTests/UIKitTabContainerLocalizationTests.swift": "8059c94cdd6222647cd5bc02525e63fb4ff7e600f741c3c25d19de563fc8b8d1",
+    "Tests/AppLocalizationTests/UIKitLocalizationInfrastructureTests.swift": "333bfc8d5814407a1c2825d49d61c4ef392c5c01e94cc3b8caf3c81591c0badd",
+    "Tests/AppLocalizationTests/UIKitTextInputLocalizationTests.swift": "33d8a74ad55a212376a0fb8b2975bc6b44fdd71de976ae90e20497fa57007be4",
+    "Tests/AppLocalizationTests/DirectionalLayoutTests.swift": "6080b1499a77234502edd417f1fd191085012a4564c1fffdfa0a80288d6521e1",
+    "Tests/AppLocalizationTests/UIKitWindowTransactionTests.swift": "32d2869ba54fda99e7da221b535695175e18e4f5bd78b12e2a25bfca80f99d41",
+    "Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift": "e5779dcbb29fa33683eae4438dd661dde62a0f41e1d099dd3692d2d8d06d1d11",
+    "Tests/AppLocalizationTests/LocalizationControllerTests.swift": "12cfb3429ca74273c2efdc36c84c0c08960691fa0eeaf42d2f815ea53a9a206f",
+    "Tests/AppLocalizationTests/UIKitCustomNavigationItemTests.swift": "692373210fb4a43590530590c9cba9a61b11a024cfb01f5f0b7bce2e3fea2a0c",
+    "Tests/AppLocalizationTests/LocalizationTransactionTests.swift": "d38c8176228f2185a07c05a0bb13c0c076b0155565e67c2eb150c1de747d61c1",
+    "Tests/AppLocalizationTests/LocalizationUpdateTests.swift": "b74504a893fba573343e4bb5ae0cb3f0497e00cc84af911b1ae2ab7843578110",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoRootView.swift": "dea0e4d1e0d4334d4b78e7d09f2328122cd51356c4e0b43590ac9e5f20a24bfd",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitDemoRepresentable.swift": "18832a7907a6037c4e85a894c8fb95ffe265539b0f039ed2167f35091e3b28da",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/LanguageSwitchingDemoApp.swift": "10fe1f168b74407db9210d47f23e4144af94275e1c2ef19b24e6494380ce8130",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoNavigationController.swift": "e79c9d801586e55637b11130d12029626a25bcf2f61e3d4d7e05cd3d6c8c6d53",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoServices.swift": "b195b7674ed11a0b0daea7361a334205b70de9e4ca6e6acfeab3774c99afe789",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/PushPopGestureDemoView.swift": "3bf8cdb1e8e39546d3297f13166e67085d68ff03fdf1efbb3a7ff05a72367139",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "f360d1e3d8229dbe09a32b18bb290d00b16e361bc27c23743dfe3ac7196844ba",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/GestureDirectionDemoView.swift": "fc4e66fdb9c7b87c488f66b4f6123dd8de28d19e6acc4955691445633202d15e",
+    "Examples/Today/Today/AppDelegate.swift": "10f0b5766e4e845156e9ac04802fde73e6b776da8fd2f9d5814d753158eb015d",
+    "Examples/Today/Today/TodayLocalizationServices.swift": "6fe41aaf1489574c73237c07274efff577cc57afd4530ec509e89868622d791e",
+    "Examples/Today/Today/SceneDelegate.swift": "1e7ecd635912f82f288d044e25cede3a006292665ce119a62244a5ef93264e63",
+    "Examples/Today/Today/SettingsViewController.swift": "bbe582b3a331ba9be447191babd3e2843a1663ade3b827b74e9971a18a250332",
+    "Examples/Today/Today/ContentViews/DatePickerContentView.swift": "b2420b07bdc7578793074350e53108b8b0f1bcf45d42c0e2c7ef5b09b76264db",
+    "Examples/Today/Today/ContentViews/UIView+PinnedSubview.swift": "28ea3391db1ae71b432b07a947900069f475e6239205be285506c062140c553c",
+    "Examples/Today/Today/ContentViews/TextFieldContentView.swift": "a327e1efdd73f649590a3b66499894bb45f9689a65a628bbe685ad136ac9acd0",
+    "Examples/Today/Today/ContentViews/TextViewContentView.swift": "5d3e11618e3fae8d9c14c5415a89c9c904a3fed2972bc8e84ae7cd714899ab6a",
+    "Examples/Today/Today/ListViewController/ReminderListViewController+DataSource.swift": "80845cb981548c580f6287b7d954225c356148c6f48e0efae832d24e93617d8c",
+    "Examples/Today/Today/ListViewController/ReminderDoneButton.swift": "0f396ed3066311e1d3b843fb1bd666e6a82d89414b9e521324d35871c7384761",
+    "Examples/Today/Today/ListViewController/ReminderListViewController+Actions.swift": "3170d6073ff39b8e4ed75c25727b8368b041bd4a2f94c42c7acf1007089b7805",
+    "Examples/Today/Today/ListViewController/ReminderListViewController.swift": "a31d1a7794019bc42e48cd78ee8824aebb182b4157b9ec4669023d5cb92d353e",
+    "Examples/Today/Today/ListViewController/ProgressHeaderView.swift": "5bf06dd31e99fe96ecfe7363ccc15edc9f34aa5c148e4efb3ee9d5c959a36c84",
+    "Examples/Today/Today/Models/ReminderListStyle.swift": "9e7fce3857d392ed94ca0ea3c0eb931f169d8b2efea027cd2c2ce3974849874f",
+    "Examples/Today/Today/Models/EKReminder+Reminder.swift": "071782f702eb6196df8be4fb47110179fbb505a20b2de444efdd028f066d3ca7",
+    "Examples/Today/Today/Models/Reminder.swift": "50f83b05b10ddac8ce2f35b8cbb38c6d5b1299ee4803d174b4a7b3f8e7426143",
+    "Examples/Today/Today/Models/TodayError.swift": "52c1368dd2d255a8f183470327b4517e3652e6fe146ec6d9bbb8ebcd30f56fb7",
+    "Examples/Today/Today/Models/ReminderStore.swift": "d191513bd592234b028e805262b977d9cc81b4d50ba1d70ebb6cb71a02d2a4df",
+    "Examples/Today/Today/Models/Date+Today.swift": "76f73305aea5ad454e09e52beed9621b03489fd26ec96c1a91b4157b57a175c8",
+    "Examples/Today/Today/Models/EKEventStore+AsyncFetch.swift": "c5008af96d03aa2c084724d78275803d5c6d72aea14fe4f9b8800ebc173623f2",
+    "Examples/Today/Today/Models/Reminder+EKReminder.swift": "f7ff0b5b132aa1609ef491c3bda8c64d7a58fd16c2c3aec5e9361687beaccf6c",
+    "Examples/Today/Today/Models/CAGradientLayer+ListStyle.swift": "30f15223c7a80c74557a9071c74543b649b97cb1d868431a4e2cfa57cbb1b757",
+    "Examples/Today/Today/DetailViewController/ReminderViewController+CellConfiguration.swift": "f8feb53791d7dd22f167729e66904c471550f8057d6e2c79a16bd2f471458083",
+    "Examples/Today/Today/DetailViewController/ReminderViewController.swift": "5ba1f6580d23336c07cbee17e4c9e9b3d3bfce81a0758957a76165aa9310d385",
+    "Examples/Today/Today/DetailViewController/ReminderViewController+Row.swift": "8ef9b03eb14d94f89017f07bf26475db93f618ed810e7d15b8269ae4936cd5a3",
+    "Examples/Today/Today/DetailViewController/ReminderViewController+Section.swift": "cf5d4f05865a9c11096171c279ac752aece45b733652309d897ade0c683b8b9f"
+  }
+}

@@ -1,0 +1,249 @@
+原生复用入口精简验证，2026-11-16
+
+retained_failed_run
+/tmp/applocalization-cleanup-tests-1.log
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testFallsBackToCandidateScriptWhenPreferredLocaleIsSameLanguageFamily]' passed (0.012 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testNativeDisplayNameFallsBackToConfiguredDisplayNameWhenFoundationCannotResolveIdentifier]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testNativeDisplayNameUsesCandidateLocaleAndDoesNotDependOnPreferredLocale]' passed (0.008 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testUsesCandidateFallbackWhenFoundationCannotResolveIdentifier]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testUsesPreferredLocaleForLanguageDisplayName]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testBackSwipeAndNavigationTransitionDirectionsFollowLayoutDirection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testConvertsPhysicalPanTranslationToSemanticDirection]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testDetectsRightToLeftLocales]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testIgnoresStationaryAndBelowThresholdPanTranslations]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testMapsSemanticEdgesToPhysicalEdges]' passed (0.000 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFallbackLocaleMatchingNormalizesCaseAndSeparators]' passed (0.010 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemChecksLaterPreferredLanguagesBeforeUsingFallback]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemPrefersMatchingScriptWithinLanguage]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemResolvesTraditionalChineseToSupportedSimplifiedChinese]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testInjectedSystemSourceResolvesRegionalLanguage]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testLoadsPersistedSupportedLocaleAndPublishesDirectionalChange]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingEquivalentLocaleDoesNotPublishChange]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingExplicitLocaleLeavesFollowSystemEvenWhenResolvedLocaleIsSame]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingFollowSystemPersistsSentinelAndPublishesResolvedLocale]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testUnsupportedLocaleFallsBackAndCannotBeSelected]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testAllPreparationPrecedesPublicationAndCompletionPrecedesNextRevision]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testBundleSourceAndExplicitSelectionHaveSeparateLifecycles]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testOneAtomicPublicationAndReentryFromWillChange]' passed (0.019 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testParticipantMembershipIsWeakAndFrozenForEachTransaction]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testRequestForCurrentStateCancelsEarlierDeferredRequest]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testSynchronizationReentryCannotOverwriteNewerState]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testSystemSourceInfersTraditionalScriptFromRegion]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testDoesNotReportTranslationWhoseValueEqualsItsKeyAsMissing]' passed (0.009 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testFallsBackToFallbackLocaleWhenCurrentLocaleMissesKey]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testFormatsUsingCurrentLocaleAndReportsMissingKeys]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testNormalizesAndProgressivelyFallsBackStringCatalogLocaleIdentifiers]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testResolvesCurrentLocaleStringFromRequestedBundle]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testUsesCompiledStringCatalogResources]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testUsesConfiguredFallbackLocaleBeforeBaseLocalization]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAnchorRestoresRelativePositionAcrossCollectionInstances]' passed (0.098 seconds).
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:62: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAppliesDirectionToMaterializedStandardListCellBoundaries] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:63: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAppliesDirectionToMaterializedStandardListCellBoundaries] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:70: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAppliesDirectionToMaterializedStandardListCellBoundaries] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift:71: error: -[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAppliesDirectionToMaterializedStandardListCellBoundaries] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAppliesDirectionToMaterializedStandardListCellBoundaries]' failed (0.605 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testCustomContentConfigurationKeepsItsInstanceAcrossDirectionChanges]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testKeepsAndInvalidatesCurrentLayoutWithoutFactory]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testCollectionStableIDsSurviveReorderingForFlowAndCompositionalLayouts]' passed (0.124 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testHorizontalFlowRestoresSemanticLeadingDistanceAcrossDirectionRoundTrip]' passed (0.018 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testLateCompletionDoesNotConsumeNewerRevisionAndDeletedAnchorIsSafe]' passed (0.023 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testOrthogonalCenteredPageRestoresBusinessIDWithoutMovingOuterViewport]' passed (0.017 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testTableRestoresStableIDAfterInsertionAndHeightChange]' passed (0.034 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorDoesNotLoadUnloadedControllerDuringAutomaticDelivery]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorMirrorsNavigationEnvironmentBeforeUpdatingChildAcrossLanguageChanges]' passed (0.027 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorPreparesEveryLoadedPageBeforeChangingNavigationDirection]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorSynchronizesNavigationEnvironmentOnArabicRegistration]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorUpdatesRegisteredHiddenWindowAndSkipsUnregisteredWindow]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testDirectionPoliciesWriteOnlyDeclaredSemantics]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testFollowContainerResolvesAgainAfterDetachedViewIsReattached]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testNavigationBarItemBuilderPreservesOrderAndMovesSharedItems]' passed (0.014 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testNavigationItemPlacementUsesUIKitSemanticSlots]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testRecreateRecoveryAppliesLatestUpdateToFactoryRoot]' passed (0.004 seconds).
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:77: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:78: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:75: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:77: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:78: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext] : XCTAssertEqual failed: ("UIUserInterfaceLayoutDirection(rawValue: 0)") is not equal to ("UIUserInterfaceLayoutDirection(rawValue: 1)")
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext]' failed (0.028 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testListRefreshPreservesCustomContentInstances]' passed (0.053 seconds).
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:91: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testListRefreshPreservesExplicitDirectionExceptions] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 3)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:92: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testListRefreshPreservesExplicitDirectionExceptions] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 2)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:93: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testListRefreshPreservesExplicitDirectionExceptions] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 1)")
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testListRefreshPreservesExplicitDirectionExceptions]' failed (0.041 seconds).
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:43: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:44: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:43: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:44: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:54: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:43: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:44: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:43: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:44: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:54: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:43: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:44: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:43: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:44: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:54: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation]' failed (0.248 seconds).
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:19: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:20: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:19: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:20: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:24: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:19: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:20: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:19: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:20: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:24: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:19: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:20: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:19: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:20: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift:24: error: -[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage]' failed (0.124 seconds).
+Test Case '-[AppLocalizationTests.UIKitTabContainerLocalizationTests testRegistrationAndRoundTripsSynchronizeTabTraitsBeforeChildren]' passed (0.107 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testBindingDoesNotRetainInputAndCanReleaseWithQueuedRefresh]' passed (0.054 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testCompositionDefersUpdatesUntilPublicEditingNotification]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testEditingNotificationsApplyLatestSnapshotOnlyToBoundInput]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testFixedAlignmentStillRefreshesInterfaceDirection]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testFixedDirectionIsIndependentOfAppLeadingAlignment]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testRefreshRepairsBusinessTypingAttributeResetWithoutReplacingDelegate]' passed (0.075 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSearchBindingUsesPublicTextFieldAndMirrorsSearchBar]' passed (0.104 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSingleLineAndSecureInputUseFreshSnapshotsAndDefaultParagraphs]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSingleLinePreservesExistingRichTextRunsAndSelection]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testTextViewPreservesRichTextAndAttachmentsAcrossDirections]' passed (0.093 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testTransactionKeepsFocusedCustomContentAndSelection]' passed (1.556 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testAllWindowsCaptureBeforeAnyWindowChangesAndUnregisteredWindowsStayUntouched]' passed (0.032 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testCoordinatorAndRegisteredWindowsAreNotRetainedByController]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testInitialRenderingReentryFinishesBeforeLanguageTransaction]' passed (0.008 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testPresentedPageAndNavigationStackRetainIdentity]' passed (0.334 seconds).
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UITableViewLayoutDirectionTests.swift:24: error: -[AppLocalizationTests.UITableViewLayoutDirectionTests testAppliesSemanticDirectionWithoutReloadingData] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UITableViewLayoutDirectionTests.swift:25: error: -[AppLocalizationTests.UITableViewLayoutDirectionTests testAppliesSemanticDirectionWithoutReloadingData] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 4)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UITableViewLayoutDirectionTests.swift:36: error: -[AppLocalizationTests.UITableViewLayoutDirectionTests testAppliesSemanticDirectionWithoutReloadingData] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+/Users/sondra/Documents/GitHub/AppLocalization/Tests/AppLocalizationTests/UITableViewLayoutDirectionTests.swift:37: error: -[AppLocalizationTests.UITableViewLayoutDirectionTests testAppliesSemanticDirectionWithoutReloadingData] : XCTAssertEqual failed: ("UISemanticContentAttribute(rawValue: 3)") is not equal to ("UISemanticContentAttribute(rawValue: 0)")
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testAppliesSemanticDirectionWithoutReloadingData]' failed (0.043 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testHandlesEmptyTable]' passed (0.008 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testKeepsDiffableSnapshotWithoutReloadingTable]' passed (0.016 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testPreservesTopVisibleRowAndItsRelativePosition]' passed (0.021 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesTableHeaderAndFooterLayoutAndDirectionCallback]' passed (0.010 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesVisibleCellLayoutAndDirectionCallback]' passed (0.015 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesVisibleHeaderLayoutAndDirectionCallback]' passed (0.016 seconds).
+	 Executed 82 tests, with 53 failures (0 unexpected) in 4.147 (4.227) seconds
+	 Executed 82 tests, with 53 failures (0 unexpected) in 4.147 (4.233) seconds
+** TEST FAILED **
+
+package_tests
+/tmp/applocalization-cleanup-tests-2.log
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testFallsBackToCandidateScriptWhenPreferredLocaleIsSameLanguageFamily]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testNativeDisplayNameFallsBackToConfiguredDisplayNameWhenFoundationCannotResolveIdentifier]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testNativeDisplayNameUsesCandidateLocaleAndDoesNotDependOnPreferredLocale]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testUsesCandidateFallbackWhenFoundationCannotResolveIdentifier]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testUsesPreferredLocaleForLanguageDisplayName]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testBackSwipeAndNavigationTransitionDirectionsFollowLayoutDirection]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testConvertsPhysicalPanTranslationToSemanticDirection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testDetectsRightToLeftLocales]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testIgnoresStationaryAndBelowThresholdPanTranslations]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testMapsSemanticEdgesToPhysicalEdges]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFallbackLocaleMatchingNormalizesCaseAndSeparators]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemChecksLaterPreferredLanguagesBeforeUsingFallback]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemPrefersMatchingScriptWithinLanguage]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemResolvesTraditionalChineseToSupportedSimplifiedChinese]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testInjectedSystemSourceResolvesRegionalLanguage]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testLoadsPersistedSupportedLocaleAndPublishesDirectionalChange]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingEquivalentLocaleDoesNotPublishChange]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingExplicitLocaleLeavesFollowSystemEvenWhenResolvedLocaleIsSame]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingFollowSystemPersistsSentinelAndPublishesResolvedLocale]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testUnsupportedLocaleFallsBackAndCannotBeSelected]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testAllPreparationPrecedesPublicationAndCompletionPrecedesNextRevision]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testBundleSourceAndExplicitSelectionHaveSeparateLifecycles]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testOneAtomicPublicationAndReentryFromWillChange]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testParticipantMembershipIsWeakAndFrozenForEachTransaction]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testRequestForCurrentStateCancelsEarlierDeferredRequest]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testSynchronizationReentryCannotOverwriteNewerState]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testSystemSourceInfersTraditionalScriptFromRegion]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testDoesNotReportTranslationWhoseValueEqualsItsKeyAsMissing]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testFallsBackToFallbackLocaleWhenCurrentLocaleMissesKey]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testFormatsUsingCurrentLocaleAndReportsMissingKeys]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testNormalizesAndProgressivelyFallsBackStringCatalogLocaleIdentifiers]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testResolvesCurrentLocaleStringFromRequestedBundle]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testUsesCompiledStringCatalogResources]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testUsesConfiguredFallbackLocaleBeforeBaseLocalization]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAnchorRestoresRelativePositionAcrossCollectionInstances]' passed (0.130 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAppliesDirectionToMaterializedStandardListCellBoundaries]' passed (0.093 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testCustomContentConfigurationKeepsItsInstanceAcrossDirectionChanges]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testKeepsAndInvalidatesCurrentLayoutWithoutFactory]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testCollectionStableIDsSurviveReorderingForFlowAndCompositionalLayouts]' passed (0.171 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testHorizontalFlowRestoresSemanticLeadingDistanceAcrossDirectionRoundTrip]' passed (0.008 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testLateCompletionDoesNotConsumeNewerRevisionAndDeletedAnchorIsSafe]' passed (0.026 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testOrthogonalCenteredPageRestoresBusinessIDWithoutMovingOuterViewport]' passed (0.010 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testTableRestoresStableIDAfterInsertionAndHeightChange]' passed (0.017 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorDoesNotLoadUnloadedControllerDuringAutomaticDelivery]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorMirrorsNavigationEnvironmentBeforeUpdatingChildAcrossLanguageChanges]' passed (0.044 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorPreparesEveryLoadedPageBeforeChangingNavigationDirection]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorSynchronizesNavigationEnvironmentOnArabicRegistration]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorUpdatesRegisteredHiddenWindowAndSkipsUnregisteredWindow]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testDirectionPoliciesWriteOnlyDeclaredSemantics]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testFollowContainerResolvesAgainAfterDetachedViewIsReattached]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testNavigationBarItemBuilderPreservesOrderAndMovesSharedItems]' passed (0.025 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testNavigationItemPlacementUsesUIKitSemanticSlots]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testRecreateRecoveryAppliesLatestUpdateToFactoryRoot]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testDetachedReusableBoundariesInheritNewContainerWithoutAContext]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testListRefreshPreservesCustomContentInstances]' passed (0.023 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testListRefreshPreservesExplicitDirectionExceptions]' passed (0.011 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testNativeCollectionRegistrationsAndReconfigurationNeedNoPreparation]' passed (0.091 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testNativeTableDequeueAndOffscreenRowsFollowCurrentLanguage]' passed (0.053 seconds).
+Test Case '-[AppLocalizationTests.UIKitTabContainerLocalizationTests testRegistrationAndRoundTripsSynchronizeTabTraitsBeforeChildren]' passed (0.050 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testBindingDoesNotRetainInputAndCanReleaseWithQueuedRefresh]' passed (0.018 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testCompositionDefersUpdatesUntilPublicEditingNotification]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testEditingNotificationsApplyLatestSnapshotOnlyToBoundInput]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testFixedAlignmentStillRefreshesInterfaceDirection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testFixedDirectionIsIndependentOfAppLeadingAlignment]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testRefreshRepairsBusinessTypingAttributeResetWithoutReplacingDelegate]' passed (0.028 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSearchBindingUsesPublicTextFieldAndMirrorsSearchBar]' passed (0.074 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSingleLineAndSecureInputUseFreshSnapshotsAndDefaultParagraphs]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSingleLinePreservesExistingRichTextRunsAndSelection]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testTextViewPreservesRichTextAndAttachmentsAcrossDirections]' passed (0.062 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testTransactionKeepsFocusedCustomContentAndSelection]' passed (0.740 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testAllWindowsCaptureBeforeAnyWindowChangesAndUnregisteredWindowsStayUntouched]' passed (0.010 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testCoordinatorAndRegisteredWindowsAreNotRetainedByController]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testInitialRenderingReentryFinishesBeforeLanguageTransaction]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testPresentedPageAndNavigationStackRetainIdentity]' passed (0.176 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testAppliesSemanticDirectionWithoutReloadingData]' passed (0.009 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testHandlesEmptyTable]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testKeepsDiffableSnapshotWithoutReloadingTable]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testPreservesTopVisibleRowAndItsRelativePosition]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesTableHeaderAndFooterLayoutAndDirectionCallback]' passed (0.017 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesVisibleCellLayoutAndDirectionCallback]' passed (0.013 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesVisibleHeaderLayoutAndDirectionCallback]' passed (0.015 seconds).
+	 Executed 82 tests, with 0 failures (0 unexpected) in 2.043 (2.078) seconds
+	 Executed 82 tests, with 0 failures (0 unexpected) in 2.043 (2.081) seconds
+** TEST SUCCEEDED **
+
+ui_tests
+/tmp/applocalization-cleanup-ui.log
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' passed (27.409 seconds).
+** TEST SUCCEEDED **
+
+package_build
+/tmp/applocalization-cleanup-package-build.log
+** BUILD SUCCEEDED **
+
+demo_build
+/tmp/applocalization-cleanup-demo-build.log
+** BUILD SUCCEEDED **
+
+today_build
+/tmp/applocalization-cleanup-today-build.log
+** BUILD SUCCEEDED **
+
+最终 UI xcresult：testFailureSummaries 0，testWarningSummaries 0。

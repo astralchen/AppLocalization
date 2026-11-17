@@ -1,0 +1,60 @@
+{
+  "date": "2026-11-16",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3",
+  "change": "移除 localizationChildren 与组件树遍历；列表和输入绑定自动弱订阅；内部方向阶段先容器后适配器，再更新业务内容",
+  "source_sha256": {
+    "Sources/AppLocalization/Core/LocalizationController.swift": "d4023e50dfbf9aa281ab6d25259378201876ff4b632764fae1ee1a5c1fafac09",
+    "Sources/AppLocalization/Core/LocalizationTransactionParticipant.swift": "9f58d6a0e7bf23a9023bebef2d9669088d8c2b5516b6ef67f24e2e0581468fbd",
+    "Sources/AppLocalization/UIKit/UIKitLocalizationUpdate.swift": "5011ff3b191f720e71a30efb9ce2c592f00909993a7cdc943608041baea1bcd6",
+    "Sources/AppLocalization/UIKit/UIKitLocalizationSubscription.swift": "f08b1628c0b8cc45502189c2f531495368cca4233658cefef8030f82c0601638",
+    "Sources/AppLocalization/UIKit/UIKitListLocalizationCoordinator.swift": "3d025a07b21073c2e077a6000825058a70b4f107de5a5e1f5b4a1a4eb9813735",
+    "Sources/AppLocalization/UIKit/UIKitTextInputLocalization.swift": "b31b67092eb72cb0a1adf2dd4ef5a9a969cadc12981687dd657c37cbe1db5f26",
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "a1f79eee3a6b1074d0695c3e6acc47f4dad7e67b3c6fca4159e86c9883ce7ef0",
+    "Examples/Today/Today/ContentViews/TextFieldContentView.swift": "6fb195a84527c92dcd602ee128d10aba4dc8342bd8fbe28afe6c894fbfb7cd8a",
+    "Examples/Today/Today/ContentViews/TextViewContentView.swift": "163b0d2a8287fb7273c6b2393e0620ca0a63d65dd5fb02942f7fb6dda1f52f79",
+    "Examples/Today/Today/DetailViewController/ReminderViewController.swift": "50e776309fd6178e5061f01b07dde04d0d8a8e703a1ddca75ee4062ee86663a3",
+    "Examples/Today/Today/ListViewController/ReminderListViewController.swift": "c63d9fb1270ab578dc909b39d4e6190e367fa84961db91b0f7739886faa41f61",
+    "Examples/Today/Today/ListViewController/ReminderListViewController+DataSource.swift": "f953dff0cb04523c3a0b5cf9c00a3a1e598dc4d52b0a671ac790e036d5d5f48e",
+    "Examples/Today/Today/SettingsViewController.swift": "c64fd8723aa7a7c713aa664dea9597a14a2906ed41b43894c1cfd29b69dd4041",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "409c1117da48c2b3008cd1165a5910a06be6d2ad89d41a980f9d4cb0172e5102",
+    "Tests/AppLocalizationTests/UIKitTextInputLocalizationTests.swift": "97b4672fb70bbe944a5cd2fbe33e048e17061bdbe2e70130c2267e259f9321bc",
+    "Tests/AppLocalizationTests/UIKitWindowTransactionTests.swift": "41e4a7f4d9266599daaf4a303c607f089467594b9de8652c8dd2f04d38ca38e7",
+    "Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift": "9ba7d9a3a7c9bdd3074e9059885cf79bcb921dd3945133d78c0f58e597f18715"
+  },
+  "package_tests": {
+    "passed": 84,
+    "failed": 0,
+    "xcresult": "/tmp/applocalization-auto-adapters-tests-2.xcresult"
+  },
+  "ui_tests": {
+    "passed": 2,
+    "failed": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-auto-adapters-ui.xcresult"
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-auto-adapters-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-auto-adapters-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-auto-adapters-today-build.log"
+    }
+  },
+  "initial_failure": {
+    "xcresult": "/tmp/applocalization-auto-adapters-tests.xcresult",
+    "reason": "布局测试辅助方法每次用固定英文控制器新建适配器，自动初始化后引入额外方向切换，导致单项测试 7 个断言失败。辅助控制器改为使用测试 update 对应的语言，保留布局重建次数和实例断言。"
+  },
+  "not_run": [
+    "Today 完整 EventKit 编辑业务的端到端运行验证",
+    "iOS 15 实际运行",
+    "Swift 6.3 精确编译器",
+    "真机"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "date": "2026-11-17",
+  "status": "passed",
+  "reference": [
+    "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LayoutDirection.swift",
+    "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LocalizedControllers.swift"
+  ],
+  "scope": "Remaining architecture audit; implementation changes limited to Today native content configuration and snapshot paths. Core package and main demo implementation unchanged in this step.",
+  "removed": [
+    "Three UICollectionViewListCell configuration factories",
+    "UIContentConfiguration+Stateless.swift global default",
+    "prepareForEditing and prepareForViewing forwarding",
+    "Duplicate initial/editing diffable snapshot submissions",
+    "Manual integer section offset mapping and Section raw values",
+    "Redundant collectionView.dataSource assignment"
+  ],
+  "native_reuse_fix": "Use independent UICollectionView.CellRegistration instances per content type; no generic factory or wrapper.",
+  "retained": [
+    "Window coordinator and phased transaction",
+    "Immutable snapshot and revision",
+    "Resolver, locale matching and preference store",
+    "Native input instances and stable row IDs",
+    "Native navigation recognizer and delegate",
+    "Narrow verified navigation customView invalidation and configured-button workaround"
+  ],
+  "today_tests": {
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "expected_failures": 0,
+    "xcresult_runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-remaining-cleanup-today-final.xcresult",
+    "log": "/tmp/applocalization-remaining-cleanup-today-final.log",
+    "summary": "remaining-cleanup-today-summary.json",
+    "coverage": [
+      "Real ReminderViewController with Scene window",
+      "LTR/RTL round trips preserve cell/content identity, draft, focus, selection, marked text and native gesture identity",
+      "Native done title follows locale",
+      "Editing before view loading, cancel without save, new reminder save callback exactly once"
+    ]
+  },
+  "main_ui_tests": {
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "expected_failures": 0,
+    "xcresult_runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-remaining-cleanup-ui.xcresult",
+    "log": "/tmp/applocalization-remaining-cleanup-ui.log",
+    "summary": "remaining-cleanup-ui-summary.json",
+    "coverage": [
+      "Glyph/title OCR",
+      "Continuous typing without focus recovery",
+      "Correct and wrong back edges, RTL and LTR",
+      "Root and Sheet navigation",
+      "Configured button and custom navigation button RTL position/actions"
+    ]
+  },
+  "builds": {
+    "LanguageSwitchingDemo": "/tmp/applocalization-remaining-cleanup-demo-build.log",
+    "Today": "/tmp/applocalization-remaining-cleanup-today-final-build.log"
+  },
+  "initial_diagnostics": {
+    "xcresult": "/tmp/applocalization-remaining-cleanup-today.xcresult",
+    "log": "/tmp/applocalization-remaining-cleanup-today.log",
+    "tests_passed": 3,
+    "findings": "ContentConfiguration incompatible reuse warning fixed with native registrations; non-key fixture window warning fixed by mounting test window in app Scene."
+  },
+  "final_console_notes": "No ContentConfiguration replacement, first-responder non-key, constraint, or Modifying state warnings. Today console still contains UIKBRenderingLog and IOSurface/file-cache diagnostics; retained full log. xcresult runtimeWarnings is empty; this does not mean the console is empty.",
+  "not_run": [
+    "Package tests/build not repeated because Sources and package tests unchanged in this step",
+    "iOS 15/16 and exact iOS 17 runtime",
+    "Physical devices",
+    "Exact Swift 6.3 compiler",
+    "Full Today EventKit persistence/permission UI workflow",
+    "Real IME keyboard candidate interaction; marked text exercised through UITextInput API"
+  ],
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator; Swift 6.4.2 compiler, Swift 6 mode, minimum tools 6.3",
+  "source_sha256": {
+    "Examples/Today/Today/DetailViewController/ReminderViewController.swift": "215b31e23f60255fa2f6a954a1099a925400a2581d41ee95c11d486dad8d1443",
+    "Examples/Today/Today/DetailViewController/ReminderViewController+CellConfiguration.swift": "f8feb53791d7dd22f167729e66904c471550f8057d6e2c79a16bd2f471458083",
+    "Examples/Today/Today/DetailViewController/ReminderViewController+Section.swift": "cf5d4f05865a9c11096171c279ac752aece45b733652309d897ade0c683b8b9f",
+    "Examples/Today/Today/ContentViews/TextFieldContentView.swift": "a327e1efdd73f649590a3b66499894bb45f9689a65a628bbe685ad136ac9acd0",
+    "Examples/Today/Today/ContentViews/TextViewContentView.swift": "5d3e11618e3fae8d9c14c5415a89c9c904a3fed2972bc8e84ae7cd714899ab6a",
+    "Examples/Today/Today/ContentViews/DatePickerContentView.swift": "fb25bff8d31103575a6566e4acedc15408e9c933c3204c348091533ecda7c8c7",
+    "Examples/Today/Today/ListViewController/ReminderListViewController.swift": "af9259c5ce784645a3573b5552c80b1c7f648aaa32b1847d1ad60325387e3109",
+    "Examples/Today/TodayTests/ReminderEditingTests.swift": "1491d858387a9db4cd877b12b0712f81ebfabaf32d04dc95dcbb1e73008a15a2",
+    "Examples/Today/Today.xcodeproj/project.pbxproj": "82193c85f0e074001b4c6d681a322c774a719123b723f4d6dc17061240c5da43",
+    "Examples/Today/Today.xcodeproj/xcshareddata/xcschemes/TodayValidation.xcscheme": "ce799d69ae1a24add05586ba3faf79d970cce7235157abf2f628e3c3212dd664",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "c676b79597562bdded564282405bedc94eb340221ce58b69e7ea841202dd31b6"
+  }
+}

@@ -1,38 +1,4 @@
-import Foundation
-
-/// 相对于界面布局方向的水平方向。
-///
-/// 从左向右布局时，前缘位于左侧；从右向左布局时，前缘位于右侧。
-public enum SemanticHorizontalDirection: Equatable, Sendable {
-    /// 朝向界面前缘的方向。
-    case leading
-
-    /// 朝向界面后缘的方向。
-    case trailing
-}
-
-/// 物理坐标中的水平边缘，不受布局方向影响。
-public enum PhysicalHorizontalEdge: Equatable, Sendable {
-    /// 物理左边缘。
-    case left
-
-    /// 物理右边缘。
-    case right
-}
-
-/// 内容的方向语义。
-///
-/// 对于含义不应随界面布局方向变化的内容，使用空间语义或播放语义。
-public enum DirectionalContentSemantics: Equatable, Sendable {
-    /// 随界面布局方向镜像的内容。
-    case mirrored
-
-    /// 具有空间含义的内容，例如地图或游戏世界。
-    case spatial
-
-    /// 具有播放含义的内容，例如进度指示器或波形。
-    case playback
-}
+import UIKit
 
 /// 在语义水平方向与物理水平方向之间转换的工具。
 public enum DirectionalLayout {
@@ -44,19 +10,17 @@ public enum DirectionalLayout {
     /// - Parameters:
     ///   - translationX: 视图坐标系中的水平位移。
     ///   - layoutDirection: 界面布局方向。
-    /// - Returns: 与位移对应的前缘或后缘方向。
+    /// - Returns: 单一 `.leading` 或 `.trailing`，不返回多边缘组合。
     public static func semanticHorizontalDirection(
         translationX: CGFloat,
-        layoutDirection: AppUserInterfaceLayoutDirection
-    ) -> SemanticHorizontalDirection {
+        layoutDirection: UIUserInterfaceLayoutDirection
+    ) -> NSDirectionalRectEdge {
         let isPhysicalRight = translationX > 0
 
-        switch layoutDirection {
-        case .leftToRight:
-            return isPhysicalRight ? .trailing : .leading
-        case .rightToLeft:
+        if layoutDirection == .rightToLeft {
             return isPhysicalRight ? .leading : .trailing
         }
+        return isPhysicalRight ? .trailing : .leading
     }
 
     /// 返回超过最小距离的位移所对应的语义方向。
@@ -67,12 +31,12 @@ public enum DirectionalLayout {
     ///   - translationX: 视图坐标系中的水平位移。
     ///   - layoutDirection: 界面布局方向。
     ///   - minimumDistance: 位移绝对值必须超过的距离。
-    /// - Returns: 对应的语义方向；位移不满足条件时返回 `nil`。
+    /// - Returns: 单一 `.leading` 或 `.trailing`；位移不满足条件时返回 `nil`。
     public static func semanticHorizontalDirection(
         translationX: CGFloat,
-        layoutDirection: AppUserInterfaceLayoutDirection,
+        layoutDirection: UIUserInterfaceLayoutDirection,
         minimumDistance: CGFloat
-    ) -> SemanticHorizontalDirection? {
+    ) -> NSDirectionalRectEdge? {
         guard translationX.isFinite,
               minimumDistance.isFinite,
               abs(translationX) > max(0, minimumDistance)
@@ -86,30 +50,31 @@ public enum DirectionalLayout {
         )
     }
 
-    /// 返回语义方向对应的物理边缘。
+    /// 将单一水平语义边缘转换为 UIKit 物理边缘。
     ///
     /// - Parameters:
-    ///   - semanticEdge: 要转换的语义方向。
+    ///   - semanticEdge: 单一 `.leading` 或 `.trailing`。
     ///   - layoutDirection: 界面布局方向。
-    /// - Returns: 对应的物理左边缘或右边缘。
+    /// - Returns: 单一 `.left` 或 `.right`；空集合、垂直边缘、组合或未知值返回 nil。
     public static func physicalEdge(
-        for semanticEdge: SemanticHorizontalDirection,
-        layoutDirection: AppUserInterfaceLayoutDirection
-    ) -> PhysicalHorizontalEdge {
-        switch (semanticEdge, layoutDirection) {
-        case (.leading, .leftToRight), (.trailing, .rightToLeft):
-            return .left
-        case (.trailing, .leftToRight), (.leading, .rightToLeft):
-            return .right
-        }
+        for semanticEdge: NSDirectionalRectEdge,
+        layoutDirection: UIUserInterfaceLayoutDirection
+    ) -> UIRectEdge? {
+        guard semanticEdge == .leading || semanticEdge == .trailing else { return nil }
+        let leadingIsLeft = layoutDirection != .rightToLeft
+        let isLeft = semanticEdge == .leading ? leadingIsLeft : !leadingIsLeft
+        return isLeft ? .left : .right
     }
 
-    /// 返回用于返回手势的物理起始边缘。
-    ///
-    /// - Parameter layoutDirection: 界面布局方向。
-    /// - Returns: 语义前缘对应的物理边缘。
-    public static func backSwipeEdge(layoutDirection: AppUserInterfaceLayoutDirection) -> PhysicalHorizontalEdge {
-        physicalEdge(for: .leading, layoutDirection: layoutDirection)
+    /// 返回自定义返回手势的原生矩形边缘。
+    /// LTR 使用左边缘，RTL 使用右边缘。
+    public static func backSwipeRectEdge(layoutDirection: UIUserInterfaceLayoutDirection) -> UIRectEdge {
+        layoutDirection == .rightToLeft ? .right : .left
+    }
+
+    /// 返回自定义返回箭头的系统符号名称。
+    public static func backChevronSystemName(layoutDirection: UIUserInterfaceLayoutDirection) -> String {
+        layoutDirection == .rightToLeft ? "chevron.right" : "chevron.left"
     }
 
     /// 返回指示位移是否表示返回手势的布尔值。
@@ -122,7 +87,7 @@ public enum DirectionalLayout {
     /// - Returns: 位移朝向语义后缘时返回 `true`。
     public static func isBackSwipe(
         translationX: CGFloat,
-        layoutDirection: AppUserInterfaceLayoutDirection
+        layoutDirection: UIUserInterfaceLayoutDirection
     ) -> Bool {
         isBackSwipe(
             translationX: translationX,
@@ -142,7 +107,7 @@ public enum DirectionalLayout {
     /// - Returns: 位移朝向语义后缘且超过阈值时返回 `true`。
     public static func isBackSwipe(
         translationX: CGFloat,
-        layoutDirection: AppUserInterfaceLayoutDirection,
+        layoutDirection: UIUserInterfaceLayoutDirection,
         minimumDistance: CGFloat
     ) -> Bool {
         semanticHorizontalDirection(
@@ -160,11 +125,10 @@ public enum DirectionalLayout {
     /// - Returns: 朝向语义后缘的有符号偏移量。
     public static func pushStartOffset(
         width: CGFloat,
-        layoutDirection: AppUserInterfaceLayoutDirection
+        layoutDirection: UIUserInterfaceLayoutDirection
     ) -> CGFloat {
         signedHorizontalOffset(
             distance: width,
-            toward: .trailing,
             layoutDirection: layoutDirection
         )
     }
@@ -177,27 +141,20 @@ public enum DirectionalLayout {
     /// - Returns: 朝向语义后缘的有符号偏移量。
     public static func popEndOffset(
         width: CGFloat,
-        layoutDirection: AppUserInterfaceLayoutDirection
+        layoutDirection: UIUserInterfaceLayoutDirection
     ) -> CGFloat {
         signedHorizontalOffset(
             distance: width,
-            toward: .trailing,
             layoutDirection: layoutDirection
         )
     }
 
     private static func signedHorizontalOffset(
         distance: CGFloat,
-        toward semanticDirection: SemanticHorizontalDirection,
-        layoutDirection: AppUserInterfaceLayoutDirection
+        layoutDirection: UIUserInterfaceLayoutDirection
     ) -> CGFloat {
         let magnitude = abs(distance)
 
-        switch physicalEdge(for: semanticDirection, layoutDirection: layoutDirection) {
-        case .left:
-            return -magnitude
-        case .right:
-            return magnitude
-        }
+        return layoutDirection == .rightToLeft ? -magnitude : magnitude
     }
 }

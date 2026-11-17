@@ -21,12 +21,12 @@ public final class LocalizedStringResolver {
     ///
     /// - Parameters:
     ///   - localeProvider: 每次查找时返回当前区域设置的闭包。
-    ///   - fallbackLocale: 当前区域设置之后查找的回退区域设置。默认值为 `.englishUS`。
+    ///   - fallbackLocale: 当前区域设置之后查找的回退区域设置。由调用方显式指定，核心库不预设应用语言。
     ///   - missingKeyHandler: 所有资源查找均失败且未提供回退值时调用的闭包。
     ///     默认闭包不执行任何操作。
     public init(
         localeProvider: @escaping @MainActor () -> AppLocale,
-        fallbackLocale: AppLocale = .englishUS,
+        fallbackLocale: AppLocale,
         missingKeyHandler: @escaping MissingKeyHandler = { _, _, _ in }
     ) {
         self.localeProvider = localeProvider

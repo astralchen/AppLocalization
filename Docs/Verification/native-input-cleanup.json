@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-16",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3",
+  "deleted_sources": [
+    "Sources/AppLocalization/UIKit/UIKitTextInputLocalization.swift"
+  ],
+  "removed_apis": [
+    "UIKitTextInputLocalizationBinding",
+    "UIKitTextInputAlignmentPolicy"
+  ],
+  "behavior": "原生方向继承与 natural 对齐，不再强制应用前缘对齐或修补 typingAttributes",
+  "source_sha256": {
+    "Examples/Today/Today/ContentViews/TextFieldContentView.swift": "7cd4ed9705a444a3be8d32dfddbb62d6bf43273296cb04d80b6aab288a1f6ea1",
+    "Examples/Today/Today/ContentViews/TextViewContentView.swift": "737a82876adb4d6fd5780b1a7dbbbd9f6e474e05b718f54b6a2a3557e3830dbc",
+    "Tests/AppLocalizationTests/UIKitTextInputLocalizationTests.swift": "8e5be62445d7e2aa930a88fcd2c1b62e1f796fc30720528332f21b463f1f82d6",
+    "Tests/AppLocalizationTests/UIKitWindowTransactionTests.swift": "8e1dcc72608fbad50f9aed5e81ffde8c006388637e90847450c611a9d19918bb"
+  },
+  "package_tests": {
+    "passed": 78,
+    "failed": 0,
+    "xcresult": "/tmp/applocalization-native-input-tests.xcresult",
+    "log": "/tmp/applocalization-native-input-tests.log"
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-input-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-input-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-input-today-build.log"
+    }
+  },
+  "not_run": [
+    "主示例 UI 手势测试，本轮未重复执行",
+    "Today 完整业务流程",
+    "实际输入法组合输入",
+    "真机",
+    "iOS 15 实际运行",
+    "Swift 6.3 精确编译器"
+  ]
+}

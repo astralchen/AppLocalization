@@ -9,7 +9,7 @@ extension ReminderListViewController {
         let settingsViewController = SettingsViewController()
         let navigationController = UINavigationController(rootViewController: settingsViewController)
         navigationController.view.semanticContentAttribute =
-            TodayLocalizationServices.shared.localizationController.layoutDirection.semanticContentAttribute
+            TodayLocalizationServices.shared.localizationController.layoutDirection == .rightToLeft ? .forceRightToLeft : .forceLeftToRight
         present(navigationController, animated: true)
     }
 
@@ -33,7 +33,7 @@ extension ReminderListViewController {
         viewController.setEditing(true, animated: false)
         let navigationController = UINavigationController(rootViewController: viewController)
         navigationController.view.semanticContentAttribute =
-            TodayLocalizationServices.shared.localizationController.layoutDirection.semanticContentAttribute
+            TodayLocalizationServices.shared.localizationController.layoutDirection == .rightToLeft ? .forceRightToLeft : .forceLeftToRight
         present(navigationController, animated: true)
     }
 

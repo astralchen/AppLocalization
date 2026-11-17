@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-16",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "deleted_source_files": [
+    "Sources/AppLocalization/UIKit/LocalizedCollectionViewFlowLayout.swift"
+  ],
+  "changed_source_sha256": {
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "d9e6f087cfad90af229e7f67bf36fc7c8ba65f6d0b14b0c4d404a36712c5bd1d",
+    "Tests/AppLocalizationTests/UIKitListTransactionTests.swift": "42a73e4292e341c41bc9dfd902b0056cdea4ea344a01db9097eafe77096c79ba",
+    "Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift": "d2e1fe18a2a39be034a8479b81a62d8fe8d27211a9901b8c7e36025975f96b94"
+  },
+  "package_tests": {
+    "passed": 82,
+    "failed": 0,
+    "xcresult": "/tmp/applocalization-remove-flow-tests.xcresult"
+  },
+  "builds": {
+    "AppLocalization": "passed",
+    "LanguageSwitchingDemo": "passed",
+    "Today": "passed"
+  },
+  "ui_tests": "not rerun; demo retains the same flow layout configuration and mirroring behavior",
+  "logs": {
+    "package_tests": "/tmp/applocalization-remove-flow-tests.log",
+    "package_build": "/tmp/applocalization-remove-flow-package.log",
+    "demo_build": "/tmp/applocalization-remove-flow-demo.log",
+    "today_build": "/tmp/applocalization-remove-flow-today.log"
+  }
+}

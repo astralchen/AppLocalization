@@ -8,12 +8,24 @@
 
 /* Begin PBXBuildFile section */
 		B20000000000000000000001 /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000102 /* AppLocalization */; };
+		C30000000000000000000001 /* AppLocalization in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000102 /* AppLocalization */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		774DB44D30ABFF2A0068342D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAD0597C28EC8D10004F4962 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AAD0598328EC8D10004F4962;
+			remoteInfo = Today;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		AAD0598428EC8D10004F4962 /* Today.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Today.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAD059B728EC8F0F004F4962 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AAD059B828EC91FD004F4962 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = folder; path = LICENSE; sourceTree = "<group>"; };
+		C30000000000000000000002 /* TodayTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -29,6 +41,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		AA0A5C6E2D4C315300AB6C01 /* Configuration */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Configuration; sourceTree = "<group>"; };
 		AA0A5C932D4C315300AB6C01 /* Today */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (AA0A5CB22D4C315300AB6C01 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Today; sourceTree = "<group>"; };
+		C30000000000000000000003 /* TodayTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = TodayTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,12 +53,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C30000000000000000000004 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C30000000000000000000001 /* AppLocalization in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		AAD0597B28EC8D10004F4962 = {
 			isa = PBXGroup;
 			children = (
+				C30000000000000000000003 /* TodayTests */,
 				AAD059B728EC8F0F004F4962 /* README.md */,
 				AA0A5C932D4C315300AB6C01 /* Today */,
 				AA0A5C6E2D4C315300AB6C01 /* Configuration */,
@@ -57,6 +79,7 @@
 		AAD0598528EC8D10004F4962 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				C30000000000000000000002 /* TodayTests.xctest */,
 				AAD0598428EC8D10004F4962 /* Today.app */,
 			);
 			name = Products;
@@ -84,6 +107,30 @@
 			productName = Today;
 			productReference = AAD0598428EC8D10004F4962 /* Today.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C30000000000000000000007 /* TodayTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C30000000000000000000008 /* Build configuration list for PBXNativeTarget "TodayTests" */;
+			buildPhases = (
+				C30000000000000000000005 /* Sources */,
+				C30000000000000000000004 /* Frameworks */,
+				C30000000000000000000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C30000000000000000000009 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C30000000000000000000003 /* TodayTests */,
+			);
+			name = TodayTests;
+			packageProductDependencies = (
+				B20000000000000000000102 /* AppLocalization */,
+			);
+			productName = TodayTests;
+			productReference = C30000000000000000000002 /* TodayTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -118,6 +165,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				C30000000000000000000007 /* TodayTests */,
 				AAD0598328EC8D10004F4962 /* Today */,
 			);
 		};
@@ -125,6 +173,13 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		AAD0598228EC8D10004F4962 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C30000000000000000000006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -141,7 +196,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C30000000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		C30000000000000000000009 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AAD0598328EC8D10004F4962 /* Today */;
+			targetProxy = 774DB44D30ABFF2A0068342D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AAD059AC28EC8D12004F4962 /* Debug */ = {
@@ -326,6 +396,46 @@
 			};
 			name = Release;
 		};
+		C30000000000000000000010 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.TodayTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Today.app/Today";
+			};
+			name = Debug;
+		};
+		C30000000000000000000011 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.apple-samplecode.TodayTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Today.app/Today";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -343,6 +453,15 @@
 			buildConfigurations = (
 				AAD059AF28EC8D12004F4962 /* Debug */,
 				AAD059B028EC8D12004F4962 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C30000000000000000000008 /* Build configuration list for PBXNativeTarget "TodayTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C30000000000000000000010 /* Debug */,
+				C30000000000000000000011 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

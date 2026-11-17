@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-16",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3",
+  "decision": "用户选择原生列表行为，移除额外滚动恢复机制",
+  "deleted_files": [
+    "Sources/AppLocalization/UIKit/UIKitListLocalizationCoordinator.swift",
+    "Sources/AppLocalization/UIKit/UIKitLocalizationSubscription.swift",
+    "Sources/AppLocalization/UIKit/UICollectionViewLocalization.swift",
+    "Tests/AppLocalizationTests/UIKitListTransactionTests.swift",
+    "Tests/AppLocalizationTests/UITableViewLayoutDirectionTests.swift",
+    "Tests/AppLocalizationTests/UICollectionViewLayoutDirectionTests.swift"
+  ],
+  "source_sha256": {
+    "Sources/AppLocalization/Core/LocalizationController.swift": "0826f4f4efeb2c5ed8a0fa4da5b3353820db03e045eb91d971608525805d786a",
+    "Sources/AppLocalization/Core/LocalizationTransactionParticipant.swift": "d92ad444cc93c3a368a20303e3517f2f890867f261631f2439dba74f395c1f63",
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "cc50199a469e7308c50eeea96a11586860d91e4aad67fd1336f271c836d39e07",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "8cc4430048394efe6875c3750eeef9eb21b63121a4464975c44d7c016939ee41",
+    "Examples/Today/Today/SettingsViewController.swift": "c4f7fbc081acc761f1a1ee63a9ab18f5a6aabeb457186bcbd6e562e0e7cd9151",
+    "Examples/Today/Today/ListViewController/ReminderListViewController.swift": "482b37ebab365c8f21af3e375d998c711bf1306aa3e13514ed12ac052781b443",
+    "Examples/Today/Today/ListViewController/ReminderListViewController+DataSource.swift": "80845cb981548c580f6287b7d954225c356148c6f48e0efae832d24e93617d8c",
+    "Examples/Today/Today/DetailViewController/ReminderViewController.swift": "c43de260ae0a618f37b9c4f46a8322b525ab6684096281ad3648e7b307f1e876",
+    "Tests/AppLocalizationTests/UIKitWindowTransactionTests.swift": "93ace3815790cd759087bdef71cd6f941b0bc9d363fc89d830ff220f902a423c",
+    "Tests/AppLocalizationTests/UIKitReusableLocalizationTests.swift": "6f9d6722917455db25aa223d185d248f77959aadd1e7d88567721a1a32c561f2"
+  },
+  "package_tests": {
+    "passed": 59,
+    "failed": 0,
+    "xcresult": "/tmp/applocalization-native-lists-final-tests.xcresult",
+    "log": "/tmp/applocalization-native-lists-final-tests.log"
+  },
+  "ui_tests": {
+    "passed": 2,
+    "failed": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-native-lists-ui.xcresult",
+    "log": "/tmp/applocalization-native-lists-ui.log"
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-lists-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-lists-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-lists-today-build.log"
+    }
+  },
+  "test_count_change": "移除 20 项列表恢复／适配器测试，增加 1 项原生数据源／布局／选择保留测试，78 -> 59",
+  "not_run": [
+    "Today 完整业务流程",
+    "实际输入法组合输入",
+    "真机",
+    "iOS 15 实际运行",
+    "Swift 6.3 精确编译器"
+  ]
+}

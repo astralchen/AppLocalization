@@ -32,39 +32,114 @@ private final class LockedValue<Value>: @unchecked Sendable {
 
 final class LocalizationControllerTests: XCTestCase {
     @MainActor
+    func testBundleSuppliesAvailableLanguagesAndDevelopmentFallback() {
+        let bundle = localizationTestBundle(["Base", "en", "ar", "EN", "zh-Hans"], developmentLocalization: "en")
+        let controller = LocalizationController(resourceBundle: bundle,
+            preferenceStore: InMemoryLocalePreferenceStore(),
+            systemLocaleIdentifiersProvider: { ["zh-Hans"] })
+        XCTAssertEqual(Set(controller.supportedLocalizations.map { $0.lowercased() }), ["en", "ar", "zh-hans"])
+        XCTAssertEqual(controller.supportedLocalizations.count, 3)
+        XCTAssertEqual(controller.fallbackLocalization.lowercased(), "en")
+        XCTAssertEqual(controller.currentLocale.identifier, "zh-Hans")
+        XCTAssertTrue(controller.followsSystemLocale)
+        // 当前偏好只有中文时，完整的语言列表仍然允许选择阿拉伯语。
+        XCTAssertTrue(controller.setLocale(identifier: "ar"))
+        XCTAssertFalse(controller.setLocale(identifier: "Base"))
+    }
+
+    @MainActor
+    func testDefaultSystemChoiceUsesBundlePreferredLocalizations() {
+        let bundle = localizationTestBundle(["en", "ar", "zh-Hans"], developmentLocalization: "en")
+        let controller = LocalizationController(resourceBundle: bundle, preferenceStore: InMemoryLocalePreferenceStore())
+        XCTAssertEqual(controller.currentLocale.identifier, bundle.preferredLocalizations.first)
+        XCTAssertTrue(controller.followsSystemLocale)
+    }
+
+    @MainActor
+    func testBaseOnlyBundleUsesItsDevelopmentLanguage() {
+        let controller = LocalizationController(
+            resourceBundle: localizationTestBundle(["Base"], developmentLocalization: "de"),
+            preferenceStore: InMemoryLocalePreferenceStore())
+        XCTAssertEqual(controller.supportedLocalizations, ["de"])
+        XCTAssertEqual(controller.fallbackLocalization, "de")
+        XCTAssertEqual(controller.currentLocale.identifier, "de")
+    }
+
+    @MainActor
+    func testPersistedRegionalChoiceMigratesToAvailableBundleLanguage() {
+        let store = InMemoryLocalePreferenceStore(localeIdentifier: "en-US")
+        let controller = LocalizationController(
+            resourceBundle: localizationTestBundle(["en", "ar"], developmentLocalization: "en"),
+            preferenceStore: store)
+        XCTAssertEqual(controller.currentLocale.identifier, "en")
+        XCTAssertFalse(controller.followsSystemLocale)
+        XCTAssertFalse(controller.setLocale(identifier: "en"))
+        XCTAssertEqual(store.localeIdentifier, "en")
+        XCTAssertEqual(controller.currentSnapshot.revision, 0)
+    }
+
+    @MainActor
+    func testSelectingCurrentFallbackRepairsStorageWithoutFakeLanguageChange() {
+        let store = InMemoryLocalePreferenceStore(localeIdentifier: "fr")
+        let notifications = NotificationCenter()
+        let controller = LocalizationController(
+            resourceBundle: localizationTestBundle(["en", "ar"], developmentLocalization: "en"),
+            preferenceStore: store, notificationCenter: notifications)
+        let snapshot = controller.currentSnapshot
+        let count = LockedValue(0)
+        let token = notifications.addObserver(forName: LocalizationController.localizationDidChangeNotification,
+                                              object: controller, queue: nil) { _ in count.mutate { $0 += 1 } }
+        defer { notifications.removeObserver(token) }
+        XCTAssertEqual(store.localeIdentifier, "fr")
+        XCTAssertFalse(controller.setLocale(identifier: "en"))
+        XCTAssertEqual(store.localeIdentifier, "en")
+        XCTAssertEqual(controller.currentSnapshot, snapshot)
+        XCTAssertEqual(count.get(), 0)
+    }
+
+    @MainActor
+    func testSelectingSystemPersistsChoiceWithoutChangingResolvedState() {
+        let store = InMemoryLocalePreferenceStore()
+        let controller = LocalizationController(resourceBundle: localizationTestBundle(["en-US"]), preferenceStore: store)
+        let snapshot = controller.currentSnapshot
+        XCTAssertFalse(controller.setFollowsSystemLocale())
+        XCTAssertEqual(store.localeIdentifier, "system")
+        XCTAssertEqual(controller.currentSnapshot, snapshot)
+    }
+
+    @MainActor
     func testLoadsPersistedSupportedLocaleAndPublishesDirectionalChange() {
         let store = InMemoryLocalePreferenceStore(localeIdentifier: "zh-Hans")
         let notificationCenter = NotificationCenter()
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans", "ar"], developmentLocalization: "en-US"),
             preferenceStore: store,
             notificationCenter: notificationCenter
         )
 
-        XCTAssertEqual(center.currentLocale, .simplifiedChinese)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "zh-Hans"))
         XCTAssertEqual(center.currentLocale.layoutDirection, .leftToRight)
 
-        let observedChange = LockedValue<LocalizationChange?>(nil)
+        let observedChange = LockedValue<LocalizationUpdate?>(nil)
         let token = notificationCenter.addObserver(
             forName: LocalizationController.localizationDidChangeNotification,
             object: center,
             queue: nil
         ) { notification in
-            observedChange.set(notification.userInfo?[LocalizationController.localizationChangeUserInfoKey] as? LocalizationChange)
+            observedChange.set(notification.userInfo?[LocalizationController.localizationChangeUserInfoKey] as? LocalizationUpdate)
         }
 
         let didChange = center.setLocale(identifier: "ar")
 
         XCTAssertTrue(didChange)
-        XCTAssertEqual(center.currentLocale, .arabic)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "ar"))
         XCTAssertEqual(store.localeIdentifier, "ar")
-        XCTAssertEqual(observedChange.get()?.previous.locale, .simplifiedChinese)
-        XCTAssertEqual(observedChange.get()?.current.locale, .arabic)
-        XCTAssertEqual(observedChange.get()?.localeChanged, true)
-        XCTAssertEqual(observedChange.get()?.layoutDirectionChanged, true)
-        XCTAssertEqual(observedChange.get()?.previous.revision, 0)
-        XCTAssertEqual(observedChange.get()?.current.revision, 1)
+        XCTAssertEqual(observedChange.get()?.previousSnapshot?.locale, AppLocale(identifier: "zh-Hans"))
+        XCTAssertEqual(observedChange.get()?.snapshot.locale, AppLocale(identifier: "ar"))
+        XCTAssertEqual(observedChange.get()?.requiresLocalizedContentRefresh, true)
+        XCTAssertEqual(observedChange.get()?.requiresLayoutDirectionRefresh, true)
+        XCTAssertEqual(observedChange.get()?.previousSnapshot?.revision, 0)
+        XCTAssertEqual(observedChange.get()?.snapshot.revision, 1)
         XCTAssertEqual(center.currentSnapshot.revision, 1)
 
         notificationCenter.removeObserver(token)
@@ -74,14 +149,13 @@ final class LocalizationControllerTests: XCTestCase {
     func testUnsupportedLocaleFallsBackAndCannotBeSelected() {
         let store = InMemoryLocalePreferenceStore(localeIdentifier: "fr")
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans"], developmentLocalization: "en-US"),
             preferenceStore: store
         )
 
-        XCTAssertEqual(center.currentLocale, .englishUS)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "en-US"))
         XCTAssertFalse(center.setLocale(identifier: "ar"))
-        XCTAssertEqual(center.currentLocale, .englishUS)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "en-US"))
         XCTAssertEqual(store.localeIdentifier, "fr")
     }
 
@@ -90,8 +164,7 @@ final class LocalizationControllerTests: XCTestCase {
         let store = InMemoryLocalePreferenceStore(localeIdentifier: "en-US")
         let notificationCenter = NotificationCenter()
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans"], developmentLocalization: "en-US"),
             preferenceStore: store,
             notificationCenter: notificationCenter
         )
@@ -114,14 +187,13 @@ final class LocalizationControllerTests: XCTestCase {
     func testFollowSystemResolvesTraditionalChineseToSupportedSimplifiedChinese() {
         let store = InMemoryLocalePreferenceStore(localeIdentifier: LocalizationController.followSystemLocaleIdentifier)
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans", "ar"], developmentLocalization: "en-US"),
             preferenceStore: store,
             systemLocaleIdentifiersProvider: { ["zh-Hant"] }
         )
 
         XCTAssertTrue(center.followsSystemLocale)
-        XCTAssertEqual(center.currentLocale, .simplifiedChinese)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "zh-Hans"))
     }
 
     @MainActor
@@ -129,28 +201,27 @@ final class LocalizationControllerTests: XCTestCase {
         let store = InMemoryLocalePreferenceStore(localeIdentifier: "en-US")
         let notificationCenter = NotificationCenter()
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans", "ar"], developmentLocalization: "en-US"),
             preferenceStore: store,
             notificationCenter: notificationCenter,
             systemLocaleIdentifiersProvider: { ["ar-SA"] }
         )
 
-        let observedChange = LockedValue<LocalizationChange?>(nil)
+        let observedChange = LockedValue<LocalizationUpdate?>(nil)
         let token = notificationCenter.addObserver(
             forName: LocalizationController.localizationDidChangeNotification,
             object: center,
             queue: nil
         ) { notification in
-            observedChange.set(notification.userInfo?[LocalizationController.localizationChangeUserInfoKey] as? LocalizationChange)
+            observedChange.set(notification.userInfo?[LocalizationController.localizationChangeUserInfoKey] as? LocalizationUpdate)
         }
 
         XCTAssertTrue(center.setFollowsSystemLocale())
         XCTAssertTrue(center.followsSystemLocale)
-        XCTAssertEqual(center.currentLocale, .arabic)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "ar"))
         XCTAssertEqual(store.localeIdentifier, LocalizationController.followSystemLocaleIdentifier)
-        XCTAssertEqual(observedChange.get()?.previous.locale, .englishUS)
-        XCTAssertEqual(observedChange.get()?.current.locale, .arabic)
+        XCTAssertEqual(observedChange.get()?.previousSnapshot?.locale, AppLocale(identifier: "en-US"))
+        XCTAssertEqual(observedChange.get()?.snapshot.locale, AppLocale(identifier: "ar"))
 
         notificationCenter.removeObserver(token)
     }
@@ -159,16 +230,15 @@ final class LocalizationControllerTests: XCTestCase {
     func testSelectingExplicitLocaleLeavesFollowSystemEvenWhenResolvedLocaleIsSame() {
         let store = InMemoryLocalePreferenceStore(localeIdentifier: LocalizationController.followSystemLocaleIdentifier)
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans"], developmentLocalization: "en-US"),
             preferenceStore: store,
             systemLocaleIdentifiersProvider: { ["zh-Hant"] }
         )
 
-        XCTAssertEqual(center.currentLocale, .simplifiedChinese)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "zh-Hans"))
         XCTAssertTrue(center.setLocale(identifier: "zh-Hans"))
         XCTAssertFalse(center.followsSystemLocale)
-        XCTAssertEqual(center.currentLocale, .simplifiedChinese)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "zh-Hans"))
         XCTAssertEqual(store.localeIdentifier, "zh-Hans")
         XCTAssertEqual(center.currentSnapshot.revision, 1)
     }
@@ -180,17 +250,16 @@ final class LocalizationControllerTests: XCTestCase {
         )
         var preferredLanguages = ["fr-FR", "ar-SA"]
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .simplifiedChinese, .arabic],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "zh-Hans", "ar"], developmentLocalization: "en-US"),
             preferenceStore: store,
             systemLocaleIdentifiersProvider: { preferredLanguages }
         )
 
-        XCTAssertEqual(center.currentLocale, .arabic)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "ar"))
 
         preferredLanguages = ["fr-FR", "zh-Hant"]
         XCTAssertTrue(center.refreshSystemLocaleIfNeeded())
-        XCTAssertEqual(center.currentLocale, .simplifiedChinese)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "zh-Hans"))
     }
 
     @MainActor
@@ -200,39 +269,36 @@ final class LocalizationControllerTests: XCTestCase {
             displayName: "Traditional Chinese"
         )
         let center = LocalizationController(
-            supportedLocales: [.simplifiedChinese, traditionalChinese, .englishUS],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["zh-Hans", traditionalChinese.identifier, "en-US"], developmentLocalization: "en-US"),
             preferenceStore: InMemoryLocalePreferenceStore(
                 localeIdentifier: LocalizationController.followSystemLocaleIdentifier
             ),
             systemLocaleIdentifiersProvider: { ["zh-Hant-HK"] }
         )
 
-        XCTAssertEqual(center.currentLocale, traditionalChinese)
+        XCTAssertEqual(center.currentLocale.identifier, traditionalChinese.identifier)
     }
 
     @MainActor
     func testFallbackLocaleMatchingNormalizesCaseAndSeparators() {
         let center = LocalizationController(
-            supportedLocales: [.arabic, .englishUS],
-            fallbackLocale: AppLocale(identifier: "EN_us"),
+            resourceBundle: localizationTestBundle(["ar", "en-US"], developmentLocalization: "EN_us"),
             preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: "unsupported")
         )
 
-        XCTAssertEqual(center.fallbackLocale, .englishUS)
-        XCTAssertEqual(center.currentLocale, .englishUS)
+        XCTAssertEqual(center.fallbackLocalization, "en-US")
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "en-US"))
     }
 
     @MainActor
-    func testSingleSystemLocaleProviderInitializerRemainsCompatible() {
+    func testInjectedSystemSourceResolvesRegionalLanguage() {
         let center = LocalizationController(
-            supportedLocales: [.englishUS, .arabic],
-            fallbackLocale: .englishUS,
+            resourceBundle: localizationTestBundle(["en-US", "ar"], developmentLocalization: "en-US"),
             preferenceStore: InMemoryLocalePreferenceStore(),
-            systemLocaleIdentifierProvider: { "ar-SA" }
+            systemLocaleIdentifiersProvider: { ["ar-SA"] }
         )
 
-        XCTAssertEqual(center.currentLocale, .arabic)
+        XCTAssertEqual(center.currentLocale, AppLocale(identifier: "ar"))
     }
 
 }

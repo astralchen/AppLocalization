@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-17",
+  "scope": "Remove navigation-item wrappers, use native weak window registry, remove unused demo observation and duplicate Today foreground refresh",
+  "references": [
+    "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LanguageService.swift",
+    "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Localization/LocalizedControllers.swift"
+  ],
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator; Swift 6.4.2; Swift tools minimum 6.3",
+  "removed": [
+    "UINavigationItemLocalization.swift",
+    "NavigationItemPlacement",
+    "setBarButtonItem / setBarButtonItems semantic wrappers",
+    "Registration weak box and ObjectIdentifier dictionary",
+    "DemoServices ObservableObject conformance",
+    "Today sceneWillEnterForeground duplicate locale refresh"
+  ],
+  "preserved": [
+    "Scene scope on iOS 17+ and legacy direction handling",
+    "Atomic snapshots and transaction ordering",
+    "Stable navigation, editing and native gesture behavior",
+    "Configured-button business workaround",
+    "Weak ownership and frozen transaction delivery"
+  ],
+  "package_tests": {
+    "passed": 65,
+    "failed": 0,
+    "expected_failures": 0,
+    "skipped": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-native-surface-final-tests.xcresult",
+    "log": "/tmp/applocalization-native-surface-final-tests.log",
+    "summary": "native-surface-package-summary.json"
+  },
+  "ui_tests": {
+    "passed": 4,
+    "failed": 0,
+    "expected_failures": 0,
+    "skipped": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-native-surface-final-ui.xcresult",
+    "log": "/tmp/applocalization-native-surface-final-ui.log",
+    "summary": "native-surface-ui-summary.json",
+    "coverage": "Language glyph and navigation title OCR, continuous draft input, semantic edge pop, root has no back button, sheet positioning/dismissal, configured button and native modal bar button live positioning"
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-surface-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-surface-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-surface-today-build.log"
+    }
+  },
+  "initial_weak_lifetime_failure": "NSHashTable.allObjects produces autoreleased strong snapshots; lifetime test now drains the autorelease pool while retaining coordinator. Persistent weak ownership and duplicate registration separately pass.",
+  "open_diagnostic": {
+    "status": "unresolved; excluded from success claim",
+    "description": "UIButton customView navigation items stay on initial physical side in package-test host although Scene/bar/button traits update. Ordinary UIBarButtonItem in actual demo passes live physical-position assertions. No framework rebuilding workaround or expected-failure mark added.",
+    "details": "native-navigation-customview-diagnostic.md",
+    "reproduction": "native-navigation-customview-diagnostic.swift.txt"
+  },
+  "preserved_diagnostic_runs": [
+    "/tmp/applocalization-native-surface-tests.xcresult",
+    "/tmp/applocalization-native-surface-navigation-tests.xcresult",
+    "/tmp/applocalization-native-surface-layout-cycle-tests.xcresult",
+    "/tmp/applocalization-native-surface-navigation-traits-tests.xcresult",
+    "/tmp/applocalization-native-surface-constraints-tests.xcresult",
+    "/tmp/applocalization-native-surface-item-refresh-tests.xcresult"
+  ],
+  "source_sha256": {
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "d1b5a0409afd06584a852830f90043f6186eeb38707e9fce736acd75ede57188",
+    "Examples/Today/Today/SceneDelegate.swift": "1e7ecd635912f82f288d044e25cede3a006292665ce119a62244a5ef93264e63",
+    "Examples/Today/Today/SettingsViewController.swift": "01b04760c44407ee70246e8a44a64cd6bab7beda700c125ff84d051c59b29c7f",
+    "Examples/Today/Today/ListViewController/ReminderListViewController.swift": "2c7ce23e3e95e1a0a9ed51426a21b89c54ea7710605cb15d2b03d1ae19c35d83",
+    "Examples/Today/Today/DetailViewController/ReminderViewController.swift": "cb30ffacbd40068de44cc24ea15fe0c094d1601d84eb71095616a19bc7a04f1d",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoNavigationController.swift": "04507a43965f4775f1cc10d5824063bb0924457d3c1af17505b740f4c734d03b",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoServices.swift": "b195b7674ed11a0b0daea7361a334205b70de9e4ca6e6acfeab3774c99afe789",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "c33e420199702dcf3ddbee50f31427523bde95a65a47a9547a22c6286a3e1bf8",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "1e66b9dcb13583ae588236920dabd69208f8d7964d37ca61be5840595df9d75a",
+    "Tests/AppLocalizationTests/UIKitLocalizationInfrastructureTests.swift": "7e8ddc308b6f78629ad79dc9da193b1bf31b025f0e786a40af863fcc152d7670",
+    "Tests/AppLocalizationTests/UIKitWindowTransactionTests.swift": "cec780de9681ce9096fe19e11693dde1c9da67fb86eb1bbf5cfa0d89236eb098"
+  },
+  "not_run": [
+    "iOS 15/16 and exact iOS 17 runtime",
+    "Physical device",
+    "Exact Swift 6.3 compiler",
+    "Today EventKit and editor UI flow"
+  ],
+  "screenshots": [
+    "native-navigation-items-ltr.png",
+    "native-navigation-items-rtl.png"
+  ]
+}

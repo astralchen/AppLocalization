@@ -1,11 +1,12 @@
 import SwiftUI
+import UIKit
 import AppLocalization
 
 struct GestureDirectionDemoView: View {
     @ObservedObject var localizationController: LocalizationController
     let resolver: LocalizedStringResolver
 
-    @State private var lastDirection: SemanticHorizontalDirection?
+    @State private var lastDirection: NSDirectionalRectEdge?
 
     var body: some View {
         Section(resolver.string("gesture.title", bundle: .main)) {
@@ -17,6 +18,7 @@ struct GestureDirectionDemoView: View {
                         Text(resolver.string("gesture.hint", bundle: .main))
                         Text(directionText)
                             .font(.headline)
+                            .accessibilityIdentifier("gesture.pan.result")
                     }
                     .multilineTextAlignment(.center)
                     .padding()
@@ -39,7 +41,7 @@ struct GestureDirectionDemoView: View {
             return resolver.string("gesture.leading", bundle: .main)
         case .trailing:
             return resolver.string("gesture.trailing", bundle: .main)
-        case nil:
+        default:
             return resolver.string("gesture.none", bundle: .main)
         }
     }

@@ -1,0 +1,84 @@
+{
+  "date": "2026-11-17",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3; Swift 6 language mode",
+  "reference": "/Users/sondra/Documents/GitHub/UIKitLanguageDemo/UIKitLanguageDemo/Screens/LanguagePickerView.swift",
+  "implementation": "Concrete page compares button semanticContentAttribute; clear configuration only when direction differs, set semantic direction, assign business configuration, setNeedsLayout. No generic wrapper, view scan, async dispatch, or button replacement.",
+  "source_sha256": {
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "23dc31eab27aaf4b65163db0173e4acc55b9313c41d1f9e6df700bc1585479eb",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "b7d493349429c1a45ec4471462b65d991bbe145ba8841edf64bd999d309254b0",
+    "Tests/AppLocalizationTests/UIKitLocalizationInfrastructureTests.swift": "d468b293086391a250afccdafebe7fde04824c3ab62e9ba6b4ab380e99750efd"
+  },
+  "package_tests": {
+    "total": 60,
+    "passed": 60,
+    "failed": 0,
+    "expected_failures": 0,
+    "log": "/tmp/applocalization-configured-button-final-tests.log",
+    "xcresult": "/tmp/applocalization-configured-button-final-tests.xcresult",
+    "summary": "configured-button-package-summary.json",
+    "coverage": [
+      "leading and trailing image actual non-overlapping positions",
+      "LTR RTL round trips",
+      "same-direction synchronization keeps image content identity",
+      "button identity, highlighted, selected, disabled state and actions retained"
+    ]
+  },
+  "ui_tests": {
+    "existing_two_tests": "passed in initial full run",
+    "configured_modal_test": "passed in focused final run",
+    "initial_full_run": {
+      "passed": 2,
+      "failed": 1,
+      "runtime_warnings": 0,
+      "log": "/tmp/applocalization-configured-button-ui.log",
+      "xcresult": "/tmp/applocalization-configured-button-ui.xcresult",
+      "summary": "configured-button-ui-initial-summary.json"
+    },
+    "final_focused_run": {
+      "passed": 1,
+      "failed": 0,
+      "runtime_warnings": 0,
+      "log": "/tmp/applocalization-configured-button-ui-final.log",
+      "xcresult": "/tmp/applocalization-configured-button-ui-final.xcresult",
+      "summary": "configured-button-ui-final-summary.json"
+    },
+    "initial_failure_reason": "After modal close, test incorrectly expected offscreen UIKit row. AX hierarchy confirmed root language picker and scroll value 0%. Corrected to assert modal and close button absence and root language picker presence; no compensating scroll/tap."
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-configured-button-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-configured-button-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-configured-button-today-build.log"
+    }
+  },
+  "reproductions": {
+    "reassignment_only": {
+      "result": "failed strict RTL image position assertions",
+      "log": "/tmp/applocalization-button-reassign.log",
+      "xcresult": "/tmp/applocalization-button-reassign.xcresult"
+    },
+    "clear_then_assign": {
+      "result": "passed strict position assertions",
+      "log": "/tmp/applocalization-button-reset.log",
+      "xcresult": "/tmp/applocalization-button-reset.xcresult"
+    }
+  },
+  "screenshots": [
+    "configured-button-rtl.png",
+    "configured-button-ltr.png"
+  ],
+  "not_run": [
+    "Physical devices",
+    "iOS 15 runtime",
+    "Exact Swift 6.3 compiler",
+    "Today complete EventKit business flow"
+  ]
+}

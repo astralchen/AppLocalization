@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-16",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3",
+  "scope": "示例 SwiftUI List 局部恢复；框架与导航桥接的诊断修改全部撤回",
+  "limitations": [
+    "方向变化会重建列表及行内容并重置列表滚动位置",
+    "未验证 iOS 15 运行期、Swift 6.3 精确编译器或真机",
+    "框架没有净修改，未重跑包测试；此前 82 项结果仍属前一轮验证"
+  ],
+  "source_sha256": {
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/DemoRootView.swift": "fee96f1f0c6724143cefd48199c699313b87836a8d18a94dc7c1aec53f1ed949",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/PushPopGestureDemoView.swift": "19b6b6aba561b78ba9316a97d5aade0ffafabdeeb1945d35405ca016072a1d80",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "8f28f878a62a0b0cb3785f4ea8ed1339f0c1cb8965c792fb605ddc8ef36cd330"
+  },
+  "ui_tests": {
+    "passed": 2,
+    "failed": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-mirror-final.xcresult",
+    "log": "/tmp/applocalization-mirror-final.log"
+  },
+  "build": {
+    "LanguageSwitchingDemo": "passed",
+    "log": "/tmp/applocalization-mirror-final-build.log"
+  },
+  "experiments": [
+    {
+      "result": "原实现：中文切回后屏幕文字识别失败",
+      "xcresult": "/tmp/applocalization-mirror-red.xcresult",
+      "log": "/tmp/applocalization-mirror-red.log"
+    },
+    {
+      "result": "仅移除控制器 trait：相同失败",
+      "xcresult": "/tmp/applocalization-mirror-no-controller-trait.xcresult",
+      "log": "/tmp/applocalization-mirror-no-controller-trait.log"
+    },
+    {
+      "result": "仅移除窗口 trait：相同失败",
+      "xcresult": "/tmp/applocalization-mirror-no-window-trait.xcresult",
+      "log": "/tmp/applocalization-mirror-no-window-trait.log"
+    },
+    {
+      "result": "移除窗口和控制器 trait：相同失败",
+      "xcresult": "/tmp/applocalization-mirror-no-traits.xcresult",
+      "log": "/tmp/applocalization-mirror-no-traits.log"
+    },
+    {
+      "result": "进一步移除宿主视图语义写入：相同失败",
+      "xcresult": "/tmp/applocalization-mirror-no-host-direction.xcresult",
+      "log": "/tmp/applocalization-mirror-no-host-direction.log"
+    },
+    {
+      "result": "进一步移除窗口语义写入：相同失败",
+      "xcresult": "/tmp/applocalization-mirror-navigation-only.xcresult",
+      "log": "/tmp/applocalization-mirror-navigation-only.log"
+    },
+    {
+      "result": "停用窗口注册与导航方向桥接：相同失败",
+      "xcresult": "/tmp/applocalization-mirror-swiftui-only.xcresult",
+      "log": "/tmp/applocalization-mirror-swiftui-only.log"
+    },
+    {
+      "result": "仅更新 List 身份：字形通过，草稿重置断言失败",
+      "xcresult": "/tmp/applocalization-mirror-list-identity.xcresult",
+      "log": "/tmp/applocalization-mirror-list-identity.log"
+    },
+    {
+      "result": "稳定页面容器隔离 List：2 项 UI 测试通过",
+      "xcresult": "/tmp/applocalization-mirror-stable-container.xcresult",
+      "log": "/tmp/applocalization-mirror-stable-container.log"
+    },
+    {
+      "result": "增加详情页屏幕识别：2 项 UI 测试通过，0 运行期警告",
+      "xcresult": "/tmp/applocalization-mirror-final.xcresult",
+      "log": "/tmp/applocalization-mirror-final.log"
+    }
+  ],
+  "screenshots": [
+    "mirror-before-chinese.png",
+    "mirror-fixed-chinese.png",
+    "mirror-fixed-arabic.png",
+    "mirror-fixed-draft.png"
+  ]
+}

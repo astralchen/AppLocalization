@@ -14,7 +14,7 @@ final class SettingsViewController: UITableViewController, UIKitLocalizationAppl
     private let services: TodayLocalizationServices
     private let doneButton = UIBarButtonItem()
     private var rows: [Row] {
-        [.followSystem] + services.localizationController.supportedLocales.map(Row.locale)
+        [.followSystem] + services.localizationController.supportedLocalizations.map { Row.locale(AppLocale(identifier: $0)) }
     }
 
     init(services: TodayLocalizationServices = .shared) {
@@ -33,23 +33,18 @@ final class SettingsViewController: UITableViewController, UIKitLocalizationAppl
         doneButton.style = .done
         doneButton.target = self
         doneButton.action = #selector(close)
-        applyLocalization(.initial(snapshot: services.localizationController.currentSnapshot))
+        navigationItem.rightBarButtonItem = doneButton
+        applyLocalization(LocalizationUpdate(snapshot: services.localizationController.currentSnapshot))
     }
 
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
-        if update.requiresLayoutDirectionRefresh {
-            tableView.applyLocalization(update, preservingVisibleRow: true)
-            navigationItem.setBarButtonItem(
-                doneButton,
-                side: .trailing
-            )
-        }
+    func applyLocalization(_ update: LocalizationUpdate) {
         guard update.requiresLocalizedContentRefresh else { return }
         title = services.resolver.string("settings.title", bundle: .main)
         navigationItem.title = title
         doneButton.title = services.resolver.string("common.done", bundle: .main)
-        // 文本刷新由 data source 负责；方向 helper 本身不会重新加载表格数据。
-        tableView.reloadData()
+        for path in tableView.indexPathsForVisibleRows ?? [] {
+            if let cell = tableView.cellForRow(at: path) as? LanguageOptionCell { configure(cell, at: path) }
+        }
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -57,12 +52,17 @@ final class SettingsViewController: UITableViewController, UIKitLocalizationAppl
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell: LanguageOptionCell = tableView.dequeueLocalizedReusableCell(
+        let cell = tableView.dequeueReusableCell(
             withIdentifier: LanguageOptionCell.reuseIdentifier,
-            for: indexPath,
-            using: services.localizationContext
-        )
+            for: indexPath
+        ) as! LanguageOptionCell
 
+        configure(cell, at: indexPath)
+
+        return cell
+    }
+
+    private func configure(_ cell: LanguageOptionCell, at indexPath: IndexPath) {
         switch rows[indexPath.row] {
         case .followSystem:
             cell.configure(
@@ -87,7 +87,6 @@ final class SettingsViewController: UITableViewController, UIKitLocalizationAppl
             )
         }
 
-        return cell
     }
 
     override func tableView(
@@ -95,7 +94,8 @@ final class SettingsViewController: UITableViewController, UIKitLocalizationAppl
         willDisplay cell: UITableViewCell,
         forRowAt indexPath: IndexPath
     ) {
-        services.localizationContext.restoreOnAttachment(cell)
+        guard let cell = cell as? LanguageOptionCell else { return }
+        configure(cell, at: indexPath)
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -121,8 +121,8 @@ private final class LanguageOptionCell: UITableViewCell, UIKitLocalizationApplyi
 
     private let titleLabel = UILabel()
     private let subtitleLabel = UILabel()
-    private var titleLayoutDirection: AppUserInterfaceLayoutDirection = .leftToRight
-    private var appLayoutDirection: AppUserInterfaceLayoutDirection = .leftToRight
+    private var titleLayoutDirection: UIUserInterfaceLayoutDirection = .leftToRight
+    private var appLayoutDirection: UIUserInterfaceLayoutDirection = .leftToRight
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -144,8 +144,8 @@ private final class LanguageOptionCell: UITableViewCell, UIKitLocalizationApplyi
     func configure(
         title: String,
         subtitle: String,
-        titleLayoutDirection: AppUserInterfaceLayoutDirection,
-        appLayoutDirection: AppUserInterfaceLayoutDirection,
+        titleLayoutDirection: UIUserInterfaceLayoutDirection,
+        appLayoutDirection: UIUserInterfaceLayoutDirection,
         isSelected: Bool
     ) {
         self.titleLayoutDirection = titleLayoutDirection
@@ -157,23 +157,20 @@ private final class LanguageOptionCell: UITableViewCell, UIKitLocalizationApplyi
         applyLayoutDirections()
     }
 
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
+    func applyLocalization(_ update: LocalizationUpdate) {
         appLayoutDirection = update.snapshot.layoutDirection
         applyLayoutDirections()
     }
 
     private func applyLayoutDirections() {
-        semanticContentAttribute = appLayoutDirection.semanticContentAttribute
-        contentView.semanticContentAttribute = appLayoutDirection.semanticContentAttribute
-
         // 候选语言只决定标题文本自身的 bidi 书写语义；标题与副标题仍应对齐到
         // 当前 App 的语义前缘。否则在中文界面中，Arabic 标题会独自靠右，
         // 与同一行靠左的中文副标题视觉断裂。
-        titleLabel.semanticContentAttribute = titleLayoutDirection.semanticContentAttribute
-        titleLabel.textAlignment = appLayoutDirection.textAlignment
+        titleLabel.semanticContentAttribute = titleLayoutDirection == .rightToLeft ? .forceRightToLeft : .forceLeftToRight
+        titleLabel.textAlignment = appLayoutDirection == .rightToLeft ? .right : .left
 
-        subtitleLabel.semanticContentAttribute = appLayoutDirection.semanticContentAttribute
-        subtitleLabel.textAlignment = appLayoutDirection.textAlignment
+        subtitleLabel.semanticContentAttribute = appLayoutDirection == .rightToLeft ? .forceRightToLeft : .forceLeftToRight
+        subtitleLabel.textAlignment = appLayoutDirection == .rightToLeft ? .right : .left
     }
 
     private func configureView() {
@@ -198,11 +195,5 @@ private final class LanguageOptionCell: UITableViewCell, UIKitLocalizationApplyi
             stackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
         ])
-    }
-}
-
-private extension AppUserInterfaceLayoutDirection {
-    var textAlignment: NSTextAlignment {
-        self == .rightToLeft ? .right : .left
     }
 }

@@ -1,0 +1,81 @@
+{
+  "date": "2026-11-16",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3; Swift 6 language mode",
+  "removed_public_api": [
+    "UIKitLocalizationApplying.prepareForLocalization / finishLocalization",
+    "UIKitLocalizationUpdate.apply(to:) / initial(snapshot:) / change(_:)",
+    "UIKitLocalizationUpdateReason / reasons",
+    "LocalizationTransactionParticipant and controller participant registration (now internal)",
+    "LocalizationTransactionDirectionApplying",
+    "LocalizationEnvironmentView / resetContentOnLayoutDirectionChange",
+    "NavigationBarItemBuilder and builder overload",
+    "UIWindowLocalizationRecoveryAction / root factory / recover",
+    "PresentedLocalizationBoundaryRebuilding"
+  ],
+  "retained_behavior": [
+    "Atomic snapshot and serialized reentrant language changes",
+    "All window directions before any page content, including multiple coordinators",
+    "Weak explicit window registration and public presented hierarchy",
+    "Native list/input/navigation behavior",
+    "Semantic direction policies and resource fallback"
+  ],
+  "source_sha256": {
+    "Sources/AppLocalization/Core/LocalizationController.swift": "3234bb9fbdfed5cf07f081d16c87f4604b90ea7e88129daa211e85a339133795",
+    "Sources/AppLocalization/Core/LocalizationTransactionParticipant.swift": "75e10016c87b7be1a3ca03ec7c9e3eec601572b05b19d6b8e9519d301066c031",
+    "Sources/AppLocalization/UIKit/UIKitLocalizationUpdate.swift": "baf95f4581a0eca1f5541b92a8fa1579a665cff011c5d73b9b4a76ed2c27097d",
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "c8a883b8c8c1a35e82d47ac9e5e33c75fb0373bd07b7964f51342fe741011e0b",
+    "Sources/AppLocalization/UIKit/UINavigationItemLocalization.swift": "f6ab21c62ddf83a1dc85d25e84c3f573ba5c70b498e78d2ba52b559c162a3f23",
+    "Sources/AppLocalization/SwiftUI/SwiftUILocalizationEnvironment.swift": "d791bf2c5e5f93df79f1d0c6e6c1e31d52c671119ef09a8245a35d77cf191c78",
+    "Tests/AppLocalizationTests/UIKitLocalizationInfrastructureTests.swift": "a67065f247f9b9ab45526f8d75ed4413f3726eb7135997fbcaf542ef3dc2a6df",
+    "Tests/AppLocalizationTests/UIKitWindowTransactionTests.swift": "0b8d2d9dd11fec42522550d851899e9b432a13d21a567993c9d09c60e1b7230e",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitDemoRepresentable.swift": "54d1d7c9fbe7c17b0ae1303903701d1030f9e0ced1e7f341eff2f26e48957c4d",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "803df5c59b12b5f7d458ca4a2979ba7637ceb2324748e915a557f973929b2d43",
+    "Examples/Today/Today/SettingsViewController.swift": "433601fb6f51905f7a45929cb376a91ad8fd365bb2e9c7521f8a140cb92c239c",
+    "Examples/Today/Today/ListViewController/ReminderListViewController.swift": "e2800f8ea03f0ac10fba6377ecbbfb04e95fccfead48ebf307583cb017790e29",
+    "Examples/Today/Today/DetailViewController/ReminderViewController.swift": "e9559734e1261d7bf3f811a97ab88b8e8507867c6c6d3f9e83b5c126567e7598",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift": "8f28f878a62a0b0cb3785f4ea8ed1339f0c1cb8965c792fb605ddc8ef36cd330"
+  },
+  "package_tests": {
+    "passed": 61,
+    "failed": 0,
+    "xcresult": "/tmp/applocalization-surface-cleanup-tests-2.xcresult",
+    "log": "/tmp/applocalization-surface-cleanup-tests-2.log"
+  },
+  "ui_tests": {
+    "passed": 2,
+    "failed": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-surface-cleanup-ui.xcresult",
+    "log": "/tmp/applocalization-surface-cleanup-ui.log",
+    "summary": "architecture-surface-cleanup-ui-summary.json"
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-surface-cleanup-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-surface-cleanup-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-surface-cleanup-today-build.log"
+    }
+  },
+  "test_count_change": "59 -> 61: added snapshot-derived refresh requirements and cross-coordinator direction-before-content regressions. Migrated lifecycle, root replacement, and navigation array tests to current APIs.",
+  "initial_failure": {
+    "status": "fixed",
+    "reason": "Test fixture still referenced removed preparedNavigationDirections; changed assertion to first recorded apply direction. No assertion removed.",
+    "log": "/tmp/applocalization-surface-cleanup-tests.log",
+    "xcresult": "/tmp/applocalization-surface-cleanup-tests.xcresult"
+  },
+  "not_run": [
+    "Today full EventKit business flow",
+    "Actual IME marked text interaction",
+    "Physical devices",
+    "iOS 15 runtime",
+    "Exact Swift 6.3 compiler"
+  ]
+}

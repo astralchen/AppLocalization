@@ -1,0 +1,137 @@
+package_tests
+/tmp/applocalization-refactor-tests-complete.log
+
+2026-11-16 15:31:28.058 appintentsmetadataprocessor[97239:2051700] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testFallsBackToCandidateScriptWhenPreferredLocaleIsSameLanguageFamily]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testNativeDisplayNameFallsBackToConfiguredDisplayNameWhenFoundationCannotResolveIdentifier]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testNativeDisplayNameUsesCandidateLocaleAndDoesNotDependOnPreferredLocale]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testUsesCandidateFallbackWhenFoundationCannotResolveIdentifier]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.AppLocaleDisplayNameTests testUsesPreferredLocaleForLanguageDisplayName]' passed (0.001 seconds).
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.005 (0.008) seconds
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testBackSwipeAndNavigationTransitionDirectionsFollowLayoutDirection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testConvertsPhysicalPanTranslationToSemanticDirection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testDetectsRightToLeftLocales]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testIgnoresStationaryAndBelowThresholdPanTranslations]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.DirectionalLayoutTests testMapsSemanticEdgesToPhysicalEdges]' passed (0.001 seconds).
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.005) seconds
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFallbackLocaleMatchingNormalizesCaseAndSeparators]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemChecksLaterPreferredLanguagesBeforeUsingFallback]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemPrefersMatchingScriptWithinLanguage]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testFollowSystemResolvesTraditionalChineseToSupportedSimplifiedChinese]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testInjectedSystemSourceResolvesRegionalLanguage]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testLoadsPersistedSupportedLocaleAndPublishesDirectionalChange]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingEquivalentLocaleDoesNotPublishChange]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingExplicitLocaleLeavesFollowSystemEvenWhenResolvedLocaleIsSame]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testSelectingFollowSystemPersistsSentinelAndPublishesResolvedLocale]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationControllerTests testUnsupportedLocaleFallsBackAndCannotBeSelected]' passed (0.001 seconds).
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.011 (0.016) seconds
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testAllPreparationPrecedesPublicationAndCompletionPrecedesNextRevision]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testBundleSourceAndExplicitSelectionHaveSeparateLifecycles]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testOneAtomicPublicationAndReentryFromWillChange]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testParticipantMembershipIsWeakAndFrozenForEachTransaction]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testRequestForCurrentStateCancelsEarlierDeferredRequest]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testSynchronizationReentryCannotOverwriteNewerState]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizationTransactionTests testSystemSourceInfersTraditionalScriptFromRegion]' passed (0.001 seconds).
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.012 (0.015) seconds
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testDoesNotReportTranslationWhoseValueEqualsItsKeyAsMissing]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testFallsBackToFallbackLocaleWhenCurrentLocaleMissesKey]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testFormatsUsingCurrentLocaleAndReportsMissingKeys]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testNormalizesAndProgressivelyFallsBackStringCatalogLocaleIdentifiers]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testResolvesCurrentLocaleStringFromRequestedBundle]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testUsesCompiledStringCatalogResources]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.LocalizedStringResolverTests testUsesConfiguredFallbackLocaleBeforeBaseLocalization]' passed (0.003 seconds).
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.014 (0.017) seconds
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAnchorRestoresRelativePositionAcrossCollectionInstances]' passed (0.048 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testAppliesDirectionToMaterializedStandardListCellBoundaries]' passed (0.055 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testCustomContentConfigurationKeepsItsInstanceAcrossDirectionChanges]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testDetachedReusableCellAppliesLatestSnapshotBeforeConfiguration]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testKeepsAndInvalidatesCurrentLayoutWithoutFactory]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UICollectionViewLayoutDirectionTests testRebuildsLayoutOnlyWhenSemanticDirectionChanges]' passed (0.001 seconds).
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.109 (0.111) seconds
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testCollectionStableIDsSurviveReorderingForFlowAndCompositionalLayouts]' passed (0.063 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testHorizontalFlowRestoresSemanticLeadingDistanceAcrossDirectionRoundTrip]' passed (0.008 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testLateCompletionDoesNotConsumeNewerRevisionAndDeletedAnchorIsSafe]' passed (0.011 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testOrthogonalCenteredPageRestoresBusinessIDWithoutMovingOuterViewport]' passed (0.010 seconds).
+Test Case '-[AppLocalizationTests.UIKitListTransactionTests testTableRestoresStableIDAfterInsertionAndHeightChange]' passed (0.016 seconds).
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.108 (0.110) seconds
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorDoesNotLoadUnloadedControllerDuringAutomaticDelivery]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorMirrorsNavigationEnvironmentBeforeUpdatingChildAcrossLanguageChanges]' passed (0.015 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorPreparesEveryLoadedPageBeforeChangingNavigationDirection]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorSynchronizesNavigationEnvironmentOnArabicRegistration]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testCoordinatorUpdatesRegisteredHiddenWindowAndSkipsUnregisteredWindow]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testDirectionPoliciesWriteOnlyDeclaredSemantics]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testFollowContainerResolvesAgainAfterDetachedViewIsReattached]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testNavigationBarItemBuilderPreservesOrderAndMovesSharedItems]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testNavigationItemPlacementUsesUIKitSemanticSlots]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitLocalizationInfrastructureTests testRecreateRecoveryAppliesLatestUpdateToFactoryRoot]' passed (0.002 seconds).
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.038 (0.041) seconds
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testCollectionCellAttachmentReplacesDetachedDirection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testContextCellRegistrationRestoresLatestSnapshotBeforeBusinessHandler]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testContextReadsLatestSnapshotMapsReasonsAndInvokesComponentOnce]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testContextSupplementaryRegistrationRestoresBeforeBusinessHandler]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testCustomHeaderFooterContentConfigurationKeepsItsInstance]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testCustomTableCellContentConfigurationKeepsItsInstance]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testHeaderFooterAndSupplementaryReceiveLifecycleUpdates]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testListCellAccessoriesSurviveLifecycleRefresh]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testReusablePoliciesPreserveInheritFollowContainerAndFixedSemantics]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testTableViewLocalizedDequeueRestoresBeforeReturningCell]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitReusableLocalizationTests testTableViewLocalizedHeaderFooterDequeueRestoresConfiguration]' passed (0.001 seconds).
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.019 (0.023) seconds
+Test Case '-[AppLocalizationTests.UIKitTabContainerLocalizationTests testRegistrationAndRoundTripsSynchronizeTabTraitsBeforeChildren]' passed (0.016 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testBindingDoesNotRetainInputAndCanReleaseWithQueuedRefresh]' passed (0.013 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testCompositionDefersUpdatesUntilPublicEditingNotification]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testEditingNotificationsApplyLatestSnapshotOnlyToBoundInput]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testFixedAlignmentStillRefreshesInterfaceDirection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testFixedDirectionIsIndependentOfAppLeadingAlignment]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testRefreshRepairsBusinessTypingAttributeResetWithoutReplacingDelegate]' passed (0.018 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSearchBindingUsesPublicTextFieldAndMirrorsSearchBar]' passed (0.037 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSingleLineAndSecureInputUseFreshSnapshotsAndDefaultParagraphs]' passed (0.004 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testSingleLinePreservesExistingRichTextRunsAndSelection]' passed (0.001 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testTextViewPreservesRichTextAndAttachmentsAcrossDirections]' passed (0.029 seconds).
+Test Case '-[AppLocalizationTests.UIKitTextInputLocalizationTests testTransactionKeepsFocusedCustomContentAndSelection]' passed (0.450 seconds).
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.558 (0.561) seconds
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testAllWindowsCaptureBeforeAnyWindowChangesAndUnregisteredWindowsStayUntouched]' passed (0.010 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testCoordinatorAndRegisteredWindowsAreNotRetainedByController]' passed (0.002 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testInitialRenderingReentryFinishesBeforeLanguageTransaction]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UIKitWindowTransactionTests testPresentedPageAndNavigationStackRetainIdentity]' passed (0.072 seconds).
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.087 (0.088) seconds
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testAppliesSemanticDirectionWithoutReloadingData]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testHandlesEmptyTable]' passed (0.003 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testKeepsDiffableSnapshotWithoutReloadingTable]' passed (0.006 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testPreservesTopVisibleRowAndItsRelativePosition]' passed (0.007 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesTableHeaderAndFooterLayoutAndDirectionCallback]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesVisibleCellLayoutAndDirectionCallback]' passed (0.005 seconds).
+Test Case '-[AppLocalizationTests.UITableViewLayoutDirectionTests testRefreshesVisibleHeaderLayoutAndDirectionCallback]' passed (0.006 seconds).
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.039 (0.041) seconds
+	 Executed 89 tests, with 0 failures (0 unexpected) in 1.019 (1.056) seconds
+	 Executed 89 tests, with 0 failures (0 unexpected) in 1.019 (1.057) seconds
+** TEST SUCCEEDED **
+
+ui_tests
+/tmp/applocalization-ui-final.log
+
+2026-11-16 15:32:17.517 appintentsmetadataprocessor[97370:2053024] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj: LanguageSwitchingDemoUITests: ld: warning: building for iOS-simulator-15.0, but linking with dylib '@rpath/XCTest.framework/XCTest' which was built for newer version 17.0
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj: LanguageSwitchingDemoUITests: ld: warning: building for iOS-simulator-15.0, but linking with dylib '@rpath/libXCTestSwiftSupport.dylib' which was built for newer version 17.0
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemo.xcodeproj: LanguageSwitchingDemoUITests: ld: warning: building for iOS-simulator-15.0, but linking with dylib '@rpath/XCUIAutomation.framework/XCUIAutomation' which was built for newer version 17.0
+2026-11-16 15:32:17.781 appintentsmetadataprocessor[97374:2053046] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+<unknown>:0: warning: -[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures] : Modifying state during view update, this will cause undefined behavior.
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' passed (29.993 seconds).
+** TEST SUCCEEDED **
+
+package_build
+/tmp/applocalization-package-final.log
+
+** BUILD SUCCEEDED **
+
+demo_build
+/tmp/applocalization-demo-final.log
+
+2026-11-16 15:34:07.624 appintentsmetadataprocessor[98084:2058093] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+** BUILD SUCCEEDED **
+
+today_build
+/tmp/applocalization-today-final.log
+
+2026-11-16 15:32:47.244 appintentsmetadataprocessor[97801:2055369] warning: Metadata extraction skipped, no AppIntents.framework dependency found
+** BUILD SUCCEEDED **

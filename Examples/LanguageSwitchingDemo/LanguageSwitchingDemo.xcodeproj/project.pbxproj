@@ -6,6 +6,28 @@
 	objectVersion = 60;
 	objects = {
 
+        A10000000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationUITests.swift; sourceTree = "<group>"; };
+        A10000000000000000000002 = {isa = PBXBuildFile; fileRef = A10000000000000000000001; };
+        A10000000000000000000003 = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = LanguageSwitchingDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+        A10000000000000000000004 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000002,); runOnlyForDeploymentPostprocessing = 0; };
+        A10000000000000000000005 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A10000000000000000000006 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+        A10000000000000000000007 = {isa = PBXContainerItemProxy; containerPortal = B1E5247B50EA4A0EB1608AB7; proxyType = 1; remoteGlobalIDString = AA115B9C561F4DF7856F5408; remoteInfo = LanguageSwitchingDemo; };
+        A10000000000000000000008 = {isa = PBXTargetDependency; target = AA115B9C561F4DF7856F5408; targetProxy = A10000000000000000000007; };
+        A10000000000000000000009 = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = A1000000000000000000000C;
+            buildPhases = (A10000000000000000000004,A10000000000000000000005,A10000000000000000000006,);
+            buildRules = (); dependencies = (A10000000000000000000008,);
+            name = LanguageSwitchingDemoUITests; productName = LanguageSwitchingDemoUITests;
+            productReference = A10000000000000000000003;
+            productType = "com.apple.product-type.bundle.ui-testing";
+        };
+        A1000000000000000000000A = {isa = XCBuildConfiguration; name = Debug; buildSettings = {GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 15.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.LanguageSwitchingDemo.UITests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 6.0; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = LanguageSwitchingDemo; CODE_SIGNING_ALLOWED = NO; }; };
+        A1000000000000000000000B = {isa = XCBuildConfiguration; name = Release; buildSettings = {GENERATE_INFOPLIST_FILE = YES; IPHONEOS_DEPLOYMENT_TARGET = 15.0; PRODUCT_BUNDLE_IDENTIFIER = com.example.LanguageSwitchingDemo.UITests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 6.0; SDKROOT = iphoneos; TARGETED_DEVICE_FAMILY = "1,2"; TEST_TARGET_NAME = LanguageSwitchingDemo; CODE_SIGNING_ALLOWED = NO; }; };
+        A1000000000000000000000C = {isa = XCConfigurationList; buildConfigurations = (A1000000000000000000000A,A1000000000000000000000B,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+
+
 /* Begin PBXBuildFile section */
 		0B37BA697EDE4D00A3C0F909 /* DemoServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B77E26E21246CDBF95382D /* DemoServices.swift */; };
 		190C7955F5D841D794268349 /* UIKitLocalizationDemoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C766D6CD6BF647B38D38B8C6 /* UIKitLocalizationDemoViewController.swift */; };
@@ -18,11 +40,12 @@
 		9B0F5AA6F3B14CBCA5010001 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 9B0F5AA6F3B14CBCA5010002 /* InfoPlist.xcstrings */; };
 		A7C9E0115A5C4E138A010001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A7C9E0115A5C4E138A010002 /* Assets.xcassets */; };
 		A91C5F6118E84A4AA0B10001 /* PushPopGestureDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C5F6118E84A4AA0B10002 /* PushPopGestureDemoView.swift */; };
-		A91C5F6118E84A4AA0B10003 /* NavigationPopGestureConfigurator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C5F6118E84A4AA0B10004 /* NavigationPopGestureConfigurator.swift */; };
+		A91C5F6118E84A4AA0B10003 /* DemoNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91C5F6118E84A4AA0B10004 /* DemoNavigationController.swift */; };
 		CF34B739DB2B4938B0B16F6F /* LanguageSwitchingDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33943A63E0104C19889FA467 /* LanguageSwitchingDemoApp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A91C5F6118E84A4AA0B10005 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		1965C4D6BDCF4E0A9899A60D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		33943A63E0104C19889FA467 /* LanguageSwitchingDemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageSwitchingDemoApp.swift; sourceTree = "<group>"; };
 		35B77E26E21246CDBF95382D /* DemoServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoServices.swift; sourceTree = "<group>"; };
@@ -31,7 +54,7 @@
 		A42FD005FDF840B5906F908A /* LanguageSwitchingDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LanguageSwitchingDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A7C9E0115A5C4E138A010002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A91C5F6118E84A4AA0B10002 /* PushPopGestureDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushPopGestureDemoView.swift; sourceTree = "<group>"; };
-		A91C5F6118E84A4AA0B10004 /* NavigationPopGestureConfigurator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationPopGestureConfigurator.swift; sourceTree = "<group>"; };
+		A91C5F6118E84A4AA0B10004 /* DemoNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoNavigationController.swift; sourceTree = "<group>"; };
 		C766D6CD6BF647B38D38B8C6 /* UIKitLocalizationDemoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitLocalizationDemoViewController.swift; sourceTree = "<group>"; };
 		E22206F1284E401FB5BF4445 /* UIKitDemoRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitDemoRepresentable.swift; sourceTree = "<group>"; };
 		E38BEFBF5CFF4CD59A4E7DCD /* GestureDirectionDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureDirectionDemoView.swift; sourceTree = "<group>"; };
@@ -58,20 +81,30 @@
 				903444C8CC7646E49183540E /* DemoRootView.swift */,
 				E38BEFBF5CFF4CD59A4E7DCD /* GestureDirectionDemoView.swift */,
 				A91C5F6118E84A4AA0B10002 /* PushPopGestureDemoView.swift */,
-				A91C5F6118E84A4AA0B10004 /* NavigationPopGestureConfigurator.swift */,
+				A91C5F6118E84A4AA0B10004 /* DemoNavigationController.swift */,
 				E22206F1284E401FB5BF4445 /* UIKitDemoRepresentable.swift */,
 				C766D6CD6BF647B38D38B8C6 /* UIKitLocalizationDemoViewController.swift */,
 				1965C4D6BDCF4E0A9899A60D /* Localizable.xcstrings */,
 				9B0F5AA6F3B14CBCA5010002 /* InfoPlist.xcstrings */,
+				A91C5F6118E84A4AA0B10005 /* Info.plist */,
 				A7C9E0115A5C4E138A010002 /* Assets.xcassets */,
 			);
 			path = LanguageSwitchingDemo;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000000D /* LanguageSwitchingDemoUITests */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000001 /* LocalizationUITests.swift */,
+			);
+			path = LanguageSwitchingDemoUITests;
 			sourceTree = "<group>";
 		};
 		B85B45A7972A4BEBA24EEE4D = {
 			isa = PBXGroup;
 			children = (
 				3237977DE08649C093F678E5 /* LanguageSwitchingDemo */,
+				A1000000000000000000000D /* LanguageSwitchingDemoUITests */,
 				C50D72E06A3C432CA0D4A2C4 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -137,6 +170,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                A10000000000000000000009,
 				AA115B9C561F4DF7856F5408 /* LanguageSwitchingDemo */,
 			);
 		};
@@ -165,7 +199,7 @@
 				7FAB7D232A084EAA915B1C6D /* DemoRootView.swift in Sources */,
 				20D5271E0FE44FD99D1AFF03 /* GestureDirectionDemoView.swift in Sources */,
 				A91C5F6118E84A4AA0B10001 /* PushPopGestureDemoView.swift in Sources */,
-				A91C5F6118E84A4AA0B10003 /* NavigationPopGestureConfigurator.swift in Sources */,
+				A91C5F6118E84A4AA0B10003 /* DemoNavigationController.swift in Sources */,
 				7737775F2D80479CB568F2BC /* UIKitDemoRepresentable.swift in Sources */,
 				190C7955F5D841D794268349 /* UIKitLocalizationDemoViewController.swift in Sources */,
 			);
@@ -186,7 +220,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Language Demo";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_FILE = LanguageSwitchingDemo/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -218,7 +252,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Language Demo";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_FILE = LanguageSwitchingDemo/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

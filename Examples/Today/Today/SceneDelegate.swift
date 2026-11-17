@@ -33,11 +33,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 在此暂停需要随场景进入非活跃状态而停止的任务。
     }
 
-    func sceneWillEnterForeground(_ scene: UIScene) {
-        // 返回前台时，重新解析“跟随系统”的区域设置。
-        TodayLocalizationServices.shared.localizationController.refreshSystemLocaleIfNeeded()
-    }
-
     func sceneDidEnterBackground(_ scene: UIScene) {
         // 在此保存数据，并释放可在下次进入前台时重新创建的共享资源。
     }

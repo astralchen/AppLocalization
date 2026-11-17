@@ -6,7 +6,7 @@ import Foundation
 import AppLocalization
 
 extension ReminderViewController {
-    enum Section: Int, Hashable {
+    enum Section: Hashable {
         case view
         case title
         case date

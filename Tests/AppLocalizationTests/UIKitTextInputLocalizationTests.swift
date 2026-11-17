@@ -1,182 +1,173 @@
-#if canImport(UIKit)
 import UIKit
 import XCTest
 @testable import AppLocalization
 
 @MainActor
 final class UIKitTextInputLocalizationTests: XCTestCase {
-    @MainActor
-    private final class State {
-        var locale: AppLocale = .simplifiedChinese
-        var revision: UInt64 = 0
-        lazy var context = UIKitLocalizationContext { [unowned self] in
-            LocalizationSnapshot(locale: locale, followsSystemLocale: false, revision: revision)
+    func testTransactionKeepsFocusedCustomContentAndSelection() throws {
+        let controller = LocalizationController(resourceBundle: localizationTestBundle(["en-US", "ar"], developmentLocalization: "en-US"),
+            preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: "en-US"))
+        let cell = UICollectionViewListCell(frame: CGRect(x: 0, y: 100, width: 320, height: 60))
+        cell.contentConfiguration = EditingConfiguration()
+        let content = try XCTUnwrap((cell.contentView as? EditingContent) ?? cell.contentView.subviews.compactMap { $0 as? EditingContent }.first)
+        let root = EditingPage(cell: cell)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: controller)
+        coordinator.register(window: window)
+        content.field.text = "draft 123"
+        XCTAssertTrue(content.field.becomeFirstResponder())
+        let start = try XCTUnwrap(content.field.position(from: content.field.beginningOfDocument, offset: 2))
+        let end = try XCTUnwrap(content.field.position(from: start, offset: 3))
+        content.field.selectedTextRange = content.field.textRange(from: start, to: end)
+        for identifier in ["ar", "en-US"] {
+            controller.setLocale(identifier: identifier)
+            XCTAssertTrue(cell.contentView === content || cell.contentView.subviews.contains { $0 === content })
+            XCTAssertTrue(content.field.isFirstResponder)
+            XCTAssertEqual(content.field.text, "draft 123")
+            let selection = try XCTUnwrap(content.field.selectedTextRange)
+            XCTAssertEqual(content.field.offset(from: content.field.beginningOfDocument, to: selection.start), 2)
+            XCTAssertEqual(content.field.offset(from: selection.start, to: selection.end), 3)
         }
-        func select(_ locale: AppLocale) {
-            self.locale = locale
-            revision += 1
-        }
+        content.field.resignFirstResponder()
+        withExtendedLifetime((window, coordinator)) {}
     }
 
-    func testSingleLineAndSecureInputUseFreshSnapshotsAndDefaultParagraphs() {
-        for secure in [false, true] {
-            let state = State()
-            let field = UITextField()
-            field.isSecureTextEntry = secure
-            let binding = state.context.makeTextInputBinding(to: field)
-            for locale in [AppLocale.simplifiedChinese, .arabic, .englishUS, .arabic] {
-                state.select(locale)
-                for text in ["", "VV77", "uu天", "مرحبا", "hello مرحبا 123"] {
-                    field.text = text
-                    binding.refresh()
-                    let alignment: NSTextAlignment = locale == .arabic ? .right : .left
-                    XCTAssertEqual(field.text, text)
-                    XCTAssertEqual(field.textAlignment, alignment)
-                    XCTAssertEqual((field.defaultTextAttributes[.paragraphStyle] as? NSParagraphStyle)?.alignment, alignment)
-                    XCTAssertEqual(field.semanticContentAttribute, locale.layoutDirection.semanticContentAttribute)
-                }
-            }
-        }
-    }
-
-    func testSingleLinePreservesExistingRichTextRunsAndSelection() {
-        let state = State()
+    func testNativeInputsInheritDirectionWithoutBindings() {
         let field = UITextField()
-        let content = NSMutableAttributedString(string: "blue red", attributes: [.foregroundColor: UIColor.blue])
-        content.addAttributes([.foregroundColor: UIColor.red, .font: UIFont.boldSystemFont(ofSize: 23)], range: NSRange(location: 5, length: 3))
-        field.attributedText = content
-        let binding = state.context.makeTextInputBinding(to: field)
-        state.select(.arabic)
-        binding.refresh()
-        XCTAssertEqual(field.attributedText?.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor, .blue)
-        XCTAssertEqual(field.attributedText?.attribute(.foregroundColor, at: 5, effectiveRange: nil) as? UIColor, .red)
-        XCTAssertEqual(field.attributedText?.attribute(.font, at: 5, effectiveRange: nil) as? UIFont, .boldSystemFont(ofSize: 23))
-    }
-
-    func testSearchBindingUsesPublicTextFieldAndMirrorsSearchBar() {
-        let state = State()
+        let secure = UITextField()
+        secure.isSecureTextEntry = true
+        let textView = UITextView()
         let search = UISearchBar()
-        let binding = state.context.makeTextInputBinding(to: search)
-        state.select(.arabic)
-        binding.refresh()
-        XCTAssertEqual(search.searchTextField.textAlignment, .right)
-        XCTAssertEqual(search.semanticContentAttribute, .forceRightToLeft)
-        state.select(.englishUS)
-        binding.refresh()
-        XCTAssertEqual(search.searchTextField.textAlignment, .left)
+        let root = UIViewController()
+        let controller = makeController()
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: controller)
+        let window = host(root)
+        for input in [field, secure, textView, search] as [UIView] { root.view.addSubview(input) }
+        field.textAlignment = .natural
+        secure.textAlignment = .natural
+        textView.textAlignment = .natural
+        field.text = "hello مرحبا 123"
+        secure.text = "secret 123"
+        textView.text = "第二段\nمرحبا"
+        search.text = "query"
+        coordinator.register(window: window)
+        for identifier in ["ar", "en-US", "ar"] {
+            controller.setLocale(identifier: identifier)
+            let direction = controller.layoutDirection
+            for input in [field, secure, textView, search] as [UIView] {
+                XCTAssertEqual(input.effectiveUserInterfaceLayoutDirection, direction)
+            }
+            XCTAssertEqual(field.textAlignment, .natural)
+            XCTAssertEqual(secure.textAlignment, .natural)
+            XCTAssertEqual(textView.textAlignment, .natural)
+            XCTAssertEqual(field.text, "hello مرحبا 123")
+            XCTAssertEqual(secure.text, "secret 123")
+            XCTAssertEqual(textView.text, "第二段\nمرحبا")
+            XCTAssertEqual(search.text, "query")
+        }
+        withExtendedLifetime(window) {}
     }
 
-    func testFixedAlignmentStillRefreshesInterfaceDirection() {
-        let state = State()
-        let field = UITextField()
-        let binding = state.context.makeTextInputBinding(to: field, alignment: .fixed(.center))
-        state.select(.arabic)
-        binding.refresh()
-        XCTAssertEqual(field.textAlignment, .center)
-        XCTAssertEqual(field.semanticContentAttribute, .forceRightToLeft)
-    }
-
-    func testTextViewPreservesRichTextAndAttachmentsAcrossDirections() {
-        let state = State()
-        let view = UITextView()
+    func testNativeTextViewKeepsEditingSelectionRichTextAndDelegate() {
+        let controller = makeController()
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: controller)
+        let root = UIViewController()
+        let window = host(root)
+        let view = UITextView(frame: CGRect(x: 0, y: 100, width: 320, height: 200))
+        let delegate = InputDelegate()
+        view.delegate = delegate
+        root.view.addSubview(view)
         let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .natural
         paragraph.lineSpacing = 7
-        paragraph.baseWritingDirection = .natural
         let font = UIFont.boldSystemFont(ofSize: 21)
         let text = NSMutableAttributedString(string: "hello مرحبا\n第二段\n", attributes: [
-            .font: font, .foregroundColor: UIColor.red, .paragraphStyle: paragraph,
-            .link: URL(string: "https://example.com")!
+            .font: font, .foregroundColor: UIColor.red, .paragraphStyle: paragraph
         ])
         let attachment = NSTextAttachment()
         text.append(NSAttributedString(attachment: attachment))
         view.attributedText = text
+        coordinator.register(window: window)
+        XCTAssertTrue(view.becomeFirstResponder())
         view.selectedRange = NSRange(location: 3, length: 2)
-        let binding = state.context.makeTextInputBinding(to: view)
-        for locale in [AppLocale.arabic, .simplifiedChinese, .englishUS, .arabic] {
-            state.select(locale)
-            binding.refresh()
-            XCTAssertEqual(view.text, text.string)
+        for identifier in ["ar", "en-US", "ar"] {
+            controller.setLocale(identifier: identifier)
+            XCTAssertTrue(view.isFirstResponder)
+            XCTAssertTrue(view.delegate === delegate)
             XCTAssertEqual(view.selectedRange, NSRange(location: 3, length: 2))
+            XCTAssertEqual(view.text, text.string)
             XCTAssertTrue(view.textStorage.attribute(.attachment, at: text.length - 1, effectiveRange: nil) as? NSTextAttachment === attachment)
             XCTAssertEqual(view.textStorage.attribute(.font, at: 0, effectiveRange: nil) as? UIFont, font)
             XCTAssertEqual(view.textStorage.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? UIColor, .red)
-            XCTAssertEqual(view.textStorage.attribute(.link, at: 0, effectiveRange: nil) as? URL, URL(string: "https://example.com"))
             let actual = view.textStorage.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
             XCTAssertEqual(actual?.lineSpacing, 7)
-            XCTAssertEqual(actual?.baseWritingDirection, .natural)
-            XCTAssertEqual(actual?.alignment, locale == .arabic ? .right : .left)
+            XCTAssertEqual(actual?.alignment, .natural)
         }
+        view.resignFirstResponder()
+        withExtendedLifetime(window) {}
     }
 
-    func testRefreshRepairsBusinessTypingAttributeResetWithoutReplacingDelegate() {
-        let state = State()
-        let view = UITextView()
-        let delegate = InputDelegate()
-        view.delegate = delegate
-        let binding = state.context.makeTextInputBinding(to: view)
-        state.select(.arabic)
-        view.typingAttributes = [.font: UIFont.systemFont(ofSize: 19), .foregroundColor: UIColor.blue]
-        binding.refresh()
-        XCTAssertTrue(view.delegate === delegate)
-        XCTAssertEqual((view.typingAttributes[.paragraphStyle] as? NSParagraphStyle)?.alignment, .right)
-        XCTAssertEqual(view.typingAttributes[.foregroundColor] as? UIColor, .blue)
-        XCTAssertEqual(view.typingAttributes[.font] as? UIFont, .systemFont(ofSize: 19))
+    func testApplicationDoesNotOverrideNativeFixedInputPolicy() {
+        let controller = makeController()
+        let coordinator = UIWindowSceneLocalizationCoordinator(localizationController: controller)
+        let root = UIViewController()
+        let window = host(root)
+        let phone = UITextField()
+        phone.semanticContentAttribute = .forceLeftToRight
+        phone.textAlignment = .center
+        phone.text = "+1 234 567"
+        root.view.addSubview(phone)
+        coordinator.register(window: window)
+        controller.setLocale(identifier: "ar")
+        XCTAssertEqual(phone.effectiveUserInterfaceLayoutDirection, .leftToRight)
+        XCTAssertEqual(phone.textAlignment, .center)
+        XCTAssertEqual(phone.text, "+1 234 567")
+        withExtendedLifetime(window) {}
     }
 
-    func testEditingNotificationsApplyLatestSnapshotOnlyToBoundInput() {
-        let state = State()
-        let field = UITextField()
-        let other = UITextField()
-        let binding = state.context.makeTextInputBinding(to: field)
-        state.select(.arabic)
-        NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: other)
-        XCTAssertEqual(field.textAlignment, .left)
-        NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: field)
-        XCTAssertEqual(field.textAlignment, .right)
-        withExtendedLifetime(binding) {}
+    private func makeController() -> LocalizationController {
+        LocalizationController(resourceBundle: localizationTestBundle(["en-US", "ar"], developmentLocalization: "en-US"),
+            preferenceStore: InMemoryLocalePreferenceStore(localeIdentifier: "en-US"))
     }
 
-    func testCompositionDefersUpdatesUntilPublicEditingNotification() {
-        let state = State()
-        let field = ComposingField()
-        let binding = state.context.makeTextInputBinding(to: field)
-        field.composing = true
-        state.select(.arabic)
-        binding.refresh()
-        XCTAssertEqual(field.textAlignment, .left)
-        state.select(.englishUS)
-        state.select(.arabic)
-        field.composing = false
-        NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: field)
-        XCTAssertEqual(field.textAlignment, .right)
-        withExtendedLifetime(binding) {}
-    }
-
-    func testBindingDoesNotRetainInputAndCanReleaseWithQueuedRefresh() async {
-        let state = State()
-        weak var releasedField: UITextField?
-        weak var releasedBinding: UIKitTextInputLocalizationBinding?
-        var binding: UIKitTextInputLocalizationBinding?
-        autoreleasepool {
-            let field = UITextField()
-            releasedField = field
-            binding = state.context.makeTextInputBinding(to: field)
-            releasedBinding = binding
-            NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: field)
-        }
-        XCTAssertNil(releasedField)
-        binding?.refresh()
-        binding = nil
-        await Task.yield()
-        XCTAssertNil(releasedBinding)
+    private func host(_ root: UIViewController) -> UIWindow {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        window.rootViewController = root
+        window.makeKeyAndVisible()
+        window.layoutIfNeeded()
+        return window
     }
 
     private final class InputDelegate: NSObject, UITextViewDelegate {}
-    /// 此替身只验证延后策略；真实拼音组合输入另由演示工程的模拟器测试覆盖。
-    private final class ComposingField: UITextField {
-        var composing = false
-        override var markedTextRange: UITextRange? { composing ? CompositionRange() : nil }
-    }
-    private final class CompositionRange: UITextRange {}
 }
-#endif
+
+private struct EditingConfiguration: UIContentConfiguration {
+    func makeContentView() -> UIView & UIContentView { EditingContent(self) }
+    func updated(for state: any UIConfigurationState) -> EditingConfiguration { self }
+}
+
+@MainActor
+private final class EditingContent: UIView, UIContentView {
+    let field = UITextField(frame: CGRect(x: 10, y: 5, width: 300, height: 50))
+    var configuration: any UIContentConfiguration
+    init(_ configuration: EditingConfiguration) {
+        self.configuration = configuration
+        super.init(frame: .zero)
+        addSubview(field)
+    }
+    required init?(coder: NSCoder) { fatalError() }
+}
+
+@MainActor
+private final class EditingPage: UIViewController {
+    let cell: UICollectionViewListCell
+    init(cell: UICollectionViewListCell) {
+        self.cell = cell
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) { fatalError() }
+    override func viewDidLoad() { super.viewDidLoad(); view.addSubview(cell) }
+}

@@ -1,0 +1,50 @@
+## 原实现：中文切回后屏幕文字识别失败
+/tmp/applocalization-mirror-red.xcresult
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:22: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs] : XCTAssertTrue failed - zh-Hans: ["17:03", ".... 8", "(EH HT", "≤#‡Ểì", "2л6H-N5", "llerçö", "·íÈłź‡®]…", "≤ấíờ₩", "lUttiwa", "7#latAa lUttiwa", "dENFTSET·EA IUttiwa"]
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' failed (19.489 seconds).
+
+## 仅移除控制器 trait：相同失败
+/tmp/applocalization-mirror-no-controller-trait.xcresult
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:22: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs] : XCTAssertTrue failed - zh-Hans: ["17:04", ".... 8", "(EH HT", "≤#‡Ểì", "2л6H-N5", "llerçö", "·íÈłź‡®]…", "≤ấíờ₩", "lUttiwa", "7#latAa lUttiwa", "dENFTSET·EA IUttiwa"]
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' failed (15.013 seconds).
+
+## 仅移除窗口 trait：相同失败
+/tmp/applocalization-mirror-no-window-trait.xcresult
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:22: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs] : XCTAssertTrue failed - zh-Hans: ["17:05", ".... 5", "(EH HT", "≤#‡Ểì", "2л6H-N5", "llerçö", "·íÈłź‡®]…", "≤ấíờ₩", "lUttiwa", "7#latAa lUttiwa", "dENFTSET·EA IUttiwa"]
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' failed (12.135 seconds).
+
+## 移除窗口和控制器 trait：相同失败
+/tmp/applocalization-mirror-no-traits.xcresult
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:22: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs] : XCTAssertTrue failed - zh-Hans: ["17:06", ".... 5", "(EH HT", "≤#‡Ểì", "2л6H-N5", "llerçö", "·íÈłź‡®]…", "≤ấíờ₩", "lUttiwa", "7#latAa lUttiwa", "dENFTSET·EA IUttiwa"]
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' failed (11.578 seconds).
+
+## 进一步移除宿主视图语义写入：相同失败
+/tmp/applocalization-mirror-no-host-direction.xcresult
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:22: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs] : XCTAssertTrue failed - zh-Hans: ["17:07", "....", "(EH HT", "≤#‡Ểì", "2л6H-N5", "llerçö", "·íÈłź‡®]…", "≤ấíờ₩", "lUttiwa", "7#latAa lUttiwa", "dENFTSET·EA IUttiwa"]
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' failed (11.552 seconds).
+
+## 进一步移除窗口语义写入：相同失败
+/tmp/applocalization-mirror-navigation-only.xcresult
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:22: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs] : XCTAssertTrue failed - zh-Hans: ["17:08", ".... 5", "(EH HT", "≤#‡Ểì", "2л6H-N5", "llerçö", "·íÈłź‡®]…", "≤ấíờ₩", "lUttiwa", "7#latAa lUttiwa", "dENFTSET·EA IUttiwa"]
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' failed (11.659 seconds).
+
+## 停用窗口注册与导航方向桥接：相同失败
+/tmp/applocalization-mirror-swiftui-only.xcresult
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:22: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs] : XCTAssertTrue failed - zh-Hans: ["17:09", ".... 5", "(EH HT", "≤#‡Ểì", "2л6H-N5", "llerçö", "·íÈłź‡®]…", "≤ấíờ₩", "lUttiwa", "7#latAa lUttiwa", "dENFTSET·EA IUttiwa"]
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' failed (13.706 seconds).
+
+## 仅更新 List 身份：字形通过，草稿重置断言失败
+/tmp/applocalization-mirror-list-identity.xcresult
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' passed (15.766 seconds).
+/Users/sondra/Documents/GitHub/AppLocalization/Examples/LanguageSwitchingDemo/LanguageSwitchingDemoUITests/LocalizationUITests.swift:64: error: -[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures] : XCTAssertEqual failed: ("Optional("مسودة")") is not equal to ("Optional("Retained draft")")
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' failed (17.565 seconds).
+
+## 稳定页面容器隔离 List：2 项 UI 测试通过
+/tmp/applocalization-mirror-stable-container.xcresult
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' passed (17.999 seconds).
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' passed (27.174 seconds).
+
+## 增加详情页屏幕识别：2 项 UI 测试通过，0 运行期警告
+/tmp/applocalization-mirror-final.xcresult
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLanguageRoundTripKeepsReadableGlyphs]' passed (18.588 seconds).
+Test Case '-[LanguageSwitchingDemoUITests.LocalizationUITests testLiveSwitchKeepsDraftNavigationAndSemanticBackGestures]' passed (29.004 seconds).

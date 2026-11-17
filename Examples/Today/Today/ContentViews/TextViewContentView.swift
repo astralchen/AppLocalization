@@ -3,9 +3,8 @@
  */
 
 import UIKit
-import AppLocalization
 
-class TextViewContentView: UIView, UIContentView, UIKitLocalizationApplying {
+class TextViewContentView: UIView, UIContentView {
     struct Configuration: UIContentConfiguration {
         var text: String? = ""
         var onChange: (String) -> Void = { _ in }
@@ -13,11 +12,12 @@ class TextViewContentView: UIView, UIContentView, UIKitLocalizationApplying {
         func makeContentView() -> UIView & UIContentView {
             return TextViewContentView(self)
         }
+
+        // 此配置不随 cell 的选中或高亮状态改变。
+        func updated(for state: any UIConfigurationState) -> Self { self }
     }
 
     let textView = UITextView()
-    private lazy var inputBinding = TodayLocalizationServices.shared.localizationContext
-        .makeTextInputBinding(to: textView)
     var configuration: UIContentConfiguration {
         didSet {
             configure(configuration: configuration)
@@ -34,20 +34,12 @@ class TextViewContentView: UIView, UIContentView, UIKitLocalizationApplying {
         textView.backgroundColor = nil
         textView.delegate = self
         textView.font = UIFont.preferredFont(forTextStyle: .body)
+        textView.textAlignment = .natural
         configure(configuration: configuration)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    func applyLocalization(_ update: UIKitLocalizationUpdate) {
-        inputBinding.refresh()
-    }
-
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
-        if window != nil { inputBinding.refresh() }
     }
 
     func configure(configuration: UIContentConfiguration) {
@@ -56,15 +48,9 @@ class TextViewContentView: UIView, UIContentView, UIKitLocalizationApplying {
         if (textView.text ?? "") != (configuration.text ?? ""), textView.markedTextRange == nil {
             textView.text = configuration.text
         }
-        inputBinding.refresh()
     }
 }
 
-extension UICollectionViewListCell {
-    func textViewConfiguration() -> TextViewContentView.Configuration {
-        TextViewContentView.Configuration()
-    }
-}
 
 extension TextViewContentView: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {

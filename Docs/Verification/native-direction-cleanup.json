@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-16",
+  "platform": "iPhone 18 Pro / iOS 27.2 Simulator",
+  "toolchain": "Apple Swift 6.4.2; minimum Swift 6.3; Swift 6 language mode",
+  "deleted_file": "Sources/AppLocalization/UIKit/UIViewLayoutDirection.swift",
+  "deleted_types": [
+    "UIViewLayoutDirectionTarget",
+    "UIViewLayoutDirectionUpdater",
+    "UIViewLayoutDirectionPolicy",
+    "DirectionalContentSemantics"
+  ],
+  "behavior": "普通控件采用 UIKit 原生继承；特殊内容直接使用 semanticContentAttribute。移除批量配置重建、附件重设及布局失效机制。",
+  "source_sha256": {
+    "Sources/AppLocalization/Directional/DirectionalLayout.swift": "6955471ef918e6a6958696004d33f45726bb076539de1e5c9858433daa7cd251",
+    "Sources/AppLocalization/UIKit/UIWindowSceneLocalizationCoordinator.swift": "c8a883b8c8c1a35e82d47ac9e5e33c75fb0373bd07b7964f51342fe741011e0b",
+    "Examples/LanguageSwitchingDemo/LanguageSwitchingDemo/UIKitLocalizationDemoViewController.swift": "7ede5edd81ff1214dee51339ee32003793f5fe2606186b4917848eceda5ec580",
+    "Tests/AppLocalizationTests/UIKitLocalizationInfrastructureTests.swift": "49aa35f842c916967677420d7edb6310fcf02864499fdce9ccb6d55c96de7c13",
+    "Tests/AppLocalizationTests/UIKitTextInputLocalizationTests.swift": "47d7eec4a2107d2a200f94c54a8ccb78f7e1a2791736322cda67c1c5e3f5d89d"
+  },
+  "package_tests": {
+    "total": 60,
+    "passed": 59,
+    "expected_failure_tests": 1,
+    "unexpected_failed_tests": 0,
+    "xcresult": "/tmp/applocalization-native-direction-final-tests.xcresult",
+    "log": "/tmp/applocalization-native-direction-final-tests.log",
+    "summary": "native-direction-package-summary.json"
+  },
+  "known_native_limitation": {
+    "status": "unresolved; retained as strict expected failure on iOS 27.2",
+    "test": "testNativeButtonsInheritDirectionWithoutRebuildingConfiguration",
+    "observed": "继承方向与配置内容检查通过；两次 RTL 切换后配置按钮图标中心 x=119，标题中心 x=158，仍为 LTR 顺序。",
+    "expected_failure_assertions": 2,
+    "scope": "仅标记 iOS 27.2 上的实际 RTL 图文位置断言；其他方向、配置和平台断言不放宽。严格预期失败在系统行为修复后会失败以提示更新。",
+    "demo_impact": "主示例调用点为普通文字按钮，不依赖配置式图标布局；未把兼容补丁移入业务代码。",
+    "diagnostic_failures": [
+      {
+        "attempt": "同步布局",
+        "log": "/tmp/applocalization-native-direction-tests.log",
+        "xcresult": "/tmp/applocalization-native-direction-tests.xcresult"
+      },
+      {
+        "attempt": "等待下一轮主队列",
+        "log": "/tmp/applocalization-native-direction-button-check.log",
+        "xcresult": "/tmp/applocalization-native-direction-button-check.xcresult"
+      },
+      {
+        "attempt": "直接设置按钮 semanticContentAttribute",
+        "log": "/tmp/applocalization-native-direction-button-explicit.log",
+        "xcresult": "/tmp/applocalization-native-direction-button-explicit.xcresult"
+      },
+      {
+        "attempt": "方向属性加原生配置刷新及 setNeedsLayout",
+        "log": "/tmp/applocalization-native-direction-button-refresh.log",
+        "xcresult": "/tmp/applocalization-native-direction-button-refresh.xcresult"
+      }
+    ]
+  },
+  "ui_tests": {
+    "passed": 2,
+    "failed": 0,
+    "runtime_warnings": 0,
+    "xcresult": "/tmp/applocalization-native-direction-ui.xcresult",
+    "log": "/tmp/applocalization-native-direction-ui.log",
+    "summary": "native-direction-ui-summary.json"
+  },
+  "builds": {
+    "package": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-direction-package-build.log"
+    },
+    "demo": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-direction-demo-build.log"
+    },
+    "today": {
+      "result": "passed",
+      "log": "/tmp/applocalization-native-direction-today-build.log"
+    }
+  },
+  "test_count_change": "61 -> 60: removed 2 wrapper-policy tests and added 1 native button integration test; editing content fixture no longer conforms to localization protocol.",
+  "not_run": [
+    "Today full EventKit business flow",
+    "Actual IME marked text interaction",
+    "Physical devices",
+    "iOS 15 runtime",
+    "Exact Swift 6.3 compiler"
+  ]
+}

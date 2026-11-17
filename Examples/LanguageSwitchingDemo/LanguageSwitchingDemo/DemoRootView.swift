@@ -5,8 +5,8 @@ struct DemoRootView: View {
     @ObservedObject var localizationController: LocalizationController
     let resolver: LocalizedStringResolver
 
-    @State private var isSheetPresented = false
-    @State private var isPushPresented = false
+    let showSheet: () -> Void
+    let showPushPage: () -> Void
 
     private var demoItemTitles: [String] {
         (1...DemoSurfaceLayout.itemCount).map {
@@ -15,7 +15,7 @@ struct DemoRootView: View {
     }
 
     var body: some View {
-        NavigationView {
+        VStack(spacing: 0) {
             List {
                 LanguageSelectionSection(
                     localizationController: localizationController,
@@ -53,59 +53,15 @@ struct DemoRootView: View {
                     resolver: resolver
                 )
             }
-            .navigationTitle(resolver.string("demo.title", bundle: .main))
-            // `NavigationView` 背后的 `UINavigationController` 必须在入栈前同步语义方向。
-            // 仅在目标页面配置会太晚，阿拉伯文布局的出栈动画仍可能从左向右移动。
-            .background(
-                NavigationPopGestureConfigurator(
-                    layoutDirection: localizationController.layoutDirection
-                )
-                .frame(width: 0, height: 0)
-            )
-            .toolbar {
-                // 返回操作位于语义前缘，而不是固定物理右侧；图标方向由
-                // `DirectionalLayout` 根据当前布局方向确定。
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Image(
-                        systemName: DirectionalLayout.backChevronSystemName(
-                            layoutDirection: localizationController.layoutDirection
-                        )
-                    )
-                    .accessibilityLabel(
-                        resolver.string("nav.direction.icon", bundle: .main)
-                    )
-                }
-            }
-            .background(
-                NavigationLink(
-                    destination: PushPopGestureDemoView(
-                        localizationController: localizationController,
-                        resolver: resolver
-                    ),
-                    isActive: $isPushPresented,
-                    label: { EmptyView() }
-                )
-                .hidden()
-            )
-            .sheet(isPresented: $isSheetPresented) {
-                DemoSheetView(
-                    localizationController: localizationController,
-                    resolver: resolver
-                )
-            }
+            // iOS 27.2 的 List 在 RTL 切回 LTR 后可能保留镜像缓存。
+            // 只重新创建列表，导航和呈现状态由原生导航控制器持有。
+            .id(localizationController.layoutDirection)
         }
-    }
-
-    private func showSheet() {
-        isSheetPresented = true
-    }
-
-    private func showPushPage() {
-        isPushPresented = true
+        .navigationTitle(resolver.string("demo.title", bundle: .main))
     }
 }
 
-private struct LanguageSelectionSection: View {
+struct LanguageSelectionSection: View {
     @ObservedObject var localizationController: LocalizationController
     let resolver: LocalizedStringResolver
 
@@ -141,8 +97,10 @@ private struct LanguageSelectionSection: View {
                     }
                 }
             }
+            .accessibilityIdentifier("language.system")
 
-            ForEach(localizationController.supportedLocales, id: \.identifier) { locale in
+            ForEach(localizationController.supportedLocalizations, id: \.self) { identifier in
+                let locale = AppLocale(identifier: identifier)
                 Button(action: { select(locale) }) {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
@@ -150,7 +108,7 @@ private struct LanguageSelectionSection: View {
                             Text(locale.nativeDisplayName)
                                 .environment(
                                     \.layoutDirection,
-                                    locale.layoutDirection.swiftUILayoutDirection
+                                    locale.layoutDirection == .rightToLeft ? .rightToLeft : .leftToRight
                                 )
                             Text(
                                 locale.localizedDisplayName(
@@ -167,6 +125,7 @@ private struct LanguageSelectionSection: View {
                         }
                     }
                 }
+                .accessibilityIdentifier("language.option.\(locale.identifier)")
             }
 
             DemoKeyValueRow(
@@ -208,7 +167,9 @@ private struct SwiftUIDemoCard: View {
                 .foregroundColor(.secondary)
 
             actionButton(sheetButtonTitle, action: showSheet)
+                .accessibilityIdentifier("demo.sheet")
             actionButton(pushButtonTitle, action: showPushPage)
+                .accessibilityIdentifier("demo.push")
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: DemoSurfaceLayout.spacing) {
@@ -248,48 +209,21 @@ private struct SwiftUIDemoCard: View {
     }
 }
 
-private struct DemoSheetView: View {
-    @Environment(\.dismiss) private var dismiss
+struct DemoSheetView: View {
     @ObservedObject var localizationController: LocalizationController
     let resolver: LocalizedStringResolver
 
     var body: some View {
-        NavigationView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(resolver.string("sheet.message", bundle: .main))
-                    .font(.body)
-                    .multilineTextAlignment(.leading)
-                Spacer()
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .navigationTitle(resolver.string("sheet.title", bundle: .main))
-            .toolbar {
-                // Sheet 边界已经显式注入应用方向，因此保持语义前缘即可；
-                // SwiftUI 会在 LTR/RTL 下分别解析到左侧/右侧。
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(resolver.string("close", bundle: .main)) {
-                        dismiss()
-                    }
-                }
-            }
-            // SwiftUI 环境会更新内容方向，工作表的 UIKit 导航容器也需使用相同语义方向。
-            .background(
-                NavigationPopGestureConfigurator(
-                    layoutDirection: localizationController.layoutDirection
-                )
-                .frame(width: 0, height: 0)
-            )
+        VStack(alignment: .leading, spacing: 16) {
+            Text(resolver.string("sheet.message", bundle: .main))
+                .font(.body)
+                .multilineTextAlignment(.leading)
+                .accessibilityIdentifier("demo.sheet.message")
+            Spacer()
         }
-        // Sheet content may be materialized after the last app-wide change
-        // notification. Inject the current values at this presentation
-        // boundary instead of relying on the presenting hierarchy to carry
-        // them into a newly created host.
-        .environment(\.locale, localizationController.locale)
-        .environment(
-            \.layoutDirection,
-            localizationController.layoutDirection.swiftUILayoutDirection
-        )
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .navigationTitle(resolver.string("sheet.title", bundle: .main))
     }
 }
 
